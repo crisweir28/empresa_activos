@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Departamentos{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">🏬 Departamentos</div>
+    <div class="page-sub">Áreas y departamentos de la empresa</div>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+    + Nuevo departamento
+  </button>
+</div>
+
+<div class="panel">
+  {% if departamentos %}
+  <table>
+    <thead><tr><th>#</th><th>Nombre</th><th>Descripción</th><th>Activos</th><th>Acciones</th></tr></thead>
+    <tbody>
+      {% for d in departamentos %}
+      <tr>
+        <td style="color:var(--muted)">{{ d.id }}</td>
+        <td><strong>{{ d.nombre }}</strong></td>
+        <td style="color:var(--muted)">{{ d.descripcion or '—' }}</td>
+        <td><span class="badge badge-activo">{{ d.total_activos or 0 }}</span></td>
+        <td>
+          <form method="POST" action="{{ url_for('departamentos.eliminar', id=d.id) }}" style="display:inline"
+                onsubmit="return confirm('¿Eliminar {{ d.nombre }}? Los activos quedarán sin departamento.')">
+            <button type="submit" class="btn-sm btn-del">🗑️ Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin departamentos registrados.</p>
+  {% endif %}
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>Nuevo departamento</h2>
+    <form method="POST" action="{{ url_for('departamentos.nuevo') }}">
+      <div class="field"><label>Nombre *</label><input name="nombre" required placeholder="Ej: Tecnología"></div>
+      <div class="field"><label>Descripción</label><textarea name="descripcion" placeholder="Descripción opcional"></textarea></div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Panel{% endblock %} — ActivosApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">🏢</div>
+    <span class="sb-logo-text">ActivosApp</span>
+  </div>
+  <nav>
+    <div class="nav-sec">Principal</div>
+    <a class="nav-link {% if request.endpoint == 'activos.dashboard' %}active{% endif %}"
+       href="{{ url_for('activos.dashboard') }}">
+      <span class="ic">📊</span> Dashboard
+    </a>
+    <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
+       href="{{ url_for('activos.lista') }}">
+      <span class="ic">📦</span> Activos
+    </a>
+    <div class="nav-sec">Organización</div>
+    <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
+       href="{{ url_for('departamentos.lista') }}">
+      <span class="ic">🏬</span> Departamentos
+    </a>
+  </nav>
+  <div class="sb-footer">
+    <div class="user-chip">
+      <div class="avatar">{{ current_user.nombre[0]|upper }}</div>
+      <div style="flex:1;min-width:0">
+        <div class="u-name">{{ current_user.nombre }}</div>
+        <div class="u-rol">{{ current_user.rol }}</div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="logout" title="Salir">⏻</a>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  {% with messages = get_flashed_messages(with_categories=True) %}
+    {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='js/base.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cambiar contraseña — ActivosApp</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+
+  <div class="card card-center">
+    <span class="emoji">🔐</span>
+    <h1>Bienvenido, {{ current_user.nombre.split()[0] }}</h1>
+    <p class="sub">
+      Iniciaste sesión con una contraseña temporal.<br>
+      ¿Te gustaría <strong>crear tu propia contraseña</strong> ahora?
+    </p>
+
+    <form method="POST" class="btns-stack">
+      <button type="submit" name="decision" value="si" class="btn-auth btn-auth-primary">
+        ✅ Sí, quiero cambiarla
+      </button>
+      <button type="submit" name="decision" value="no" class="btn-auth btn-auth-secondary">
+        Ahora no, entrar al sistema
+      </button>
+    </form>
+
+    <p class="hint">
+      Si eliges "ahora no", podrás cambiarla después desde tu perfil.<br>
+      Te recomendamos cambiarla por seguridad.
+    </p>
+  </div>
+</body>
+</html>

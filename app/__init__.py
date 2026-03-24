@@ -1,0 +1,87 @@
+from flask import Flask
+from .config import config
+from .extensions import db, login_manager, migrate
+
+
+def create_app(env="default"):
+    app = Flask(__name__)
+    app.config.from_object(config[env])
+
+    # ── Extensiones ───────────────────────────────────────────────────────────
+    db.init_app(app)
+    login_manager.init_app(app)
+    migrate.init_app(app, db)
+
+    # ── Blueprints ────────────────────────────────────────────────────────────
+    from .routes.auth          import auth_bp
+    from .routes.activos       import activos_bp
+    from .routes.departamentos import departamentos_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(activos_bp,       url_prefix="/activos")
+    app.register_blueprint(departamentos_bp, url_prefix="/departamentos")
+
+    # ── Filtros Jinja2 ────────────────────────────────────────────────────────
+    @app.template_filter("moneda")
+    def filtro_moneda(valor):
+        try:
+            return f"${float(valor):,.2f}"
+        except (TypeError, ValueError):
+            return "$0.00"
+
+    @app.template_filter("fecha_corta")
+    def filtro_fecha_corta(fecha):
+        if fecha is None:
+            return "—"
+        try:
+            return fecha.strftime("%d/%m/%Y")
+        except AttributeError:
+            return str(fecha)
+
+    @app.template_filter("fecha_relativa")
+    def filtro_fecha_relativa(fecha):
+        from datetime import datetime
+        if fecha is None:
+            return "—"
+        try:
+            diff = datetime.utcnow() - fecha
+            dias = diff.days
+            if dias == 0:
+                horas = diff.seconds // 3600
+                if horas == 0:
+                    mins = diff.seconds // 60
+                    return f"Hace {mins} min" if mins > 0 else "Justo ahora"
+                return f"Hace {horas} h"
+            elif dias == 1:
+                return "Ayer"
+            elif dias < 7:
+                return f"Hace {dias} días"
+            elif dias < 30:
+                return f"Hace {dias // 7} semanas"
+            else:
+                return fecha.strftime("%d/%m/%Y")
+        except Exception:
+            return str(fecha)
+
+    # ── Seguridad: sin caché ──────────────────────────────────────────────────
+    @app.after_request
+    def no_cache(response):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"]        = "no-cache"
+        response.headers["Expires"]       = "0"
+        return response
+
+    app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
+    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
+
+    # ── Shell context ─────────────────────────────────────────────────────────
+    from .models.usuario      import Usuario
+    from .models.activo       import Activo
+    from .models.departamento import Departamento
+
+    @app.shell_context_processor
+    def make_shell_context():
+        return {"db": db, "Usuario": Usuario, "Activo": Activo,
+                "Departamento": Departamento}
+
+    return app

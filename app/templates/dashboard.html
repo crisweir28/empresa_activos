@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% set page_title    = "Dashboard" %}
+{% set page_icon     = "📊" %}
+{% set page_subtitle = "Resumen general de activos de la empresa" %}
+
+{% block content %}
+
+{# Stat cards — datos vienen de v_dashboard_stats #}
+<div class="stats-grid">
+  {% for label, val, emoji, color in [
+      ('Total activos',   total,         '📦', '#a78bfa'),
+      ('Activos',         activos,       '✅', '#22d3a5'),
+      ('Mantenimiento',   mantenimiento, '🔧', '#fbbf24'),
+      ('Dados de baja',   baja,          '🗑️', '#f87171')] %}
+  <div class="stat-card" style="animation-delay:{{ loop.index0 * 0.07 }}s">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="stat-label">{{ label }}</span>
+      <span style="font-size:22px">{{ emoji }}</span>
+    </div>
+    <div class="stat-val" style="color:{{ color }}">{{ val }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{# Fila inferior: recientes + por departamento #}
+<div style="display:grid;grid-template-columns:1fr 380px;gap:16px">
+
+  {# Activos recientes — datos de v_activos #}
+  <div class="panel">
+    <div class="panel-title">
+      🕐 Activos recientes
+      <a href="{{ url_for('activos.lista') }}" class="btn-sm">Ver todos →</a>
+    </div>
+    {% if recientes %}
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th><th>Estado</th><th>Departamento</th>
+            <th>Responsable</th><th>Registrado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in recientes %}
+          <tr>
+            <td><strong>{{ a.nombre }}</strong></td>
+            <td><span class="badge badge-{{ a.estado }}">{{ a.estado }}</span></td>
+            {# departamento_nombre viene directo de la vista v_activos #}
+            <td style="color:var(--muted)">{{ a.departamento_nombre or '—' }}</td>
+            <td style="color:var(--muted)">{{ a.responsable_nombre or '—' }}</td>
+            <td style="color:var(--muted);font-size:12px">
+              {{ a.creado_en | fecha_relativa }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
+      Sin activos. <a href="{{ url_for('activos.lista') }}" style="color:var(--accent)">Agregar →</a>
+    </p>
+    {% endif %}
+  </div>
+
+  {# Por departamento — datos de v_activos_por_departamento #}
+  <div class="panel">
+    <div class="panel-title">🏬 Por departamento</div>
+    {% if por_depto %}
+    <div style="display:flex;flex-direction:column;gap:12px">
+      {% for d in por_depto %}
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="font-size:13px">{{ d.departamento }}</strong>
+          <span class="badge badge-activo">{{ d.total_activos }}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          {% if d.activos %}
+          <span style="font-size:11px;color:var(--green)">✅ {{ d.activos }} activos</span>
+          {% endif %}
+          {% if d.en_mantenimiento %}
+          <span style="font-size:11px;color:var(--yellow)">🔧 {{ d.en_mantenimiento }} mant.</span>
+          {% endif %}
+          {% if d.bajas %}
+          <span style="font-size:11px;color:var(--red)">🗑️ {{ d.bajas }} bajas</span>
+          {% endif %}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          Valor: {{ d.valor_total | moneda }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin datos.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
