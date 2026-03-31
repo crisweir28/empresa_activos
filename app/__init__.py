@@ -17,11 +17,13 @@ def create_app(env="default"):
     from .routes.activos       import activos_bp
     from .routes.departamentos  import departamentos_bp
     from .routes.administrativo import administrativo_bp
+    from .routes.almacenista    import almacenista_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(activos_bp,       url_prefix="/activos")
     app.register_blueprint(departamentos_bp,  url_prefix="/departamentos")
     app.register_blueprint(administrativo_bp, url_prefix="/administrativo")
+    app.register_blueprint(almacenista_bp,    url_prefix="/almacen")
 
     # ── Filtros Jinja2 ────────────────────────────────────────────────────────
     @app.template_filter("moneda")

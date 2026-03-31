@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Historial de asignaciones{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">📋 Historial de asignaciones</div>
+    <div class="page-sub">Registro de asignaciones y devoluciones</div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div style="display:flex;gap:8px;margin-bottom:18px">
+  <a href="{{ url_for('almacenista.historial') }}"
+     class="btn-sm {% if not estado_filtro %}active{% endif %}"
+     style="{% if not estado_filtro %}border-color:var(--accent);color:#a78bfa{% endif %}">Todas</a>
+  <a href="{{ url_for('almacenista.historial', estado='activa') }}"
+     class="btn-sm {% if estado_filtro == 'activa' %}active{% endif %}"
+     style="{% if estado_filtro == 'activa' %}border-color:var(--green);color:var(--green){% endif %}">Activas</a>
+  <a href="{{ url_for('almacenista.historial', estado='devuelta') }}"
+     class="btn-sm {% if estado_filtro == 'devuelta' %}active{% endif %}"
+     style="{% if estado_filtro == 'devuelta' %}border-color:var(--muted);color:var(--muted){% endif %}">Devueltas</a>
+</div>
+
+<div class="panel">
+  {% if asignaciones %}
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>Herramienta</th><th>Asignada a</th><th>Fecha asignación</th><th>Fecha devolución</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for a in asignaciones %}
+        <tr>
+          <td>
+            <strong>{{ a.HerramientaNombre }}</strong>
+            <br><span style="font-size:11px;color:var(--muted);font-family:monospace">{{ a.NumeroSerie or '—' }}</span>
+          </td>
+          <td style="color:var(--muted)">{{ a.UsuarioNombre }}</td>
+          <td style="color:var(--muted);font-size:12px">{{ a.FechaAsignacion }}</td>
+          <td style="color:var(--muted);font-size:12px">{{ a.FechaDevolucion or '—' }}</td>
+          <td>
+            {% if a.EstadoAsignacion == 'activa' %}
+            <span class="badge badge-activo">Activa</span>
+            {% else %}
+            <span class="badge" style="background:rgba(96,96,122,.15);color:var(--muted)">Devuelta</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.EstadoAsignacion == 'activa' %}
+            <button class="btn-sm" onclick="devolverModal({{ a.IdAsignacion }})">📥 Devolver</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin registros.</p>
+  {% endif %}
+</div>
+
+<!-- Modal Devolver -->
+<div class="overlay" id="modal-devolver" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>📥 Registrar devolución</h2>
+    <form method="POST" id="form-devolver">
+      <div class="field"><label>Fecha de devolución</label>
+        <input name="fecha_devolucion" type="date">
+      </div>
+      <div class="field"><label>Estado final</label>
+        <select name="estado_final">
+          <option value="disponible">Disponible (buen estado)</option>
+          <option value="dañado">Dañado</option>
+          <option value="perdido">Perdido</option>
+          <option value="mantenimiento">Requiere mantenimiento</option>
+        </select>
+      </div>
+      <div class="field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-devolver').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function devolverModal(id) {
+  document.getElementById('form-devolver').action = `/almacen/asignaciones/${id}/devolver`;
+  document.getElementById('modal-devolver').classList.add('open');
+}
+</script>
+{% endblock %}

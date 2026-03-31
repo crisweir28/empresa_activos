@@ -58,13 +58,26 @@
        href="{{ url_for('administrativo.vehiculos') }}">
       <span class="ic">🚗</span> Vehículos
     </a>
-    <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
-       href="{{ url_for('administrativo.mantenimiento_lista') }}">
-       <span class="ic">🔧</span> Mantenimiento
-    </a>
     <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.personal' %}active{% endif %}"
        href="{{ url_for('administrativo.personal') }}">
       <span class="ic">👤</span> Personal / Conductores
+    </a>
+    {% endif %}
+
+    {# Módulo almacén — TI y Almacenista #}
+    {% if current_user.rol in ('ti', 'almacenista') %}
+    <div class="nav-sec">Almacén</div>
+    <a class="nav-link {% if request.endpoint == 'almacenista.dashboard' %}active{% endif %}"
+       href="{{ url_for('almacenista.dashboard') }}">
+      <span class="ic">📊</span> Dashboard
+    </a>
+    <a class="nav-link {% if request.endpoint == 'almacenista.inventario' %}active{% endif %}"
+       href="{{ url_for('almacenista.inventario') }}">
+      <span class="ic">🔧</span> Inventario
+    </a>
+    <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
+       href="{{ url_for('almacenista.historial') }}">
+      <span class="ic">📋</span> Historial
     </a>
     {% endif %}
 

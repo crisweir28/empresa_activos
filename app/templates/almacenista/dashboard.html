@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Almacén — Dashboard{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">📦 Almacén</div>
+    <div class="page-sub">Gestión de herramientas e inventario</div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:22px">
+  <div class="stat-card" style="animation-delay:.0s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Total herramientas</span><span style="font-size:22px">🔧</span></div>
+    <div class="stat-val" style="color:var(--accent)">{{ total }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.07s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Disponibles</span><span style="font-size:22px">✅</span></div>
+    <div class="stat-val" style="color:var(--green)">{{ disponibles }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.14s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignadas</span><span style="font-size:22px">👤</span></div>
+    <div class="stat-val" style="color:var(--accent)">{{ asignados }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.21s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Dañadas / Perdidas</span><span style="font-size:22px">⚠️</span></div>
+    <div class="stat-val" style="color:var(--red)">{{ daniados }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+
+  <!-- Asignaciones activas -->
+  <div class="panel">
+    <div class="panel-title">
+      👤 Asignaciones activas
+      <a href="{{ url_for('almacenista.historial') }}" class="btn-sm">Ver todas →</a>
+    </div>
+    {% if recientes %}
+    <table>
+      <thead><tr><th>Herramienta</th><th>Asignado a</th><th>Fecha asignación</th></tr></thead>
+      <tbody>
+        {% for a in recientes %}
+        <tr>
+          <td><strong>{{ a.HerramientaNombre }}</strong><br>
+              <span style="font-size:11px;color:var(--muted)">{{ a.NumeroSerie or '—' }}</span></td>
+          <td style="color:var(--muted)">{{ a.UsuarioNombre }}</td>
+          <td style="color:var(--muted);font-size:12px">{{ a.FechaAsignacion }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin asignaciones activas.</p>
+    {% endif %}
+  </div>
+
+  <!-- Reportes de daño recientes -->
+  <div class="panel">
+    <div class="panel-title">⚠️ Reportes recientes</div>
+    {% if reportes %}
+      {% for r in reportes %}
+      <div style="background:var(--bg);border:1px solid rgba(248,113,113,.2);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between">
+          <strong style="font-size:13px">{{ r.NombreMaterial }}</strong>
+          <span class="badge badge-baja" style="font-size:10px">{{ r.Tipo }}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">{{ r.Caracteristica[:60] }}...</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--green);font-size:13px;text-align:center;padding:24px">✅ Sin reportes recientes</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
