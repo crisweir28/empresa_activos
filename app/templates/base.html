@@ -6,6 +6,22 @@
   <title>{% block title %}Panel{% endblock %} — ActivosApp</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+
+  {# Tema de color según rol del usuario #}
+  {% set _temas = {
+    "ti":             {"c1": "#7c5cfc", "c2": "#e040fb"},
+    "administrativo": {"c1": "#fbbf24", "c2": "#f97316"},
+    "almacenista":    {"c1": "#22d3a5", "c2": "#0ea5e9"},
+    "rh":             {"c1": "#a78bfa", "c2": "#818cf8"},
+    "supervisor":     {"c1": "#f87171", "c2": "#fb923c"},
+  } %}
+  {% set _t = _temas.get(current_user.rol, _temas["ti"]) %}
+  <style>
+    :root {
+      --accent:  {{ _t.c1 }};
+      --accent2: {{ _t.c2 }};
+    }
+  </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -14,28 +30,60 @@
     <div class="sb-logo-icon">🏢</div>
     <span class="sb-logo-text">ActivosApp</span>
   </div>
+
   <nav>
     <div class="nav-sec">Principal</div>
     <a class="nav-link {% if request.endpoint == 'activos.dashboard' %}active{% endif %}"
        href="{{ url_for('activos.dashboard') }}">
       <span class="ic">📊</span> Dashboard
     </a>
+
+    {# Activos — solo roles que no son puro administrativo #}
+    {% if current_user.rol != 'administrativo' %}
     <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
        href="{{ url_for('activos.lista') }}">
-      <span class="ic">📦</span> Activos
+      <span class="ic">📦</span>
+      {% if current_user.es_admin %}Todos los activos{% else %}Mis activos{% endif %}
     </a>
-    <div class="nav-sec">Organización</div>
+    {% endif %}
+
+    {# Módulo vehículos — TI y Administrativo #}
+    {% if current_user.rol in ('ti', 'administrativo') %}
+    <div class="nav-sec">Vehículos</div>
+    <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
+       href="{{ url_for('administrativo.dashboard') }}">
+      <span class="ic">📊</span> Dashboard
+    </a>
+    <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.vehiculos' %}active{% endif %}"
+       href="{{ url_for('administrativo.vehiculos') }}">
+      <span class="ic">🚗</span> Vehículos
+    </a>
+    <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
+       href="{{ url_for('administrativo.mantenimiento_lista') }}">
+       <span class="ic">🔧</span> Mantenimiento
+    </a>
+    <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.personal' %}active{% endif %}"
+       href="{{ url_for('administrativo.personal') }}">
+      <span class="ic">👤</span> Personal / Conductores
+    </a>
+    {% endif %}
+
+    {# Administración — solo TI #}
+    {% if current_user.es_admin %}
+    <div class="nav-sec">Administración</div>
     <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
        href="{{ url_for('departamentos.lista') }}">
       <span class="ic">🏬</span> Departamentos
     </a>
+    {% endif %}
   </nav>
+
   <div class="sb-footer">
     <div class="user-chip">
       <div class="avatar">{{ current_user.nombre[0]|upper }}</div>
       <div style="flex:1;min-width:0">
-        <div class="u-name">{{ current_user.nombre }}</div>
-        <div class="u-rol">{{ current_user.rol }}</div>
+        <div class="u-name">{{ current_user.nombre.split()[0] }}</div>
+        <div class="u-rol">{{ current_user.rol_label }}</div>
       </div>
       <a href="{{ url_for('auth.logout') }}" class="logout" title="Salir">⏻</a>
     </div>

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ depto_nombre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Tema por departamento ── */
+  :root {
+    --dcolor:  {{ depto_color }};
+    --dcolor2: {{ depto_color2 }};
+    --dglow:   {{ depto_glow }};
+  }
+  .depto-header {
+    background: linear-gradient(135deg, rgba({{ depto_rgb }}, .12), rgba({{ depto_rgb2 }}, .06));
+    border: 1px solid rgba({{ depto_rgb }}, .25);
+    border-radius: 16px;
+    padding: 22px 26px;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .depto-icon {
+    font-size: 36px;
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--dcolor), var(--dcolor2));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .depto-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+  .depto-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* Stats con color del depto */
+  .stat-card-d {
+    background: var(--card);
+    border: 1px solid rgba({{ depto_rgb }}, .2);
+    border-radius: 14px;
+    padding: 18px 20px;
+    transition: border-color .2s, transform .2s;
+    animation: fadeIn .4s ease both;
+  }
+  .stat-card-d:hover { border-color: rgba({{ depto_rgb }}, .5); transform: translateY(-2px); }
+  .stat-val-d {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px; font-weight: 800;
+    background: linear-gradient(90deg, var(--dcolor), var(--dcolor2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Alerta mantenimiento */
+  .alerta-mant {
+    background: rgba(251,191,36,.07);
+    border: 1px solid rgba(251,191,36,.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; margin-bottom: 8px;
+    animation: fadeIn .3s ease;
+  }
+  .alerta-mant:last-child { margin-bottom: 0; }
+
+  /* Barra de estados */
+  .estado-bar { display: flex; gap: 4px; height: 8px; border-radius: 8px; overflow: hidden; margin: 8px 0; }
+  .bar-activo       { background: var(--green); }
+  .bar-mantenimiento{ background: var(--yellow); }
+  .bar-baja         { background: var(--red); }
+  .estado-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+  .legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header del departamento -->
+<div class="depto-header">
+  <div class="depto-icon">{{ depto_icon }}</div>
+  <div>
+    <div class="depto-title">{{ depto_nombre }}</div>
+    <div class="depto-sub">Bienvenido, {{ current_user.nombre.split()[0] }} · {{ current_user.rol_label }}</div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:22px">
+  <div class="stat-card-d" style="animation-delay:.0s">
+    <div class="stat-label">Total activos</div>
+    <div class="stat-val-d">{{ total }}</div>
+  </div>
+  <div class="stat-card-d" style="animation-delay:.07s">
+    <div class="stat-label">Activos</div>
+    <div class="stat-val-d" style="background:linear-gradient(90deg,var(--green),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent">{{ activos_ok }}</div>
+  </div>
+  <div class="stat-card-d" style="animation-delay:.14s">
+    <div class="stat-label">Mantenimiento</div>
+    <div class="stat-val-d" style="background:linear-gradient(90deg,var(--yellow),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent">{{ mantenimiento }}</div>
+  </div>
+  <div class="stat-card-d" style="animation-delay:.21s">
+    <div class="stat-label">Valor total</div>
+    <div class="stat-val-d">{{ valor_total | moneda }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+
+  <!-- Activos recientes -->
+  <div class="panel">
+    <div class="panel-title">
+      🕐 Activos recientes
+      <a href="{{ url_for('activos.lista') }}" class="btn-sm">Ver todos →</a>
+    </div>
+
+    <!-- Barra de estados -->
+    {% if total > 0 %}
+    <div style="margin-bottom:16px">
+      <div class="estado-bar">
+        <div class="bar-activo"        style="flex:{{ activos_ok }}"></div>
+        <div class="bar-mantenimiento" style="flex:{{ mantenimiento }}"></div>
+        <div class="bar-baja"          style="flex:{{ bajas }}"></div>
+      </div>
+      <div class="estado-legend">
+        <span><span class="legend-dot" style="background:var(--green)"></span>Activos ({{ activos_ok }})</span>
+        <span><span class="legend-dot" style="background:var(--yellow)"></span>Mantenimiento ({{ mantenimiento }})</span>
+        <span><span class="legend-dot" style="background:var(--red)"></span>Bajas ({{ bajas }})</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if recientes %}
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Categoría</th><th>Estado</th><th>Valor</th><th>Registrado</th></tr>
+        </thead>
+        <tbody>
+          {% for a in recientes %}
+          <tr>
+            <td><strong>{{ a.nombre }}</strong>
+              {% if a.numero_serie %}<br><span style="font-size:11px;color:var(--muted)">{{ a.numero_serie }}</span>{% endif %}
+            </td>
+            <td style="color:var(--muted)">{{ a.categoria or '—' }}</td>
+            <td><span class="badge badge-{{ a.estado }}">{{ a.estado }}</span></td>
+            <td style="color:var(--muted)">{{ a.valor | moneda }}</td>
+            <td style="color:var(--muted);font-size:12px">{{ a.creado_en | fecha_relativa }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
+      Sin activos registrados.
+      <a href="{{ url_for('activos.lista') }}" style="color:var(--dcolor)">Agregar →</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Alertas mantenimiento -->
+  <div class="panel">
+    <div class="panel-title">⚠️ En mantenimiento</div>
+    {% if alertas_mant %}
+      {% for a in alertas_mant %}
+      <div class="alerta-mant">
+        <span style="font-size:18px">🔧</span>
+        <div>
+          <div style="font-size:13px;font-weight:500">{{ a.nombre }}</div>
+          <div style="font-size:11px;color:var(--muted)">{{ a.categoria or 'Sin categoría' }} · {{ a.creado_en | fecha_relativa }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--muted);font-size:13px;text-align:center;padding:24px">
+        ✅ Sin activos en mantenimiento
+      </p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

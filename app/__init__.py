@@ -15,11 +15,13 @@ def create_app(env="default"):
     # ── Blueprints ────────────────────────────────────────────────────────────
     from .routes.auth          import auth_bp
     from .routes.activos       import activos_bp
-    from .routes.departamentos import departamentos_bp
+    from .routes.departamentos  import departamentos_bp
+    from .routes.administrativo import administrativo_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(activos_bp,       url_prefix="/activos")
-    app.register_blueprint(departamentos_bp, url_prefix="/departamentos")
+    app.register_blueprint(departamentos_bp,  url_prefix="/departamentos")
+    app.register_blueprint(administrativo_bp, url_prefix="/administrativo")
 
     # ── Filtros Jinja2 ────────────────────────────────────────────────────────
     @app.template_filter("moneda")

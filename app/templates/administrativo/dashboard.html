@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Vehicular{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">🚗 Dashboard Vehicular</div>
+    <div class="page-sub">Gestión de vehículos, conductores y permisos</div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:22px">
+  <div class="stat-card" style="animation-delay:.0s">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="stat-label">Total vehículos</span>
+      <span style="font-size:22px">🚗</span>
+    </div>
+    <div class="stat-val" style="color:var(--accent)">{{ total_vehiculos }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.07s">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="stat-label">Activos</span>
+      <span style="font-size:22px">✅</span>
+    </div>
+    <div class="stat-val" style="color:var(--green)">{{ activos }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.14s">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="stat-label">En mantenimiento</span>
+      <span style="font-size:22px">🔧</span>
+    </div>
+    <div class="stat-val" style="color:var(--yellow)">{{ en_mantenimiento }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.21s">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="stat-label">Alertas permisos</span>
+      <span style="font-size:22px">⚠️</span>
+    </div>
+    <div class="stat-val" style="color:var(--red)">{{ alertas_permisos }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:16px">
+
+  <!-- Vehículos recientes -->
+  <div class="panel">
+    <div class="panel-title">
+      🚗 Vehículos registrados
+      <a href="{{ url_for('administrativo.vehiculos') }}" class="btn-sm">Ver todos →</a>
+    </div>
+    {% if vehiculos %}
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th>Vehículo</th><th>Placa</th><th>Conductor</th><th>Estado</th><th>Permisos</th></tr>
+        </thead>
+        <tbody>
+          {% for v in vehiculos %}
+          <tr>
+            <td>
+              <strong>{{ v.nombre }}</strong>
+              {% if v.marca or v.modelo %}
+              <br><span style="font-size:11px;color:var(--muted)">{{ v.marca }} {{ v.modelo }}</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--muted);font-size:12px;font-family:monospace">{{ v.matricula }}</td>
+            <td style="color:var(--muted)">{{ v.conductor_nombre or '—' }}</td>
+            <td><span class="badge badge-{{ v.estado }}">{{ v.estado }}</span></td>
+            <td>
+              {% if v.permisos_por_vencer > 0 %}
+              <span style="color:var(--yellow);font-size:12px">⚠️ {{ v.permisos_por_vencer }} por vencer</span>
+              {% else %}
+              <span style="color:var(--green);font-size:12px">✅ Al día</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">
+      Sin vehículos registrados.
+      <a href="{{ url_for('administrativo.vehiculos') }}" style="color:var(--accent)">Agregar →</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Panel derecho -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Permisos por vencer -->
+    <div class="panel">
+      <div class="panel-title">⚠️ Permisos por vencer</div>
+      {% if permisos_vencer %}
+        {% for p in permisos_vencer %}
+        <div style="background:var(--bg);border:1px solid {% if p.dias_restantes <= 7 %}rgba(248,113,113,.3){% else %}rgba(251,191,36,.3){% endif %};border-radius:10px;padding:10px 14px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:13px">{{ p.vehiculo_nombre }}</strong>
+            <span style="font-size:11px;color:{% if p.dias_restantes <= 7 %}var(--red){% else %}var(--yellow){% endif %}">
+              {{ p.dias_restantes }} días
+            </span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">
+            {{ p.tipo }} · {{ p.matricula }}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin alertas</p>
+      {% endif %}
+    </div>
+
+    <!-- Mantenimientos activos -->
+    <div class="panel">
+      <div class="panel-title">🔧 Mantenimientos activos</div>
+      {% if mantenimientos %}
+        {% for m in mantenimientos %}
+        <div style="background:var(--bg);border:1px solid rgba(251,191,36,.25);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:500">{{ m.vehiculo_nombre }}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">
+            {{ m.tipo_servicio }} · {{ m.fecha_inicio }}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
