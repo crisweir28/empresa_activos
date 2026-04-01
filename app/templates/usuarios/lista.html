@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Usuarios{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">👥 Gestión de Usuarios</div>
+    <div class="page-sub">Administración de cuentas y roles del sistema</div>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+    + Nuevo usuario
+  </button>
+</div>
+
+<!-- Filtros por rol -->
+<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+  <a href="{{ url_for('usuarios.lista') }}"
+     class="btn-sm {% if not rol_filtro %}active{% endif %}"
+     style="{% if not rol_filtro %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
+  {% for r in roles %}
+  <a href="{{ url_for('usuarios.lista', rol=r.IdRol) }}"
+     class="btn-sm {% if rol_filtro|string == r.IdRol|string %}active{% endif %}"
+     style="{% if rol_filtro|string == r.IdRol|string %}border-color:var(--accent);color:#a78bfa{% endif %}">
+    {{ r.NombreRol }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  {% if usuarios %}
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>Usuario</th><th>Nombre completo</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Primer login</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr style="opacity:{% if not u.Estatus %}0.5{% else %}1{% endif %}">
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0">
+                {{ u.Nombre[0]|upper }}
+              </div>
+              <strong>{{ u.NombreUsuario }}</strong>
+            </div>
+          </td>
+          <td style="color:var(--muted)">
+            {{ u.Nombre }} {{ u.ApellidoPaterno }}
+            {% if u.ApellidoMaterno %} {{ u.ApellidoMaterno }}{% endif %}
+          </td>
+          <td style="color:var(--muted);font-size:12px">{{ u.Correo }}</td>
+          <td>
+            {% set rol_colores = {
+              'Administrador': 'rgba(124,92,252,.15);color:#a78bfa',
+              'Administrativo': 'rgba(251,191,36,.15);color:#fbbf24',
+              'Almacenista': 'rgba(34,211,165,.15);color:#22d3a5',
+              'Recursos Humanos': 'rgba(167,139,250,.15);color:#a78bfa',
+              'Usuario TI': 'rgba(124,92,252,.15);color:#7c5cfc',
+              'Supervisor': 'rgba(248,113,113,.15);color:#f87171',
+            } %}
+            <span class="badge" style="background:{{ rol_colores.get(u.rol_label, 'rgba(96,96,122,.15);color:var(--muted)') }}">
+              {{ u.rol_label }}
+            </span>
+          </td>
+          <td>
+            {% if u.Estatus %}
+            <span class="badge badge-activo">Activo</span>
+            {% else %}
+            <span class="badge badge-baja">Inactivo</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.PrimerLogin %}
+            <span style="color:var(--yellow);font-size:12px">⚠️ Pendiente</span>
+            {% else %}
+            <span style="color:var(--green);font-size:12px">✅ Completado</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.IdUsuario != current_user.id %}
+            <button class="btn-sm" onclick="editarUsuario({{ u.IdUsuario }})">✏️</button>
+            <button class="btn-sm" onclick="resetPass({{ u.IdUsuario }}, '{{ u.NombreUsuario }}')">🔑</button>
+            <form method="POST" action="{{ url_for('usuarios.toggle_estatus', id=u.IdUsuario) }}" style="display:inline">
+              <button type="submit" class="btn-sm" title="{% if u.Estatus %}Desactivar{% else %}Activar{% endif %}">
+                {% if u.Estatus %}🚫{% else %}✅{% endif %}
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}"
+                  style="display:inline"
+                  onsubmit="return confirm('¿Eliminar usuario {{ u.NombreUsuario }}? Esta acción no se puede deshacer.')">
+              <button type="submit" class="btn-sm btn-del">🗑️</button>
+            </form>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px">Tu cuenta</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin usuarios registrados.</p>
+  {% endif %}
+</div>
+
+
+<!-- Modal: Nuevo usuario -->
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>👤 Nuevo usuario</h2>
+    <form method="POST" action="{{ url_for('usuarios.nuevo') }}">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input name="nombre" required placeholder="Juan"></div>
+        <div class="field"><label>Apellido paterno *</label><input name="apellido_paterno" required placeholder="García"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Apellido materno</label><input name="apellido_materno" placeholder="López"></div>
+        <div class="field"><label>Teléfono</label><input name="telefono" placeholder="555-0000"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Usuario *</label><input name="username" required placeholder="jgarcia"></div>
+        <div class="field"><label>Correo *</label><input name="correo" type="email" required placeholder="juan@empresa.mx"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Contraseña *</label><input name="password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres"></div>
+        <div class="field"><label>Rol *</label>
+          <select name="rol_id" required>
+            <option value="">— Seleccionar —</option>
+            {% for r in roles %}<option value="{{ r.IdRol }}">{{ r.NombreRol }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear usuario</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- Modal: Editar usuario -->
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✏️ Editar usuario</h2>
+    <form method="POST" id="form-editar">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
+        <div class="field"><label>Apellido paterno *</label><input id="e-ap" name="apellido_paterno" required></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Apellido materno</label><input id="e-am" name="apellido_materno"></div>
+        <div class="field"><label>Teléfono</label><input id="e-tel" name="telefono"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Usuario *</label><input id="e-user" name="username" required></div>
+        <div class="field"><label>Correo *</label><input id="e-correo" name="correo" type="email" required></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Rol *</label>
+          <select id="e-rol" name="rol_id" required>
+            {% for r in roles %}<option value="{{ r.IdRol }}">{{ r.NombreRol }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field"><label>Estado</label>
+          <select id="e-estatus" name="estatus">
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- Modal: Reset contraseña -->
+<div class="overlay" id="modal-reset" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>🔑 Restablecer contraseña</h2>
+    <p id="reset-subtitle" style="color:var(--muted);font-size:13px;margin-bottom:16px"></p>
+    <form method="POST" id="form-reset">
+      <div class="field">
+        <label>Nueva contraseña *</label>
+        <input name="nueva_password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+      </div>
+      <p style="font-size:12px;color:var(--yellow);margin-top:8px">
+        ⚠️ El usuario deberá cambiar su contraseña al iniciar sesión.
+      </p>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-reset').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Restablecer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function editarUsuario(id) {
+  const res  = await fetch(`/usuarios/api/${id}`);
+  const u    = await res.json();
+  document.getElementById('form-editar').action          = `/usuarios/${id}/editar`;
+  document.getElementById('e-nombre').value              = u.nombre;
+  document.getElementById('e-ap').value                  = u.apellido_paterno;
+  document.getElementById('e-am').value                  = u.apellido_materno;
+  document.getElementById('e-tel').value                 = u.telefono;
+  document.getElementById('e-user').value                = u.username;
+  document.getElementById('e-correo').value              = u.correo;
+  document.getElementById('e-rol').value                 = u.rol_id;
+  document.getElementById('e-estatus').value             = u.estatus ? '1' : '0';
+  document.getElementById('modal-editar').classList.add('open');
+}
+
+function resetPass(id, username) {
+  document.getElementById('form-reset').action    = `/usuarios/${id}/reset-password`;
+  document.getElementById('reset-subtitle').textContent = `Usuario: ${username}`;
+  document.getElementById('modal-reset').classList.add('open');
+}
+</script>
+{% endblock %}

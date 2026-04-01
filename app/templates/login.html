@@ -1,53 +1,61 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Iniciar sesión — ActivosApp</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
-  <div class="bg-grid"></div>
-  <div class="glow g1"></div>
-  <div class="glow g2"></div>
+  <!-- Círculos decorativos -->
+  <div class="geo-circle-1"></div>
+  <div class="geo-circle-2"></div>
+  <div class="geo-circle-3"></div>
 
-  <div class="card" style="max-width:400px">
-    <div class="logo">
-      <div class="logo-icon">🏢</div>
-      <span class="logo-text">ActivosApp</span>
+  <div class="auth-wrap">
+    <div class="auth-card">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-icon">🏢</div>
+        <span class="auth-logo-text">ActivosApp</span>
+      </div>
+
+      <h1 class="auth-title">Bienvenido</h1>
+      <p class="auth-sub">Inicia sesión para gestionar los activos.</p>
+
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% for cat, msg in messages %}
+          <div class="flash flash-{{ cat }}">⚠️ {{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST">
+        <div class="field">
+          <label>Usuario</label>
+          <input type="text" name="username" placeholder="tu_usuario"
+                 autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" name="password" placeholder="••••••••"
+                 autocomplete="current-password" required>
+        </div>
+
+        <label class="remember" style="margin-bottom:16px">
+          <input type="checkbox" name="remember">
+          Mantener sesión
+        </label>
+
+        <button class="btn-auth" type="submit">Entrar →</button>
+      </form>
+
+      <div class="auth-link">
+        <a href="{{ url_for('auth.recuperar') }}">¿Olvidaste tu contraseña?</a>
+      </div>
+
     </div>
-    <h1>Bienvenido</h1>
-    <p class="sub">Inicia sesión para gestionar los activos.</p>
-
-    {% with messages = get_flashed_messages(with_categories=True) %}
-      {% for cat, msg in messages %}
-        <div class="error-box">⚠️ {{ msg }}</div>
-      {% endfor %}
-    {% endwith %}
-
-    <form method="POST">
-      <div class="field">
-        <label>Usuario</label>
-        <input type="text" name="username" placeholder="tu_usuario" autocomplete="username" required>
-      </div>
-      <div class="field">
-        <label>Contraseña</label>
-        <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin:14px 0;font-size:13px;color:var(--muted)">
-        <input type="checkbox" name="remember" id="remember" style="width:auto;accent-color:var(--accent)">
-        <label for="remember" style="text-transform:none;letter-spacing:0;font-size:13px;margin:0">Mantener sesión</label>
-      </div>
-      <button class="btn-auth btn-auth-primary" type="submit">Entrar →</button>
-      <div style="text-align:center;margin-top:16px">
-        <a href="{{ url_for('auth.recuperar') }}"
-           style="color:var(--muted);font-size:12px;text-decoration:none"
-           onmouseover="this.style.color='var(--accent)'"
-           onmouseout="this.style.color='var(--muted)'">
-          ¿Olvidaste tu contraseña?
-        </a>
-      </div>
-    </form>
   </div>
 </body>
 </html>

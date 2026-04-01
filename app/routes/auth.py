@@ -161,7 +161,14 @@ def recuperar():
                         {"uid": user.IdUsuario, "token": token}
                     )
                     db.session.commit()
-                    link = f"{request.host_url}reset-password/{token}"
+                    # Usar IP de red para que el link funcione desde cualquier equipo
+                    import os
+                    host = request.host_url
+                    if 'localhost' in host or '127.0.0.1' in host:
+                        app_host = os.getenv('APP_HOST', '').strip()
+                        if app_host:
+                            host = f"http://{app_host}:5000/"
+                    link = f"{host}reset-password/{token}"
                     _enviar_correo_reset(email, user.Nombre, link)
 
                 enviado       = True

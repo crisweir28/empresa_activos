@@ -7,16 +7,16 @@ from flask import redirect, url_for, flash
 from flask_login import current_user
 
 # Roles con acceso total al sistema
-ROLES_ADMIN = {"ti"}
+ROLES_ADMIN = {"admin"}  # Solo Administrador (IdRol=1) es super admin
 
 # Roles con acceso al módulo administrativo
-ROLES_ADMINISTRATIVO = {"ti", "administrativo"}
+ROLES_ADMINISTRATIVO = {"admin", "administrativo"}
 
 # Roles con acceso al módulo de almacén
-ROLES_ALMACEN = {"ti", "almacenista"}
+ROLES_ALMACEN = {"admin", "almacenista"}
 
 # Roles con acceso a RH
-ROLES_RH = {"ti", "rh"}
+ROLES_RH = {"admin", "rh"}
 
 # Todos los roles válidos
 ROLES_VALIDOS = {"ti", "administrativo", "almacenista", "rh", "supervisor"}
@@ -41,7 +41,7 @@ ROL_COLORES = {
 
 
 def es_admin():
-    return current_user.is_authenticated and current_user.rol in ROLES_ADMIN
+    return current_user.is_authenticated and current_user.rol == "admin"
 
 
 def requiere_admin(f):

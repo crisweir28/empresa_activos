@@ -74,8 +74,8 @@ class Usuario(UserMixin, db.Model):
             return "viewer"
         nombre = self.rol_obj.NombreRol.lower()
         mapa = {
-            "administrador":  "ti",
-            "usuario ti":     "ti",
+            "administrador":  "admin",   # Super admin — acceso total
+            "usuario ti":     "ti",      # TI — solo equipos TI
             "administrativo": "administrativo",
             "almacenista":    "almacenista",
             "recursos humanos": "rh",
@@ -85,7 +85,11 @@ class Usuario(UserMixin, db.Model):
 
     @property
     def es_admin(self):
-        return self.rol in ("ti",)
+        return self.rol == "admin"  # Solo Administrador (IdRol=1)
+
+    @property
+    def puede_gestionar_usuarios(self):
+        return self.rol in ("admin", "rh", "ti")
 
     @property
     def rol_label(self):

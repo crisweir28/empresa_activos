@@ -19,6 +19,8 @@ def create_app(env="default"):
     from .routes.administrativo import administrativo_bp
     from .routes.almacenista    import almacenista_bp
     from .routes.ti             import ti_bp
+    from .routes.usuarios       import usuarios_bp
+    from .routes.permisos       import permisos_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(activos_bp,       url_prefix="/activos")
@@ -26,6 +28,8 @@ def create_app(env="default"):
     app.register_blueprint(administrativo_bp, url_prefix="/administrativo")
     app.register_blueprint(almacenista_bp,    url_prefix="/almacen")
     app.register_blueprint(ti_bp,             url_prefix="/ti")
+    app.register_blueprint(usuarios_bp,       url_prefix="/usuarios")
+    app.register_blueprint(permisos_bp,       url_prefix="/permisos")
 
     # ── Filtros Jinja2 ────────────────────────────────────────────────────────
     @app.template_filter("moneda")

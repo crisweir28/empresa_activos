@@ -74,7 +74,7 @@ def dashboard():
     rol  = current_user.rol
     tema = DEPTO_TEMAS.get(rol, DEPTO_TEMAS["ti"])
 
-    if rol in ROLES_DASHBOARD_GLOBAL:
+    if rol in ("admin", "ti") and rol == "admin":
         # TI — vista global completa
         stats     = VDashboardStats.query.first()
         recientes = VActivo.query.order_by(VActivo.creado_en.desc()).limit(8).all()
@@ -91,8 +91,10 @@ def dashboard():
             tema          = tema,
         )
 
+    elif rol == "ti":
+        # TI — redirige a su módulo
+        return redirect(url_for("ti.dashboard"))
     elif rol == "administrativo":
-        # Administrativo — redirige directo a su módulo de vehículos
         return redirect(url_for("administrativo.dashboard"))
 
     else:

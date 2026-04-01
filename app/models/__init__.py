@@ -7,3 +7,7 @@ from .vehiculo     import (
     Personal, Vehiculo, ConductorVehiculo,
     PermisosVehiculo, MantenimientoVehiculo
 )
+
+from .herramienta import Herramienta, AsignacionHerramienta, EvidenciaHerramienta, ReporteDanio
+from .electronico import Electronico, MantenimientoElectronico
+from .permiso import Modulo, PermisoRol, PermisoUsuario

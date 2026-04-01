@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Permisos — {{ usuario.Nombre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .permisos-table { width: 100%; border-collapse: collapse; }
+  .permisos-table th {
+    padding: 10px 18px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .permisos-table th:first-child { text-align: left; }
+  .permisos-table th:not(:first-child) { text-align: center; width: 90px; }
+  .permisos-table td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
+  .permisos-table tr:last-child td { border-bottom: none; }
+  .permisos-table tr:hover td { background: rgba(255,255,255,.02); }
+
+  .modulo-info { display: flex; align-items: center; gap: 10px; }
+  .modulo-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(124,92,252,.12); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .modulo-name { font-size: 13px; font-weight: 600; }
+  .modulo-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  .toggle-wrap { display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 4px; }
+  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; cursor: pointer; background: rgba(255,255,255,.08); border-radius: 20px; transition: .2s; }
+  .slider:before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .2s; }
+  input:checked + .slider { background: var(--accent); }
+  input:checked + .slider:before { transform: translateX(16px); }
+
+  .rol-ref { font-size: 9px; color: var(--muted); }
+  .personalizado-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">🔐 Permisos individuales</div>
+    <div class="page-sub">
+      <strong>{{ usuario.Nombre }} {{ usuario.ApellidoPaterno }}</strong>
+      · @{{ usuario.NombreUsuario }} · {{ usuario.rol_label }}
+    </div>
+  </div>
+  <a href="{{ url_for('permisos.index', rol=usuario.IdRol) }}" class="btn-sm">← Volver</a>
+</div>
+
+<div class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border)">
+    <div>
+      <div style="font-size:14px;font-weight:600">Permisos de {{ usuario.Nombre }}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">
+        {% if tiene_personalizados %}
+        <span style="color:var(--accent)">● Tiene permisos personalizados</span>
+        — diferentes a los del rol {{ usuario.rol_label }}
+        {% else %}
+        <span style="color:var(--muted)">○ Sin personalizar</span>
+        — se muestran los permisos del rol {{ usuario.rol_label }} como referencia
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      {% if tiene_personalizados %}
+      <form method="POST" action="{{ url_for('permisos.usuario_permisos_reset', usuario_id=usuario.IdUsuario) }}"
+            onsubmit="return confirm('¿Restablecer permisos al rol? Se perderán los permisos personalizados.')">
+        <button type="submit" class="btn-cancel">↺ Restablecer al rol</button>
+      </form>
+      {% endif %}
+      <button type="button" class="btn-cancel" onclick="history.back()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="document.getElementById('form-permisos').submit()">
+        💾 Guardar permisos
+      </button>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('permisos.usuario_permisos_guardar', usuario_id=usuario.IdUsuario) }}"
+        id="form-permisos">
+    <table class="permisos-table">
+      <thead>
+        <tr>
+          <th>Módulo</th>
+          <th>Ver</th>
+          <th>Crear</th>
+          <th>Editar</th>
+          <th>Eliminar</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in modulos %}
+        {% set p = permisos_map.get(m.IdModulo) %}
+        {% set r = permisos_rol.get(m.IdModulo) %}
+        <tr>
+          <td>
+            <div class="modulo-info">
+              <div class="modulo-icon">{{ m.Icono or '📦' }}</div>
+              <div>
+                <div class="modulo-name">
+                  {{ m.Nombre }}
+                  {% if p and p.get('EsPersonalizado') %}
+                  <span class="personalizado-dot" title="Permiso personalizado"></span>
+                  {% endif %}
+                </div>
+                <div class="modulo-desc">{{ m.Descripcion or '' }}</div>
+              </div>
+            </div>
+          </td>
+          {% for accion, label in [('ver','Ver'),('crear','Crear'),('editar','Editar'),('eliminar','Eliminar')] %}
+          {% set campo = 'Puede' ~ accion|capitalize %}
+          {% set val_usuario = p.get(campo, False) if p else None %}
+          {% set val_rol = r.get(campo, False) if r else False %}
+          <td>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}"
+                       {% if val_usuario is not none %}
+                         {% if val_usuario %}checked{% endif %}
+                       {% elif val_rol %}checked{% endif %}
+                       onchange="marcarCambio()">
+                <span class="slider"></span>
+              </label>
+              <span class="rol-ref" title="Permiso del rol">
+                rol: {% if val_rol %}✓{% else %}✗{% endif %}
+              </span>
+            </div>
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+  <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+    <span style="font-size:11px;color:var(--muted)" id="sync-status">● Sincronizado</span>
+    <span style="font-size:11px;color:var(--muted)">
+      <span class="personalizado-dot"></span> = permiso personalizado distinto al rol
+      &nbsp;·&nbsp; "rol: ✓/✗" = referencia del rol base
+    </span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let hayChanges = false;
+function marcarCambio() {
+  hayChanges = true;
+  document.getElementById('sync-status').innerHTML =
+    '● <span style="color:var(--yellow)">Cambios pendientes</span>';
+}
+window.addEventListener('beforeunload', e => {
+  if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+{% endblock %}

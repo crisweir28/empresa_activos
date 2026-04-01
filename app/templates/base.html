@@ -4,111 +4,178 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Panel{% endblock %} — ActivosApp</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 
-  {# Tema de color según rol del usuario #}
   {% set _temas = {
-    "ti":             {"c1": "#7c5cfc", "c2": "#e040fb"},
-    "administrativo": {"c1": "#fbbf24", "c2": "#f97316"},
-    "almacenista":    {"c1": "#22d3a5", "c2": "#0ea5e9"},
-    "rh":             {"c1": "#a78bfa", "c2": "#818cf8"},
-    "supervisor":     {"c1": "#f87171", "c2": "#fb923c"},
+    "admin":          {"c1": "#9B2335", "c2": "#c0392b"},
+    "ti":             {"c1": "#2563eb", "c2": "#4f46e5"},
+    "administrativo": {"c1": "#d97706", "c2": "#b45309"},
+    "almacenista":    {"c1": "#16a34a", "c2": "#0891b2"},
+    "rh":             {"c1": "#7c3aed", "c2": "#6d28d9"},
+    "supervisor":     {"c1": "#dc2626", "c2": "#ea580c"},
   } %}
   {% set _t = _temas.get(current_user.rol, _temas["ti"]) %}
   <style>
-    :root {
-      --accent:  {{ _t.c1 }};
-      --accent2: {{ _t.c2 }};
+    :root { --accent: {{ _t.c1 }}; --accent2: {{ _t.c2 }}; }
+
+    /* ── Accordion sidebar ── */
+    .sb-group { overflow: hidden; }
+    .sb-group-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 16px; cursor: pointer;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      user-select: none; border: none; background: transparent;
+      width: 100%;
     }
+    .sb-group-btn:hover { color: var(--text); }
+    .sb-group-arrow {
+      font-size: 9px; transition: transform .2s;
+      display: inline-block;
+    }
+    .sb-group-btn.collapsed .sb-group-arrow { transform: rotate(-90deg); }
+    .sb-group-body { overflow: hidden; transition: max-height .25s ease; }
+    .sb-group-body.collapsed { max-height: 0 !important; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-<aside class="sidebar">
-  <div class="sb-logo">
+<aside class="sidebar" style="display:flex;flex-direction:column;overflow:hidden">
+  <div class="sb-logo" style="flex-shrink:0">
     <div class="sb-logo-icon">🏢</div>
     <span class="sb-logo-text">ActivosApp</span>
   </div>
 
-  <nav>
-    <div class="nav-sec">Principal</div>
-    <a class="nav-link {% if request.endpoint == 'activos.dashboard' %}active{% endif %}"
-       href="{{ url_for('activos.dashboard') }}">
-      <span class="ic">📊</span> Dashboard
-    </a>
+  <nav style="flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:8px">
 
-    {# Activos — solo roles que no son puro administrativo #}
-    {% if current_user.rol != 'administrativo' %}
-    <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
-       href="{{ url_for('activos.lista') }}">
-      <span class="ic">📦</span>
-      {% if current_user.es_admin %}Todos los activos{% else %}Mis activos{% endif %}
-    </a>
+    {# ── Principal ── #}
+    <div class="sb-group">
+      <button class="sb-group-btn" onclick="toggleGroup(this)">
+        Principal <span class="sb-group-arrow">▾</span>
+      </button>
+      <div class="sb-group-body" style="max-height:200px">
+        <a class="nav-link {% if request.endpoint == 'activos.dashboard' %}active{% endif %}"
+           href="{{ url_for('activos.dashboard') }}">
+          <span class="ic">📊</span> Dashboard
+        </a>
+        {% if current_user.rol not in ('administrativo', 'almacenista') %}
+        <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
+           href="{{ url_for('activos.lista') }}">
+          <span class="ic">📦</span>
+          {% if current_user.es_admin %}Todos los activos{% else %}Mis activos{% endif %}
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Vehículos ── #}
+    {% if current_user.rol in ('admin', 'administrativo') %}
+    <div class="sb-group">
+      <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
+              onclick="toggleGroup(this)">
+        Vehículos <span class="sb-group-arrow">▾</span>
+      </button>
+      <div class="sb-group-body {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
+           style="max-height:200px">
+        <a class="nav-link {% if request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
+           href="{{ url_for('administrativo.dashboard') }}">
+          <span class="ic">📊</span> Dashboard
+        </a>
+        <a class="nav-link {% if request.endpoint == 'administrativo.vehiculos' %}active{% endif %}"
+           href="{{ url_for('administrativo.vehiculos') }}">
+          <span class="ic">🚗</span> Vehículos
+        </a>
+        <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
+           href="{{ url_for('administrativo.mantenimiento_lista') }}">
+          <span class="ic">🔧</span> Mantenimiento
+        </a>
+        <a class="nav-link {% if request.endpoint == 'administrativo.personal' %}active{% endif %}"
+           href="{{ url_for('administrativo.personal') }}">
+          <span class="ic">👤</span> Personal
+        </a>
+      </div>
+    </div>
     {% endif %}
 
-    {# Módulo vehículos — TI y Administrativo #}
-    {% if current_user.rol in ('ti', 'administrativo') %}
-    <div class="nav-sec">Vehículos</div>
-    <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
-       href="{{ url_for('administrativo.dashboard') }}">
-      <span class="ic">📊</span> Dashboard
-    </a>
-    <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.vehiculos' %}active{% endif %}"
-       href="{{ url_for('administrativo.vehiculos') }}">
-      <span class="ic">🚗</span> Vehículos
-    </a>
-    <a class="nav-link {% if request.blueprint == 'administrativo' and request.endpoint == 'administrativo.personal' %}active{% endif %}"
-       href="{{ url_for('administrativo.personal') }}">
-      <span class="ic">👤</span> Personal / Conductores
-    </a>
+    {# ── Almacén ── #}
+    {% if current_user.rol in ('admin', 'almacenista') %}
+    <div class="sb-group">
+      <button class="sb-group-btn {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
+              onclick="toggleGroup(this)">
+        Almacén <span class="sb-group-arrow">▾</span>
+      </button>
+      <div class="sb-group-body {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
+           style="max-height:200px">
+        <a class="nav-link {% if request.endpoint == 'almacenista.dashboard' %}active{% endif %}"
+           href="{{ url_for('almacenista.dashboard') }}">
+          <span class="ic">📊</span> Dashboard
+        </a>
+        <a class="nav-link {% if request.endpoint == 'almacenista.inventario' %}active{% endif %}"
+           href="{{ url_for('almacenista.inventario') }}">
+          <span class="ic">🔧</span> Inventario
+        </a>
+        <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
+           href="{{ url_for('almacenista.historial') }}">
+          <span class="ic">📋</span> Historial
+        </a>
+      </div>
+    </div>
     {% endif %}
 
-    {# Módulo almacén — TI y Almacenista #}
-    {% if current_user.rol in ('ti', 'almacenista') %}
-    <div class="nav-sec">Almacén</div>
-    <a class="nav-link {% if request.endpoint == 'almacenista.dashboard' %}active{% endif %}"
-       href="{{ url_for('almacenista.dashboard') }}">
-      <span class="ic">📊</span> Dashboard
-    </a>
-    <a class="nav-link {% if request.endpoint == 'almacenista.inventario' %}active{% endif %}"
-       href="{{ url_for('almacenista.inventario') }}">
-      <span class="ic">🔧</span> Inventario
-    </a>
-    <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
-       href="{{ url_for('almacenista.historial') }}">
-      <span class="ic">📋</span> Historial
-    </a>
+    {# ── Equipos TI ── #}
+    {% if current_user.rol in ('ti', 'admin') %}
+    <div class="sb-group">
+      <button class="sb-group-btn {% if request.blueprint != 'ti' %}collapsed{% endif %}"
+              onclick="toggleGroup(this)">
+        Equipos TI <span class="sb-group-arrow">▾</span>
+      </button>
+      <div class="sb-group-body {% if request.blueprint != 'ti' %}collapsed{% endif %}"
+           style="max-height:200px">
+        <a class="nav-link {% if request.endpoint == 'ti.dashboard' %}active{% endif %}"
+           href="{{ url_for('ti.dashboard') }}">
+          <span class="ic">📊</span> Dashboard
+        </a>
+        <a class="nav-link {% if request.endpoint == 'ti.equipos' %}active{% endif %}"
+           href="{{ url_for('ti.equipos') }}">
+          <span class="ic">💻</span> Equipos
+        </a>
+        <a class="nav-link {% if request.endpoint == 'ti.validacion_estados' %}active{% endif %}"
+           href="{{ url_for('ti.validacion_estados') }}">
+          <span class="ic">✅</span> Validación estados
+        </a>
+      </div>
+    </div>
     {% endif %}
 
-    {# Módulo TI — solo rol ti #}
-    {% if current_user.rol == "ti" %}
-    <div class="nav-sec">Equipos TI</div>
-    <a class="nav-link {% if request.endpoint == "ti.dashboard" %}active{% endif %}"
-       href="{{ url_for('ti.dashboard') }}">
-      <span class="ic">📊</span> Dashboard
-    </a>
-    <a class="nav-link {% if request.endpoint == "ti.equipos" %}active{% endif %}"
-       href="{{ url_for('ti.equipos') }}">
-      <span class="ic">💻</span> Equipos
-    </a>
-    <a class="nav-link {% if request.endpoint == "ti.validacion_estados" %}active{% endif %}"
-       href="{{ url_for('ti.validacion_estados') }}">
-      <span class="ic">✅</span> Validación estados
-    </a>
+    {# ── Administración — solo super admin #}
+    {% if current_user.rol == 'admin' %}
+    <div class="sb-group">
+      <button class="sb-group-btn {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
+              onclick="toggleGroup(this)">
+        Administración <span class="sb-group-arrow">▾</span>
+      </button>
+      <div class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
+           style="max-height:200px">
+        <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
+           href="{{ url_for('permisos.index') }}">
+          <span class="ic">🔐</span> Roles & Permisos
+        </a>
+        <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
+           href="{{ url_for('usuarios.lista') }}">
+          <span class="ic">👥</span> Usuarios
+        </a>
+        <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
+           href="{{ url_for('departamentos.lista') }}">
+          <span class="ic">🏬</span> Departamentos
+        </a>
+      </div>
+    </div>
     {% endif %}
 
-    {# Administración — solo TI #}
-    {% if current_user.es_admin %}
-    <div class="nav-sec">Administración</div>
-    <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
-       href="{{ url_for('departamentos.lista') }}">
-      <span class="ic">🏬</span> Departamentos
-    </a>
-    {% endif %}
   </nav>
 
-  <div class="sb-footer">
+  <div class="sb-footer" style="flex-shrink:0">
     <div class="user-chip">
       <div class="avatar">{{ current_user.nombre[0]|upper }}</div>
       <div style="flex:1;min-width:0">
@@ -130,6 +197,19 @@
 </main>
 
 <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+<script>
+function toggleGroup(btn) {
+  const body = btn.nextElementSibling;
+  const isCollapsed = body.classList.contains('collapsed');
+  if (isCollapsed) {
+    body.classList.remove('collapsed');
+    btn.classList.remove('collapsed');
+  } else {
+    body.classList.add('collapsed');
+    btn.classList.add('collapsed');
+  }
+}
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
