@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Dashboard TI{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">💻 Gestión de Equipos TI</div>
+    <div class="page-sub">Control de equipos, mantenimiento y validación de estados</div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="margin-bottom:22px">
+  <div class="stat-card" style="animation-delay:.0s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Total equipos</span><span style="font-size:22px">💻</span></div>
+    <div class="stat-val" style="color:var(--accent)">{{ stats.TotalEquipos if stats else 0 }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.07s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">En almacén</span><span style="font-size:22px">📦</span></div>
+    <div class="stat-val" style="color:var(--green)">{{ stats.EnAlmacen if stats else 0 }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.14s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignados</span><span style="font-size:22px">👤</span></div>
+    <div class="stat-val" style="color:var(--accent)">{{ stats.Asignados if stats else 0 }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.21s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Buen estado</span><span style="font-size:22px">✅</span></div>
+    <div class="stat-val" style="color:var(--green)">{{ stats.EnBuenEstado if stats else 0 }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.28s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Mal estado</span><span style="font-size:22px">⚠️</span></div>
+    <div class="stat-val" style="color:var(--red)">{{ stats.EnMalEstado if stats else 0 }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay:.35s">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Mantenimiento</span><span style="font-size:22px">🔧</span></div>
+    <div class="stat-val" style="color:var(--yellow)">{{ stats.EnMantenimiento if stats else 0 }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
+
+  <!-- Equipos recientes -->
+  <div class="panel">
+    <div class="panel-title">
+      💻 Equipos registrados
+      <a href="{{ url_for('ti.equipos') }}" class="btn-sm">Ver todos →</a>
+    </div>
+    {% if equipos %}
+    <table>
+      <thead><tr><th>Equipo</th><th>Tipo</th><th>Asignado a</th><th>Estado</th><th>Condición</th></tr></thead>
+      <tbody>
+        {% for e in equipos %}
+        <tr>
+          <td>
+            <strong>{{ e.Nombre }}</strong>
+            <br><span style="font-size:11px;color:var(--muted)">{{ e.Marca or '' }} {{ e.Modelo or '' }}</span>
+          </td>
+          <td style="color:var(--muted)">
+            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+            {{ iconos.get(e.TipoEquipo, '📦') }} {{ e.TipoEquipo }}
+          </td>
+          <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
+          <td>
+            {% set colores = {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja','mal_estado':'badge-baja'} %}
+            <span class="badge {{ colores.get(e.Estado,'') }}"
+                  style="{% if e.Estado=='asignado' %}background:rgba(124,92,252,.15);color:#a78bfa{% endif %}">
+              {{ e.Estado }}
+            </span>
+          </td>
+          <td>
+            {% set cond_color = {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
+            <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">{{ e.Condicion }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin equipos registrados.</p>
+    {% endif %}
+  </div>
+
+  <!-- Panel derecho -->
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    <!-- Por tipo -->
+    <div class="panel">
+      <div class="panel-title">📊 Por tipo</div>
+      {% for tipo, count in por_tipo.items() %}
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span style="color:var(--muted)">
+          {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+          {{ iconos.get(tipo,'📦') }} {{ tipo }}
+        </span>
+        <strong style="color:var(--accent)">{{ count }}</strong>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Mantenimientos activos -->
+    <div class="panel">
+      <div class="panel-title">🔧 En mantenimiento</div>
+      {% if mantenimientos %}
+        {% for m in mantenimientos %}
+        <div style="background:var(--bg);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:500">{{ m.EquipoNombre }}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">{{ m.Tipo }} · {{ m.FechaInicio }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -81,6 +81,23 @@
     </a>
     {% endif %}
 
+    {# Módulo TI — solo rol ti #}
+    {% if current_user.rol == "ti" %}
+    <div class="nav-sec">Equipos TI</div>
+    <a class="nav-link {% if request.endpoint == "ti.dashboard" %}active{% endif %}"
+       href="{{ url_for('ti.dashboard') }}">
+      <span class="ic">📊</span> Dashboard
+    </a>
+    <a class="nav-link {% if request.endpoint == "ti.equipos" %}active{% endif %}"
+       href="{{ url_for('ti.equipos') }}">
+      <span class="ic">💻</span> Equipos
+    </a>
+    <a class="nav-link {% if request.endpoint == "ti.validacion_estados" %}active{% endif %}"
+       href="{{ url_for('ti.validacion_estados') }}">
+      <span class="ic">✅</span> Validación estados
+    </a>
+    {% endif %}
+
     {# Administración — solo TI #}
     {% if current_user.es_admin %}
     <div class="nav-sec">Administración</div>

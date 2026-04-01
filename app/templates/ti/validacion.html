@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Validación de Estados{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">✅ Validación de estados</div>
+    <div class="page-sub">Equipos en buen y mal estado en almacén</div>
+  </div>
+</div>
+
+<!-- Stats resumen -->
+{% if stats %}
+<div class="stats-grid" style="margin-bottom:22px">
+  <div class="stat-card">
+    <div class="stat-label">Total equipos</div>
+    <div class="stat-val" style="color:var(--accent)">{{ stats.TotalEquipos }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">En buen estado</div>
+    <div class="stat-val" style="color:var(--green)">{{ stats.EnBuenEstado }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">En mal estado</div>
+    <div class="stat-val" style="color:var(--red)">{{ stats.EnMalEstado }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">En almacén</div>
+    <div class="stat-val" style="color:var(--accent)">{{ stats.EnAlmacen }}</div>
+  </div>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+  <!-- Buen estado -->
+  <div class="panel">
+    <div class="panel-title" style="color:var(--green)">✅ En buen estado ({{ buen_estado|length }})</div>
+    {% if buen_estado %}
+    <table>
+      <thead><tr><th>Equipo</th><th>Tipo</th><th>Estado</th><th>Asignado a</th></tr></thead>
+      <tbody>
+        {% for e in buen_estado %}
+        <tr>
+          <td>
+            <strong>{{ e.Nombre }}</strong>
+            <br><span style="font-size:11px;color:var(--muted)">{{ e.NumeroSerie or '—' }}</span>
+          </td>
+          <td style="color:var(--muted)">{{ e.TipoEquipo }}</td>
+          <td><span class="badge badge-activo">{{ e.Estado }}</span></td>
+          <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Sin equipos.</p>
+    {% endif %}
+  </div>
+
+  <!-- Mal estado -->
+  <div class="panel">
+    <div class="panel-title" style="color:var(--red)">⚠️ En mal estado ({{ mal_estado|length }})</div>
+    {% if mal_estado %}
+    <table>
+      <thead><tr><th>Equipo</th><th>Tipo</th><th>Condición</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% for e in mal_estado %}
+        <tr>
+          <td>
+            <strong>{{ e.Nombre }}</strong>
+            <br><span style="font-size:11px;color:var(--muted)">{{ e.NumeroSerie or '—' }}</span>
+          </td>
+          <td style="color:var(--muted)">{{ e.TipoEquipo }}</td>
+          <td>
+            {% set cond_color = {'regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
+            <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">{{ e.Condicion }}</span>
+          </td>
+          <td>
+            {% set colores = {'almacen':'badge-activo','mantenimiento':'badge-mantenimiento','baja':'badge-baja'} %}
+            <span class="badge {{ colores.get(e.Estado,'badge-baja') }}">{{ e.Estado }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--green);font-size:13px;text-align:center;padding:24px">✅ Sin equipos en mal estado.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

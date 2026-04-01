@@ -15,12 +15,12 @@
 <!-- Filtros -->
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
   <a href="{{ url_for('administrativo.vehiculos') }}"
-     class="btn-sm {% if not request.args.get('estado') %}active{% endif %}"
-     style="{% if not request.args.get('estado') %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
+    class="btn-sm {% if not request.args.get('estado') %}active{% endif %}"
+    style="{% if not request.args.get('estado') %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
   {% for e in ['activo','mantenimiento','baja'] %}
   <a href="{{ url_for('administrativo.vehiculos', estado=e) }}"
-     class="btn-sm {% if request.args.get('estado')==e %}active{% endif %}"
-     style="{% if request.args.get('estado')==e %}border-color:var(--accent);color:#a78bfa{% endif %}">
+    class="btn-sm {% if request.args.get('estado')==e %}active{% endif %}"
+    style="{% if request.args.get('estado')==e %}border-color:var(--accent);color:#a78bfa{% endif %}">
     {{ e|capitalize }}
   </a>
   {% endfor %}
@@ -31,7 +31,16 @@
   <div style="overflow-x:auto">
     <table>
       <thead>
-        <tr><th>Vehículo</th><th>Placa</th><th>Km</th><th>Adquisición</th><th>Conductor</th><th>Estado</th><th>Alertas</th><th>Acciones</th></tr>
+        <tr>
+          <th>Vehículo</th>
+          <th>Placa</th>
+          <th>Km</th>
+          <th>Adquisición</th>
+          <th>Conductor</th>
+          <th>Estado</th>
+          <th>Alertas</th>
+          <th>Acciones</th>
+        </tr>
       </thead>
       <tbody>
         {% for v in vehiculos %}
@@ -58,10 +67,11 @@
           </td>
           <td>
             <a href="{{ url_for('administrativo.vehiculo_detalle', id=v.id) }}" class="btn-sm">👁 Ver</a>
-            <button class="btn-sm" onclick="editarVehiculo({{ v|tojson }})">✏️ Editar</button>
+            <button class="btn-sm" onclick="editarVehiculo({{ v.id }},'{{ v.nombre }}','{{ v.matricula }}','{{ v.marca or '' }}',
+                '{{ v.modelo or '' }}',{{ v.kilometraje or 0 }},'{{ v.tipo_adquisicion or '' }}','{{ v.estado }}',{{ v.valor or 0 }},
+                '{{ v.fecha_adquisicion or '' }}')">✏️ Editar</button>
             <form method="POST" action="{{ url_for('administrativo.vehiculo_eliminar', id=v.id) }}"
-                  style="display:inline"
-                  onsubmit="return confirm('¿Eliminar {{ v.nombre }}?')">
+              style="display:inline" onsubmit="return confirm('¿Eliminar {{ v.nombre }}?')">
               <button type="submit" class="btn-sm btn-del">🗑️</button>
             </form>
           </td>
@@ -89,7 +99,8 @@
         <div class="field"><label>Modelo</label><input name="modelo" placeholder="NP300 2022"></div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Kilometraje</label><input name="kilometraje" type="number" min="0" placeholder="0"></div>
+        <div class="field"><label>Kilometraje</label><input name="kilometraje" type="number" min="0" placeholder="0">
+        </div>
         <div class="field"><label>Tipo adquisición</label>
           <select name="tipo_adquisicion">
             <option value="">— Seleccionar —</option>
@@ -107,7 +118,8 @@
             <option value="baja">Baja</option>
           </select>
         </div>
-        <div class="field"><label>Valor ($)</label><input name="valor" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="field"><label>Valor ($)</label><input name="valor" type="number" step="0.01" min="0"
+            placeholder="0.00"></div>
       </div>
       <div class="grid-2">
         <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
@@ -119,7 +131,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+          onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
@@ -158,10 +171,12 @@
             <option value="baja">Baja</option>
           </select>
         </div>
-        <div class="field"><label>Valor ($)</label><input id="e-valor" name="valor" type="number" step="0.01" min="0"></div>
+        <div class="field"><label>Valor ($)</label><input id="e-valor" name="valor" type="number" step="0.01" min="0">
+        </div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion" type="date"></div>
+        <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion" type="date">
+        </div>
         <div class="field"><label>Ubicación</label>
           <select id="e-ubicacion" name="ubicacion_id">
             <option value="">— Sin ubicación —</option>
@@ -170,7 +185,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+          onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
       </div>
     </form>
@@ -180,17 +196,17 @@
 
 {% block scripts %}
 <script>
-function editarVehiculo(v) {
-  document.getElementById('form-editar').action = `/administrativo/vehiculos/${v.id}/editar`;
-  document.getElementById('e-nombre').value    = v.nombre       || '';
-  document.getElementById('e-matricula').value = v.matricula    || '';
-  document.getElementById('e-marca').value     = v.marca        || '';
-  document.getElementById('e-modelo').value    = v.modelo       || '';
-  document.getElementById('e-km').value        = v.kilometraje  || 0;
-  document.getElementById('e-tipo').value      = v.tipo_adquisicion || '';
-  document.getElementById('e-estado').value    = v.estado       || 'activo';
-  document.getElementById('e-valor').value     = v.valor        || 0;
-  document.getElementById('e-fecha').value     = v.fecha_adquisicion || '';
+  function editarVehiculo(id, nombre, matricula, marca, modelo, km, tipo, estado, valor, fecha) {
+  document.getElementById('form-editar').action = `/administrativo/vehiculos/${id}/editar`;
+  document.getElementById('e-nombre').value    = nombre;
+  document.getElementById('e-matricula').value = matricula;
+  document.getElementById('e-marca').value     = marca;
+  document.getElementById('e-modelo').value    = modelo;
+  document.getElementById('e-km').value        = km;
+  document.getElementById('e-tipo').value      = tipo;
+  document.getElementById('e-estado').value    = estado;
+  document.getElementById('e-valor').value     = valor;
+  document.getElementById('e-fecha').value     = fecha;
   document.getElementById('modal-editar').classList.add('open');
 }
 </script>
