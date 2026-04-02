@@ -9,7 +9,7 @@ from ..models.vehiculo import (
     TipoServicio, Ubicacion, Condicion
 )
 from ..views.vehiculo_vistas import VVehiculo, VPermisosVencer, VMantenimientoVehiculo, VAlertasMantenimiento
-from ..utils.permisos import requiere_rol
+from ..utils.permisos import requiere_rol, requiere_permiso
 
 administrativo_bp = Blueprint("administrativo", __name__)
 
@@ -25,6 +25,7 @@ def _check_acceso():
 
 @administrativo_bp.route("/")
 @login_required
+@requiere_permiso('Vehículos')
 def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -53,6 +54,7 @@ def dashboard():
 
 @administrativo_bp.route("/vehiculos")
 @login_required
+@requiere_permiso('Vehículos')
 def vehiculos():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

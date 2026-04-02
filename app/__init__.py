@@ -31,6 +31,10 @@ def create_app(env="default"):
     app.register_blueprint(usuarios_bp,       url_prefix="/usuarios")
     app.register_blueprint(permisos_bp,       url_prefix="/permisos")
 
+    # ── Funciones globales Jinja2 ──────────────────────────────────────────────
+    from .utils.permisos import tiene_permiso
+    app.jinja_env.globals['tiene_permiso'] = tiene_permiso
+
     # ── Filtros Jinja2 ────────────────────────────────────────────────────────
     @app.template_filter("moneda")
     def filtro_moneda(valor):

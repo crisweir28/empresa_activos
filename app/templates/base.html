@@ -70,7 +70,7 @@
     </div>
 
     {# ── Vehículos ── #}
-    {% if current_user.rol in ('admin', 'administrativo') %}
+    {% if current_user.rol in ('admin', 'administrativo') and tiene_permiso('Vehículos') %}
     <div class="sb-group">
       <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
               onclick="toggleGroup(this)">
@@ -99,7 +99,7 @@
     {% endif %}
 
     {# ── Almacén ── #}
-    {% if current_user.rol in ('admin', 'almacenista') %}
+    {% if current_user.rol in ('admin', 'almacenista') and tiene_permiso('Almacén') %}
     <div class="sb-group">
       <button class="sb-group-btn {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
               onclick="toggleGroup(this)">
@@ -124,7 +124,7 @@
     {% endif %}
 
     {# ── Equipos TI ── #}
-    {% if current_user.rol in ('ti', 'admin') %}
+    {% if current_user.rol in ('ti', 'admin') and tiene_permiso('Equipos TI') %}
     <div class="sb-group">
       <button class="sb-group-btn {% if request.blueprint != 'ti' %}collapsed{% endif %}"
               onclick="toggleGroup(this)">

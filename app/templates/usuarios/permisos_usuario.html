@@ -68,7 +68,8 @@
       </form>
       {% endif %}
       <button type="button" class="btn-cancel" onclick="history.back()">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="document.getElementById('form-permisos').submit()">
+      <button type="button" class="btn btn-primary" 
+        onclick="hayChanges=false; document.getElementById('form-permisos').submit()">
         💾 Guardar permisos
       </button>
     </div>
@@ -149,6 +150,9 @@ function marcarCambio() {
   document.getElementById('sync-status').innerHTML =
     '● <span style="color:var(--yellow)">Cambios pendientes</span>';
 }
+document.getElementById('form-permisos').addEventListener('submit', function() {
+  hayChanges = false;
+});
 window.addEventListener('beforeunload', e => {
   if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
 });

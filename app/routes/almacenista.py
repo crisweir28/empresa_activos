@@ -8,6 +8,7 @@ from ..extensions import db
 from ..models.herramienta import Herramienta, AsignacionHerramienta, EvidenciaHerramienta, ReporteDanio
 from ..models.usuario import Usuario
 from ..views.almacen_vistas import VInventario, VHistorialAsignaciones
+from ..utils.permisos import requiere_permiso
 
 almacenista_bp = Blueprint("almacenista", __name__)
 
@@ -30,6 +31,7 @@ def _allowed_file(filename):
 # ── Dashboard ─────────────────────────────────────────────────
 @almacenista_bp.route("/")
 @login_required
+@requiere_permiso('Almacén')
 def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -58,6 +60,7 @@ def dashboard():
 # ── Inventario ────────────────────────────────────────────────
 @almacenista_bp.route("/inventario")
 @login_required
+@requiere_permiso('Almacén')
 def inventario():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

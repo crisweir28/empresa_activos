@@ -74,8 +74,8 @@ def dashboard():
     rol  = current_user.rol
     tema = DEPTO_TEMAS.get(rol, DEPTO_TEMAS["ti"])
 
-    if rol in ("admin", "ti") and rol == "admin":
-        # TI — vista global completa
+    if rol == "admin":
+        # Admin — vista global completa
         stats     = VDashboardStats.query.first()
         recientes = VActivo.query.order_by(VActivo.creado_en.desc()).limit(8).all()
         por_depto = VActivoPorDepartamento.query.order_by(
@@ -92,8 +92,23 @@ def dashboard():
         )
 
     elif rol == "ti":
-        # TI — redirige a su módulo
-        return redirect(url_for("ti.dashboard"))
+        # TI — redirige a su módulo solo si tiene permiso
+        from ..utils.permisos import tiene_permiso
+        if tiene_permiso('Equipos TI'):
+            return redirect(url_for("ti.dashboard"))
+        # Sin permiso — mostrar dashboard vacío
+        return render_template("dashboard_depto.html",
+            depto_nombre  = tema["nombre"],
+            depto_icon    = tema["icon"],
+            depto_color   = tema["color"],
+            depto_color2  = tema["color2"],
+            depto_rgb     = tema["rgb"],
+            depto_rgb2    = tema["rgb2"],
+            depto_glow    = f"rgba({tema['rgb']},.15)",
+            total=0, activos_ok=0, mantenimiento=0,
+            bajas=0, valor_total=0, recientes=[], alertas_mant=[],
+        )
+
     elif rol == "administrativo":
         return redirect(url_for("administrativo.dashboard"))
 
@@ -120,7 +135,6 @@ def dashboard():
             recientes     = recientes,
             alertas_mant  = alertas,
         )
-
 
 @activos_bp.route("/")
 @login_required

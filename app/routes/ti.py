@@ -7,10 +7,11 @@ from ..models.electronico import Electronico, MantenimientoElectronico
 from ..models.usuario import Usuario
 from ..models.vehiculo import Ubicacion
 from ..views.ti_vistas import VEquiposTI, VEstadisticasTI, VMantenimientoElectronico
+from ..utils.permisos import requiere_rol, requiere_permiso
 
 ti_bp = Blueprint("ti", __name__)
 
-ROLES_TI = ("ti",)
+ROLES_TI = ("ti", "admin")  # admin puede ver todo, ti solo su módulo
 
 
 def _check_acceso():
@@ -54,6 +55,7 @@ def dashboard():
 # ── Gestión de equipos ────────────────────────────────────────
 @ti_bp.route("/equipos")
 @login_required
+@requiere_permiso('Equipos TI')
 def equipos():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

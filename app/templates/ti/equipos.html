@@ -7,9 +7,12 @@
         <div class="page-title">💻 Equipos TI</div>
         <div class="page-sub">Registro y gestión de equipos tecnológicos</div>
     </div>
-    <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
-        + Nuevo equipo
-    </button>
+    <!-- Botón nuevo equipo -->
+{% if tiene_permiso('Equipos TI', 'crear') %}
+<button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+  + Nuevo equipo
+</button>
+{% endif %}
 </div>
 
 <!-- Filtros -->
@@ -78,9 +81,9 @@
                     <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
                     <td>
                         <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
-                        <button class="btn-sm" onclick="editarEquipo(
-                                {{ e.IdElectronico }},'{{ e.Nombre }}','{{ e.TipoEquipo }}','{{ e.Marca or '' }}', '{{ e.Modelo or '' }}',
-                                '{{ e.NumeroSerie or '' }}','{{ e.Condicion }}',{{ e.Costo or 0 }},'{{ e.FechaAdquisicion or '' }}')">✏️</button>
+                        {% if tiene_permiso('Equipos TI', 'editar') %}
+                        <button class="btn-sm" onclick="editarEquipo(...)">✏️</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
