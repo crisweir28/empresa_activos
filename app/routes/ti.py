@@ -12,7 +12,7 @@ from ..utils.permisos import requiere_rol, requiere_permiso
 
 ti_bp = Blueprint("ti", __name__)
 
-ROLES_TI = ("ti", "admin")  # admin puede ver todo, ti solo su módulo
+ROLES_TI = ("ti", "admin")
 
 
 def _check_acceso():
@@ -30,16 +30,14 @@ def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    stats      = VEstadisticasTI.query.first()
-    equipos    = VEquiposTI.query.all()
+    stats          = VEstadisticasTI.query.first()
+    equipos        = VEquiposTI.query.all()
     mantenimientos = VMantenimientoElectronico.query.filter_by(Estatus="en_proceso").limit(8).all()
 
-    # Equipos por tipo
     por_tipo = {}
     for e in equipos:
         por_tipo[e.TipoEquipo] = por_tipo.get(e.TipoEquipo, 0) + 1
 
-    # Equipos por área (usuario)
     por_area = {}
     for e in equipos:
         if e.UsuarioRol:
@@ -62,9 +60,9 @@ def equipos():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    tipo    = request.args.get("tipo", "")
-    estado  = request.args.get("estado", "")
-    query   = VEquiposTI.query
+    tipo   = request.args.get("tipo", "")
+    estado = request.args.get("estado", "")
+    query  = VEquiposTI.query
 
     if tipo:
         query = query.filter_by(TipoEquipo=tipo)
@@ -75,10 +73,10 @@ def equipos():
     ubicaciones = Ubicacion.query.all()
 
     return render_template("ti/equipos.html",
-        equipos     = query.order_by(VEquiposTI.Nombre).all(),
-        usuarios    = usuarios,
-        ubicaciones = ubicaciones,
-        tipo_filtro  = tipo,
+        equipos       = query.order_by(VEquiposTI.Nombre).all(),
+        usuarios      = usuarios,
+        ubicaciones   = ubicaciones,
+        tipo_filtro   = tipo,
         estado_filtro = estado,
     )
 
@@ -106,7 +104,10 @@ def equipo_nuevo():
         )
         db.session.execute(sqla_text("COMMIT"))
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        flash("Equipo registrado correctamente." if row and row.r == "OK" else f"Error: {row.r}.", "success" if row and row.r == "OK" else "error")
+        flash(
+            "Equipo registrado correctamente." if row and row.r == "OK" else f"Error: {row.r}.",
+            "success" if row and row.r == "OK" else "error"
+        )
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
@@ -137,32 +138,53 @@ def equipo_editar(id):
     return redirect(url_for("ti.equipos"))
 
 
-# ── Asignar equipo a usuario ──────────────────────────────────
+# ── Asignar equipo a usuario + proyecto (opcional) ────────────
 @ti_bp.route("/equipos/<int:id>/asignar", methods=["POST"])
 @login_required
 def equipo_asignar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
+    usuario_id  = request.form.get('usuario_id', type=int)
+    proyecto_id = request.form.get('proyecto_id', type=int)
+
+    if not usuario_id:
+        flash('Selecciona un usuario.', 'warning')
+        return redirect(url_for('ti.equipo_detalle', id=id))
+
     try:
-        db.session.execute(
-            sqla_text("CALL sp_asignar_equipo_ti(:eid,:uid,@res)"),
-            {
-                "eid": id,
-                "uid": int(request.form.get("usuario_id")),
-            }
-        )
-        db.session.execute(sqla_text("COMMIT"))
-        row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        if row and row.r == "OK":
-            flash("Equipo asignado correctamente.", "success")
-        else:
-            flash(f"No se pudo asignar: {row.r if row else 'error'}.", "error")
+        # Asignar equipo al usuario
+        db.session.execute(db.text("""
+            UPDATE electronico
+            SET IdUsuario = :uid, Estado = 'asignado'
+            WHERE IdElectronico = :id
+        """), {'uid': usuario_id, 'id': id})
+
+        # Si se seleccionó proyecto, ligar en proyectoactivo
+        if proyecto_id:
+            existente = db.session.execute(db.text("""
+                SELECT IdAsignacion FROM proyectoactivo
+                WHERE IdProyecto = :pid AND TipoActivo = 'electronico'
+                  AND IdActivo = :aid AND FechaDevolucion IS NULL
+                LIMIT 1
+            """), {'pid': proyecto_id, 'aid': id}).fetchone()
+
+            if not existente:
+                db.session.execute(db.text("""
+                    INSERT INTO proyectoactivo
+                        (IdProyecto, TipoActivo, IdActivo, EstadoInicial, AsignadoPor, FechaAsignacion)
+                    VALUES
+                        (:pid, 'electronico', :aid, 'bueno', :usr, CURDATE())
+                """), {'pid': proyecto_id, 'aid': id, 'usr': current_user.IdUsuario})
+
+        db.session.commit()
+        flash('Equipo asignado correctamente.', 'success')
+
     except Exception as e:
         db.session.rollback()
-        flash(f"Error: {str(e)}", "error")
+        flash(f'Error al asignar: {str(e)}', 'error')
 
-    return redirect(url_for("ti.equipo_detalle", id=id))
+    return redirect(url_for('ti.equipo_detalle', id=id))
 
 
 # ── Liberar equipo ────────────────────────────────────────────
@@ -192,16 +214,24 @@ def equipo_detalle(id):
     usuarios       = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
     ubicaciones    = Ubicacion.query.all()
 
+    proyectos_activos = db.session.execute(db.text("""
+        SELECT IdProyecto, Nombre, Estatus
+        FROM proyecto
+        WHERE Estatus NOT IN ('Completado','Cancelado')
+        ORDER BY Nombre
+    """)).fetchall()
+
     return render_template("ti/equipo_detalle.html",
-        equipo         = equipo,
-        mantenimientos = mantenimientos,
-        usuarios       = usuarios,
-        ubicaciones    = ubicaciones,
-        today          = date.today(),
+        equipo            = equipo,
+        mantenimientos    = mantenimientos,
+        usuarios          = usuarios,
+        ubicaciones       = ubicaciones,
+        today             = date.today(),
+        proyectos_activos = proyectos_activos,
     )
 
 
-# ── Mantenimiento previo ──────────────────────────────────────
+# ── Mantenimiento nuevo ───────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/mantenimiento/nuevo", methods=["POST"])
 @login_required
 def mantenimiento_nuevo(id):
@@ -225,7 +255,10 @@ def mantenimiento_nuevo(id):
         )
         db.session.execute(sqla_text("COMMIT"))
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        flash("Mantenimiento registrado." if row and row.r == "OK" else f"Error: {row.r}.", "success" if row and row.r == "OK" else "error")
+        flash(
+            "Mantenimiento registrado." if row and row.r == "OK" else f"Error: {row.r}.",
+            "success" if row and row.r == "OK" else "error"
+        )
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
@@ -245,7 +278,6 @@ def mantenimiento_completar(id):
     m.FechaTermino = request.form.get("fecha_termino") or date.today()
     m.Descripcion  = request.form.get("descripcion", m.Descripcion)
 
-    # Si no hay más mantenimientos activos, regresar a almacén
     otros = MantenimientoElectronico.query.filter_by(
         IdElectronico=m.IdElectronico, Estatus="en_proceso"
     ).filter(MantenimientoElectronico.IdMantenimiento != id).count()
@@ -274,10 +306,52 @@ def validacion_estados():
     ).all()
 
     return render_template("ti/validacion.html",
-        stats      = stats,
+        stats       = stats,
         buen_estado = buen_estado,
         mal_estado  = mal_estado,
     )
+
+
+# ── Reporte consolidado ───────────────────────────────────────
+@ti_bp.route("/reporte/consolidado")
+@login_required
+def reporte_consolidado():
+    if not _check_acceso():
+        return redirect(url_for("activos.dashboard"))
+
+    tipo_filter     = request.args.get('tipo', '')
+    estado_filter   = request.args.get('estado', '')
+    proyecto_filter = request.args.get('proyecto_id', type=int)
+
+    sql    = "SELECT * FROM v_equipos_consolidado WHERE 1=1"
+    params = {}
+
+    if tipo_filter:
+        sql += " AND TipoEquipo = :tipo"
+        params['tipo'] = tipo_filter
+
+    if estado_filter:
+        sql += " AND EstadoEquipo = :estado"
+        params['estado'] = estado_filter
+
+    if proyecto_filter:
+        sql += " AND (IdProyecto = :pid OR IdProyectoEquipo = :pid)"
+        params['pid'] = proyecto_filter
+
+    sql += " ORDER BY NombreEquipo"
+
+    equipos = db.session.execute(db.text(sql), params).fetchall()
+
+    proyectos = db.session.execute(db.text("""
+        SELECT IdProyecto, Nombre, Estatus FROM proyecto ORDER BY Nombre
+    """)).fetchall()
+
+    return render_template('ti/reporte_consolidado.html',
+                           equipos         = equipos,
+                           proyectos       = proyectos,
+                           tipo_filter     = tipo_filter,
+                           estado_filter   = estado_filter,
+                           proyecto_filter = proyecto_filter)
 
 
 # ── API ───────────────────────────────────────────────────────

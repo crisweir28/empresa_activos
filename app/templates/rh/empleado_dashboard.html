@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Empleado — {{ empleado.NombreCompleto }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">👤 {{ empleado.NombreCompleto }}</h1>
+    <p class="page-sub">{{ empleado.Rol }} · {{ empleado.Correo }}</p>
+  </div>
+  <a href="{{ url_for('rh.activos_usuario') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+{# ── Alerta baja activa ── #}
+{% if baja_activa %}
+<div style="background:#fef9c3;border:1px solid #fbbf24;border-radius:10px;padding:14px 18px;
+     margin-bottom:20px;display:flex;gap:12px;align-items:center">
+  <span style="font-size:22px">⚠️</span>
+  <div>
+    <strong style="color:#a16207">Proceso de baja activo</strong>
+    <span style="color:#a16207;font-size:13px;margin-left:8px">
+      Estado: {{ baja_activa.Estatus|capitalize }}
+    </span>
+    <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-sm btn-outline" style="margin-left:12px">Ver proceso</a>
+  </div>
+</div>
+{% endif %}
+
+{# ── Tarjetas resumen ── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px">
+  {% for num, lbl, ico, color in [
+    (resumen.total,        'Total activos',    '📦', '#6b7280'),
+    (resumen.electronico,  'Equipos TI',       '💻', '#2563eb'),
+    (resumen.herramienta,  'Herramientas',     '🔧', '#16a34a'),
+    (resumen.general,      'Generales',        '🗂️',  '#d97706'),
+    (proyectos|length,     'Proyectos',        '📋', '#8b5cf6'),
+    (valor_total,          'Valor total',      '💰', '#9B2335'),
+  ] %}
+  <div class="stat-box" style="--c:{{ color }}">
+    <span style="font-size:20px">{{ ico }}</span>
+    <span class="sn">
+      {% if lbl == 'Valor total' %}${{ "{:,.0f}".format(num) }}{% else %}{{ num }}{% endif %}
+    </span>
+    <span class="sl">{{ lbl }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+
+  {# ── Activos ── #}
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Activos asignados</h3>
+        <span class="badge">{{ activos|length }}</span>
+      </div>
+      {% if activos %}
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tipo</th><th>Activo</th><th>N° Serie</th>
+              <th>Estado</th><th>Valor</th><th>Proyecto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in activos %}
+            <tr>
+              <td>
+                {% if a.TipoActivo == 'electronico' %}<span class="badge badge-blue">💻 TI</span>
+                {% elif a.TipoActivo == 'herramienta' %}<span class="badge badge-green">🔧 Herr.</span>
+                {% else %}<span class="badge badge-yellow">📦 General</span>{% endif %}
+              </td>
+              <td style="font-weight:600">{{ a.NombreActivo }}</td>
+              <td><code>{{ a.NumeroSerie or '—' }}</code></td>
+              <td>
+                <span class="badge {% if a.Estado in ('activo','asignado','disponible') %}badge-green
+                                   {% elif a.Estado == 'mantenimiento' %}badge-yellow
+                                   {% else %}badge-red{% endif %}">
+                  {{ a.Estado }}
+                </span>
+              </td>
+              <td>${{ "{:,.0f}".format(a.Valor or 0) }}</td>
+              <td>
+                {% if a.NombreProyecto %}
+                  <span class="badge badge-purple" title="{{ a.EstatusProyecto }}">
+                    📋 {{ a.NombreProyecto|truncate(20) }}
+                  </span>
+                {% else %}
+                  <span style="color:var(--muted);font-size:12px">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state"><div style="font-size:40px">📭</div><p>Sin activos asignados.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Panel derecho ── #}
+  <div style="display:flex;flex-direction:column;gap:16px">
+
+    {# Info del empleado #}
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">ℹ️ Información</h3></div>
+      <div class="card-body">
+        <table style="font-size:13px;width:100%">
+          <tr>
+            <td style="color:var(--muted);padding:5px 0;width:110px">Usuario</td>
+            <td><code>{{ empleado.NombreUsuario }}</code></td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);padding:5px 0">Rol</td>
+            <td>{{ empleado.Rol }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);padding:5px 0">Correo</td>
+            <td>{{ empleado.Correo }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);padding:5px 0">Teléfono</td>
+            <td>{{ empleado.NumeroTelefono or '—' }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);padding:5px 0">Estatus</td>
+            <td>
+              {% if empleado.Estatus %}
+                <span class="badge badge-green">● Activo</span>
+              {% else %}
+                <span class="badge badge-red">● Inactivo</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--muted);padding:5px 0">Alta</td>
+            <td>{{ empleado.CreadoEn.strftime('%d/%m/%Y') if empleado.CreadoEn else '—' }}</td>
+          </tr>
+        </table>
+
+        {% if not baja_activa and empleado.Estatus %}
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
+          <a href="{{ url_for('rh.baja_nueva') }}?uid={{ empleado.IdUsuario }}"
+             class="btn btn-outline" style="width:100%;text-align:center;font-size:13px">
+            📋 Iniciar proceso de baja
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Proyectos #}
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📋 Proyectos</h3>
+        <span class="badge">{{ proyectos|length }}</span>
+      </div>
+      {% if proyectos %}
+      <div class="card-body" style="padding:0">
+        {% for p in proyectos %}
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="font-weight:600;font-size:13px">{{ p.Nombre }}</div>
+          <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center">
+            <span class="badge {% if p.Estatus == 'En progreso' %}badge-blue
+                               {% elif p.Estatus == 'Completado' %}badge-green
+                               {% elif p.Estatus == 'Pausado' %}badge-yellow
+                               {% else %}badge-red{% endif %}">
+              {{ p.Estatus }}
+            </span>
+            {% if p.RolEnProyecto %}
+            <span style="font-size:11px;color:var(--muted)">{{ p.RolEnProyecto }}</span>
+            {% endif %}
+            <span style="font-size:11px;color:var(--muted);margin-left:auto">
+              {{ p.TotalActivos }} activos
+            </span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">
+            {{ p.FechaInicio.strftime('%d/%m/%Y') if p.FechaInicio else '' }}
+            {% if p.FechaTermino %} → {{ p.FechaTermino.strftime('%d/%m/%Y') }}{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:24px">
+        <p style="color:var(--muted);font-size:13px">Sin proyectos asignados.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<style>
+.stat-box { display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:14px 8px;border-radius:10px;border:1px solid var(--border);background:var(--card); }
+.stat-box .sn { font-size:20px;font-weight:800;color:var(--c,var(--text)); }
+.stat-box .sl { font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
+</style>
+{% endblock %}

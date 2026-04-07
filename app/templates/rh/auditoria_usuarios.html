@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Auditoría — Usuarios{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Usuarios del Sistema</h1>
+    <p class="page-sub">Listado completo de usuarios registrados en ActivosApp</p>
+  </div>
+  <a href="{{ url_for('rh.auditoria') }}" class="btn btn-outline">
+    📦 Ver Resguardo
+  </a>
+</div>
+
+{# ── Filtros ── #}
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('rh.auditoria_usuarios') }}"
+          style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div>
+        <label class="form-label">Rol</label>
+        <select name="rol" class="form-control" onchange="this.form.submit()">
+          <option value="">Todos los roles</option>
+          {% for r in roles %}
+          <option value="{{ r.NombreRol }}" {% if rol_filter == r.NombreRol %}selected{% endif %}>
+            {{ r.NombreRol }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Estatus</label>
+        <select name="estatus" class="form-control" onchange="this.form.submit()">
+          <option value="1" {% if estatus_filter == '1' %}selected{% endif %}>Activos</option>
+          <option value="0" {% if estatus_filter == '0' %}selected{% endif %}>Inactivos</option>
+          <option value=""  {% if estatus_filter == '' %}selected{% endif %}>Todos</option>
+        </select>
+      </div>
+      {% if rol_filter %}
+      <a href="{{ url_for('rh.auditoria_usuarios') }}" class="btn btn-outline">✕ Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{# ── Tabla ── #}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">
+      {% if rol_filter %}{{ rol_filter }}{% else %}Todos los usuarios{% endif %}
+      {% if estatus_filter == '1' %} — Activos{% elif estatus_filter == '0' %} — Inactivos{% endif %}
+    </h3>
+    <span class="badge">{{ usuarios|length }}</span>
+  </div>
+  {% if usuarios %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Nombre completo</th>
+          <th>Correo</th>
+          <th>Teléfono</th>
+          <th>Rol</th>
+          <th>Estatus</th>
+          <th>Creado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td><code>{{ u.NombreUsuario }}</code></td>
+          <td style="font-weight:600">{{ u.NombreCompleto }}</td>
+          <td style="font-size:13px">{{ u.Correo }}</td>
+          <td style="font-size:13px;color:var(--muted)">{{ u.NumeroTelefono or '—' }}</td>
+          <td>
+            {% set rol_colors = {
+              'Administrador':    'badge-red',
+              'Recursos Humanos': 'badge-purple',
+              'Administrativo':   'badge-yellow',
+              'Almacenista':      'badge-green',
+              'Usuario TI':       'badge-blue',
+              'Supervisor':       'badge-orange',
+            } %}
+            <span class="badge {{ rol_colors.get(u.Rol, '') }}">{{ u.Rol }}</span>
+          </td>
+          <td>
+            {% if u.Estatus %}
+              <span class="badge badge-green">● Activo</span>
+            {% else %}
+              <span class="badge badge-red">● Inactivo</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted)">
+            {{ u.CreadoEn.strftime('%d/%m/%Y') if u.CreadoEn else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:48px">👥</div>
+    <p>No se encontraron usuarios con estos filtros.</p>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
+.badge-orange { background:#ffedd5; color:#c2410c; }
+</style>
+{% endblock %}

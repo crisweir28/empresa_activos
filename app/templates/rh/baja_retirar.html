@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Retiro de Activos — Baja #{{ baja.IdBaja }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Retiro de Activos</h1>
+    <p class="page-sub">Baja #{{ baja.IdBaja }} — {{ baja.Empleado }}</p>
+  </div>
+  <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+{# ── Info del empleado ── #}
+<div class="card mb-4" style="border-left:4px solid #8b5cf6">
+  <div class="card-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <div class="avatar" style="width:48px;height:48px;font-size:20px;background:#8b5cf6;
+         color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      {{ baja.Empleado[0]|upper }}
+    </div>
+    <div style="flex:1">
+      <div style="font-size:17px;font-weight:700">{{ baja.Empleado }}</div>
+      <div style="font-size:12px;color:var(--muted)">{{ baja.RolEmpleado }} · {{ baja.CorreoEmpleado }}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;color:var(--muted)">Fecha de baja</div>
+      <div style="font-weight:700">{{ baja.FechaBaja.strftime('%d/%m/%Y') if baja.FechaBaja else 'No definida' }}</div>
+    </div>
+    {% if baja.AutorizadoPorNombre %}
+    <div style="text-align:right">
+      <div style="font-size:12px;color:var(--muted)">Autorizado por</div>
+      <div style="font-weight:700;font-size:13px">{{ baja.AutorizadoPorNombre }}</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if activos %}
+<form method="POST" action="{{ url_for('rh.baja_retirar', id_baja=baja.IdBaja) }}"
+      id="form-retiro">
+
+  <div class="card mb-4">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <h3 class="card-title">📦 Activos a retirar</h3>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn btn-sm btn-outline" onclick="toggleAll(true)">Seleccionar todo</button>
+        <button type="button" class="btn btn-sm btn-outline" onclick="toggleAll(false)">Quitar todo</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:40px">
+              <input type="checkbox" id="chk-all" onchange="toggleAll(this.checked)">
+            </th>
+            <th>Tipo</th>
+            <th>Activo</th>
+            <th>N° Serie</th>
+            <th>Estado actual</th>
+            <th>Condición al retirar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in activos %}
+          {% set key = a.TipoActivo ~ ':' ~ a.IdActivo ~ ':' ~ a.NombreActivo %}
+          <tr>
+            <td>
+              <input type="checkbox" name="activos[]" value="{{ key }}"
+                     class="chk-activo" checked>
+            </td>
+            <td>
+              {% if a.TipoActivo == 'electronico' %}
+                <span class="badge badge-blue">💻 TI</span>
+              {% elif a.TipoActivo == 'herramienta' %}
+                <span class="badge badge-green">🔧 Herramienta</span>
+              {% else %}
+                <span class="badge badge-yellow">📦 General</span>
+              {% endif %}
+            </td>
+            <td style="font-weight:600">{{ a.NombreActivo }}</td>
+            <td><code>{{ a.NumeroSerie or '—' }}</code></td>
+            <td>
+              <span class="badge {% if a.Estado in ('activo','asignado') %}badge-green
+                                 {% elif a.Estado == 'mantenimiento' %}badge-yellow
+                                 {% else %}badge-red{% endif %}">
+                {{ a.Estado }}
+              </span>
+            </td>
+            <td>
+              <select name="condicion_{{ a.TipoActivo }}_{{ a.IdActivo }}"
+                      class="form-control form-control-sm">
+                <option value="bueno">✅ Bueno</option>
+                <option value="regular">⚠️ Regular</option>
+                <option value="dañado">❌ Dañado</option>
+                <option value="perdido">🔍 Perdido</option>
+              </select>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ── Alerta confirmación ── #}
+  <div class="alert-warning mb-4" style="background:#fef9c3;border:1px solid #fbbf24;
+       border-radius:10px;padding:16px;display:flex;gap:12px;align-items:flex-start">
+    <span style="font-size:20px;flex-shrink:0">⚠️</span>
+    <div>
+      <div style="font-weight:700;color:#a16207">Acción irreversible</div>
+      <div style="font-size:13px;color:#a16207">
+        Al completar el retiro, el usuario <strong>{{ baja.Empleado }}</strong> será
+        desactivado del sistema y los activos seleccionados regresarán al inventario.
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;justify-content:flex-end">
+    <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-outline">Cancelar</a>
+    <button type="submit" class="btn btn-primary" onclick="return confirmarRetiro()">
+      📦 Completar Retiro y Dar de Baja
+    </button>
+  </div>
+</form>
+
+{% else %}
+<div class="card">
+  <div class="card-body">
+    <div class="empty-state">
+      <div style="font-size:48px">📭</div>
+      <p>Este empleado no tiene activos asignados.</p>
+      <p style="font-size:13px;color:var(--muted)">Puedes completar la baja sin retirar activos.</p>
+    </div>
+    <form method="POST" action="{{ url_for('rh.baja_retirar', id_baja=baja.IdBaja) }}"
+          style="display:flex;justify-content:center;margin-top:16px">
+      <button type="submit" class="btn btn-primary"
+              onclick="return confirm('¿Completar la baja sin retirar activos?')">
+        ✅ Completar Baja
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+.form-control-sm { padding:4px 8px; font-size:13px; }
+</style>
+
+{% block scripts %}
+<script>
+function toggleAll(val) {
+  document.querySelectorAll('.chk-activo').forEach(c => c.checked = val);
+  document.getElementById('chk-all').checked = val;
+}
+function confirmarRetiro() {
+  const seleccionados = document.querySelectorAll('.chk-activo:checked').length;
+  return confirm(`¿Confirmar retiro de ${seleccionados} activo(s) y completar la baja del empleado?`);
+}
+</script>
+{% endblock %}
+{% endblock %}

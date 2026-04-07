@@ -191,6 +191,27 @@
     </div>
     {% endif %}
 
+  {% if current_user.rol in ('admin', 'rh') and tiene_permiso('Recursos Humanos') %}
+    <div class="sb-group">
+    <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}"
+          onclick="toggleGroup(this)">
+    Recursos Humanos <span class="sb-group-arrow">▾</span>
+    </button>
+  <div class="sb-group-body {% if request.blueprint != 'rh' %}collapsed{% endif %}"
+       style="max-height:300px">
+    <a class="nav-link {% if request.endpoint == 'rh.activos_usuario' %}active{% endif %}"
+       href="{{ url_for('rh.activos_usuario') }}"><span class="ic">👤</span> Activos por Empleado</a>
+    <a class="nav-link {% if request.endpoint == 'rh.activos_area' %}active{% endif %}"
+       href="{{ url_for('rh.activos_area') }}"><span class="ic">🏢</span> Activos por Área</a>
+    <a class="nav-link {% if request.endpoint == 'rh.bajas_lista' %}active{% endif %}"
+       href="{{ url_for('rh.bajas_lista') }}"><span class="ic">📋</span> Procesos de Baja</a>
+    <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
+       href="{{ url_for('rh.auditoria') }}"><span class="ic">🔍</span> Auditoría</a>
+    <a class="nav-link ..." href="{{ url_for('rh.reporte_consolidado') }}"><span class="ic">📊</span> Reporte consolidado</a>
+  </div>
+</div>
+{% endif %}
+
   </nav>
 
   <div class="sb-footer" style="flex-shrink:0">

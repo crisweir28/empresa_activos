@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Procesos de Baja{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Validación de Procesos de Baja</h1>
+    <p class="page-sub">Gestiona el proceso de baja de empleados y retiro de activos</p>
+  </div>
+  {% if puede_crear %}
+  <a href="{{ url_for('rh.baja_nueva') }}" class="btn btn-primary">
+    + Nuevo Aviso de Baja
+  </a>
+  {% endif %}
+</div>
+
+{# ── Tarjetas de conteo ── #}
+<div class="stats-grid mb-4" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">
+  {% set filtros = [
+    ('', conteos.total,      '📋', 'Todos',       '#6b7280'),
+    ('aviso',      conteos.aviso,      '🔔', 'Aviso',       '#f59e0b'),
+    ('proceso',    conteos.proceso,    '⚙️',  'En proceso',  '#3b82f6'),
+    ('autorizado', conteos.autorizado, '✅', 'Autorizados', '#8b5cf6'),
+    ('completado', conteos.completado, '🎯', 'Completados', '#16a34a'),
+    ('cancelado',  conteos.cancelado,  '✕',  'Cancelados',  '#ef4444'),
+  ] %}
+  {% for val, num, ico, lbl, color in filtros %}
+  <a href="{{ url_for('rh.bajas_lista') }}{% if val %}?estatus={{ val }}{% endif %}"
+     class="stat-card {% if estatus_filter == val %}stat-card-active{% endif %}"
+     style="--c:{{ color }}">
+    <span style="font-size:22px">{{ ico }}</span>
+    <span class="stat-num">{{ num or 0 }}</span>
+    <span class="stat-lbl">{{ lbl }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+{# ── Tabla de bajas ── #}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">
+      {% if estatus_filter %}Bajas: {{ estatus_filter }}{% else %}Todos los procesos{% endif %}
+    </h3>
+  </div>
+  {% if bajas %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Empleado</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>F. Aviso</th>
+          <th>F. Baja</th>
+          <th>Solicitado por</th>
+          <th>Activos retirados</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bajas %}
+        <tr>
+          <td style="color:var(--muted);font-size:12px">#{{ b.IdBaja }}</td>
+          <td>
+            <div style="font-weight:600">{{ b.Empleado }}</div>
+            <div style="font-size:11px;color:var(--muted)">{{ b.CorreoEmpleado }}</div>
+          </td>
+          <td><span class="badge">{{ b.RolEmpleado }}</span></td>
+          <td>
+            {% set colores = {
+              'aviso':      ('badge-yellow', '🔔'),
+              'proceso':    ('badge-blue',   '⚙️'),
+              'autorizado': ('badge-purple', '✅'),
+              'completado': ('badge-green',  '🎯'),
+              'cancelado':  ('badge-red',    '✕'),
+            } %}
+            {% set cls, ico = colores.get(b.Estatus, ('', '?')) %}
+            <span class="badge {{ cls }}">{{ ico }} {{ b.Estatus|capitalize }}</span>
+          </td>
+          <td>{{ b.FechaAviso.strftime('%d/%m/%Y') if b.FechaAviso else '—' }}</td>
+          <td>{{ b.FechaBaja.strftime('%d/%m/%Y') if b.FechaBaja else '—' }}</td>
+          <td style="font-size:13px">{{ b.SolicitadoPorNombre or '—' }}</td>
+          <td style="text-align:center">
+            <span class="badge {% if b.TotalActivosRetirados > 0 %}badge-green{% endif %}">
+              {{ b.TotalActivosRetirados }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+
+              {# Avanzar estado #}
+              {% if b.Estatus in ('aviso', 'proceso') %}
+              <form method="POST" action="{{ url_for('rh.baja_avanzar', id_baja=b.IdBaja) }}"
+                    onsubmit="return confirm('¿Avanzar el estado de este proceso?')">
+                <button type="submit" class="btn btn-sm btn-primary" title="Avanzar">
+                  {% if b.Estatus == 'aviso' %}▶ Iniciar{% else %}✅ Autorizar{% endif %}
+                </button>
+              </form>
+              {% endif %}
+
+              {# Retirar activos #}
+              {% if b.Estatus == 'autorizado' %}
+              <a href="{{ url_for('rh.baja_retirar', id_baja=b.IdBaja) }}"
+                 class="btn btn-sm btn-outline" title="Retirar activos">
+                📦 Retirar
+              </a>
+              {% endif %}
+
+              {# Cancelar #}
+              {% if b.Estatus not in ('completado', 'cancelado') %}
+              <form method="POST" action="{{ url_for('rh.baja_cancelar', id_baja=b.IdBaja) }}"
+                    onsubmit="return confirm('¿Cancelar este proceso de baja?')">
+                <button type="submit" class="btn btn-sm btn-danger" title="Cancelar">✕</button>
+              </form>
+              {% endif %}
+
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:48px">📋</div>
+    <p>No hay procesos de baja registrados.</p>
+    {% if puede_crear %}
+    <a href="{{ url_for('rh.baja_nueva') }}" class="btn btn-primary mt-2">+ Nuevo Aviso</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.stat-card {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; padding:16px 8px; border-radius:10px; border:1px solid var(--border);
+  background:var(--card); text-decoration:none; transition:.15s;
+  cursor:pointer;
+}
+.stat-card:hover { border-color:var(--c, var(--accent)); }
+.stat-card-active { border-color:var(--c, var(--accent)); background:color-mix(in srgb, var(--c, var(--accent)) 8%, transparent); }
+.stat-card .stat-num { font-size:24px; font-weight:800; color:var(--c, var(--text)); }
+.stat-card .stat-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+.btn-danger   { background:#ef4444; color:#fff; border-color:#ef4444; }
+.btn-danger:hover { background:#dc2626; }
+.btn-sm { padding:4px 10px; font-size:12px; }
+</style>
+{% endblock %}

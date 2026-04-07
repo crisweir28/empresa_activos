@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Activos por Empleado{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Activos por Empleado</h1>
+    <p class="page-sub">Consulta los activos asignados a cada empleado</p>
+  </div>
+  <a href="{{ url_for('rh.activos_area') }}" class="btn btn-outline">
+    🏢 Ver por Área
+  </a>
+</div>
+
+{# ── Selector de empleado ── #}
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('rh.activos_usuario') }}" class="flex-row gap-3" style="display:flex;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <label class="form-label">Seleccionar Empleado</label>
+        <select name="usuario_id" class="form-control" onchange="this.form.submit()">
+          <option value="">— Selecciona un empleado —</option>
+          {% for u in usuarios %}
+          <option value="{{ u.IdUsuario }}" {% if uid == u.IdUsuario %}selected{% endif %}>
+            {{ u.NombreCompleto }} — {{ u.Rol }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if uid %}
+      <a href="{{ url_for('rh.activos_usuario') }}" class="btn btn-outline">✕ Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% if usuario_sel %}
+{# ── Info del empleado ── #}
+<div class="card mb-4" style="border-left:4px solid var(--accent)">
+  <div class="card-body" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+    <div class="avatar" style="width:52px;height:52px;font-size:22px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      {{ usuario_sel.NombreCompleto[0]|upper }}
+    </div>
+    <div style="flex:1">
+      <div style="font-size:18px;font-weight:700;color:var(--text)">{{ usuario_sel.NombreCompleto }}</div>
+      <div style="color:var(--muted);font-size:13px">{{ usuario_sel.Rol }} · {{ usuario_sel.Correo }}</div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div class="stat-mini">
+        <span class="stat-num">{{ resumen.total }}</span>
+        <span class="stat-lbl">Total</span>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-num" style="color:#2563eb">{{ resumen.electronico }}</span>
+        <span class="stat-lbl">TI</span>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-num" style="color:#16a34a">{{ resumen.herramienta }}</span>
+        <span class="stat-lbl">Herramientas</span>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-num" style="color:#d97706">{{ resumen.general }}</span>
+        <span class="stat-lbl">Generales</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Tabla de activos ── #}
+{% if activos %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Activos asignados</h3>
+    <span class="badge">{{ activos|length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Condición</th>
+          <th>Valor</th>
+          <th>F. Adquisición</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activos %}
+        <tr>
+          <td>
+            {% if a.TipoActivo == 'electronico' %}
+              <span class="badge badge-blue">💻 TI</span>
+            {% elif a.TipoActivo == 'herramienta' %}
+              <span class="badge badge-green">🔧 Herramienta</span>
+            {% else %}
+              <span class="badge badge-yellow">📦 General</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:500">{{ a.NombreActivo }}</td>
+          <td><code>{{ a.NumeroSerie or '—' }}</code></td>
+          <td>
+            <span class="badge {% if a.Estado in ('activo','asignado','disponible') %}badge-green
+                               {% elif a.Estado == 'mantenimiento' %}badge-yellow
+                               {% else %}badge-red{% endif %}">
+              {{ a.Estado }}
+            </span>
+          </td>
+          <td>{{ a.Condicion or '—' }}</td>
+          <td>${{ "{:,.0f}".format(a.Valor or 0) }}</td>
+          <td>{{ a.FechaAdquisicion.strftime('%d/%m/%Y') if a.FechaAdquisicion else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div style="font-size:48px">📭</div>
+  <p>Este empleado no tiene activos asignados.</p>
+</div>
+{% endif %}
+
+{% elif uid %}
+<div class="empty-state">
+  <div style="font-size:48px">❓</div>
+  <p>Empleado no encontrado.</p>
+</div>
+{% else %}
+<div class="empty-state" style="padding:48px">
+  <div style="font-size:48px">👆</div>
+  <p style="color:var(--muted)">Selecciona un empleado para ver sus activos.</p>
+</div>
+{% endif %}
+
+<style>
+.stat-mini { text-align:center; }
+.stat-num  { display:block; font-size:22px; font-weight:800; color:var(--text); }
+.stat-lbl  { display:block; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+</style>
+{% endblock %}

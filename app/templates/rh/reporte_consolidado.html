@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Reporte Consolidado{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">📊 Reporte Consolidado</h1>
+    <p class="page-sub">Equipo → Usuario → Área → Proyecto</p>
+  </div>
+  <a href="{{ url_for('rh.activos_usuario') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+{# ── Stats ── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+  {% for num, lbl, ico, color in [
+    (stats.total,        'Total equipos',    '💻', '#6b7280'),
+    (stats.con_usuario,  'Con usuario',      '👤', '#2563eb'),
+    (stats.con_proyecto, 'En proyecto',      '📋', '#8b5cf6'),
+    (stats.sin_asignar,  'Sin asignar',      '📦', '#d97706'),
+  ] %}
+  <div class="stat-box" style="--c:{{ color }}">
+    <span style="font-size:20px">{{ ico }}</span>
+    <span class="sn">{{ num }}</span>
+    <span class="sl">{{ lbl }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Filtros ── #}
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('rh.reporte_consolidado') }}"
+          style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+
+      <div>
+        <label class="form-label">Tipo equipo</label>
+        <select name="tipo" class="form-control" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          {% for t in ['laptop','desktop','monitor','red','otro'] %}
+          <option value="{{ t }}" {% if tipo_filter == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Proyecto</label>
+        <select name="proyecto_id" class="form-control" onchange="this.form.submit()">
+          <option value="">Todos los proyectos</option>
+          {% for p in proyectos %}
+          <option value="{{ p.IdProyecto }}" {% if proyecto_filter == p.IdProyecto %}selected{% endif %}>
+            {{ p.Nombre }} ({{ p.Estatus }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Área</label>
+        <select name="depto_id" class="form-control" onchange="this.form.submit()">
+          <option value="">Todas las áreas</option>
+          {% for d in departamentos %}
+          <option value="{{ d.id }}" {% if depto_filter == d.id %}selected{% endif %}>{{ d.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;padding-bottom:2px">
+        <input type="checkbox" id="sin_proyecto" name="sin_proyecto" value="1"
+               {% if sin_proyecto %}checked{% endif %} onchange="this.form.submit()">
+        <label for="sin_proyecto" class="form-label" style="margin:0;cursor:pointer">Sin proyecto</label>
+      </div>
+
+      {% if tipo_filter or proyecto_filter or depto_filter or sin_proyecto %}
+      <a href="{{ url_for('rh.reporte_consolidado') }}" class="btn btn-outline">✕ Limpiar</a>
+      {% endif %}
+
+    </form>
+  </div>
+</div>
+
+{# ── Tabla ── #}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Equipos</h3>
+    <span class="badge">{{ equipos|length }}</span>
+  </div>
+  {% if equipos %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Equipo</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Usuario asignado</th>
+          <th>Rol</th>
+          <th>Área</th>
+          <th>Proyecto (usuario)</th>
+          <th>Proyecto (equipo)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in equipos %}
+        <tr>
+          <td>
+            <div style="font-weight:600">{{ e.NombreEquipo }}</div>
+            <div style="font-size:11px;color:var(--muted)">
+              {{ e.Marca or '' }} {{ e.Modelo or '' }}
+              {% if e.NumeroSerie %}<code style="margin-left:4px">{{ e.NumeroSerie }}</code>{% endif %}
+            </div>
+          </td>
+          <td>
+            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+            <span style="color:var(--muted);font-size:13px">{{ iconos.get(e.TipoEquipo,'📦') }} {{ e.TipoEquipo }}</span>
+          </td>
+          <td>
+            <span class="badge {% if e.EstadoEquipo in ('asignado',) %}badge-blue
+                               {% elif e.EstadoEquipo == 'almacen' %}badge-green
+                               {% elif e.EstadoEquipo == 'mantenimiento' %}badge-yellow
+                               {% else %}badge-red{% endif %}">
+              {{ e.EstadoEquipo }}
+            </span>
+          </td>
+          <td>
+            {% if e.NombreUsuario %}
+            <a href="{{ url_for('rh.empleado_dashboard', uid=e.IdUsuario) }}"
+               style="color:var(--accent);font-weight:500;font-size:13px">
+              {{ e.NombreUsuario }}
+            </a>
+            <div style="font-size:11px;color:var(--muted)">{{ e.CorreoUsuario }}</div>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px">Sin asignar</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted)">{{ e.NombreRol or '—' }}</td>
+          <td style="font-size:12px;color:var(--muted)">{{ e.NombreDepartamento or '—' }}</td>
+          <td>
+            {% if e.NombreProyecto %}
+            <span class="badge badge-purple" title="{{ e.EstatusProyecto }}">
+              📋 {{ e.NombreProyecto|truncate(22) }}
+            </span>
+            <div style="font-size:11px;color:var(--muted)">{{ e.RolEnProyecto or '' }}</div>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if e.NombreProyectoEquipo %}
+            <span class="badge badge-blue" title="Asignado directamente al proyecto">
+              🔗 {{ e.NombreProyectoEquipo|truncate(22) }}
+            </span>
+            <div style="font-size:11px;color:var(--muted)">
+              Desde {{ e.FechaAsignacionProyecto.strftime('%d/%m/%Y') if e.FechaAsignacionProyecto else '' }}
+            </div>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:48px">📭</div>
+    <p>No hay equipos con los filtros seleccionados.</p>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.stat-box { display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:14px 8px;border-radius:10px;border:1px solid var(--border);background:var(--card); }
+.stat-box .sn { font-size:24px;font-weight:800;color:var(--c,var(--text)); }
+.stat-box .sl { font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+.badge-purple { background:#ede9fe; color:#6d28d9; }
+</style>
+{% endblock %}

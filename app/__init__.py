@@ -14,8 +14,8 @@ def create_app(env="default"):
     socketio.init_app(app, cors_allowed_origins='*')
 
     # ── Blueprints ────────────────────────────────────────────────────────────
-    from .routes.auth          import auth_bp
-    from .routes.activos       import activos_bp
+    from .routes.auth           import auth_bp
+    from .routes.activos        import activos_bp
     from .routes.departamentos  import departamentos_bp
     from .routes.administrativo import administrativo_bp
     from .routes.almacenista    import almacenista_bp
@@ -23,9 +23,11 @@ def create_app(env="default"):
     from .routes.usuarios       import usuarios_bp
     from .routes.permisos       import permisos_bp
     from .routes.proyectos      import proyectos_bp
+    from .routes.rh             import rh_bp
+    
 
     app.register_blueprint(auth_bp)
-    app.register_blueprint(activos_bp,       url_prefix="/activos")
+    app.register_blueprint(activos_bp,        url_prefix="/activos")
     app.register_blueprint(departamentos_bp,  url_prefix="/departamentos")
     app.register_blueprint(administrativo_bp, url_prefix="/administrativo")
     app.register_blueprint(almacenista_bp,    url_prefix="/almacen")
@@ -33,6 +35,7 @@ def create_app(env="default"):
     app.register_blueprint(usuarios_bp,       url_prefix="/usuarios")
     app.register_blueprint(permisos_bp,       url_prefix="/permisos")
     app.register_blueprint(proyectos_bp,      url_prefix="/proyectos")
+    app.register_blueprint(rh_bp,             url_prefix="/rh")
 
     # ── Socket events ─────────────────────────────────────────────────────────
     from . import socket_events  # noqa

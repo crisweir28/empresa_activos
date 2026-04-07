@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Activos por Área{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Activos por Área</h1>
+    <p class="page-sub">Consulta los activos asignados por departamento</p>
+  </div>
+  <a href="{{ url_for('rh.activos_usuario') }}" class="btn btn-outline">
+    👤 Ver por Empleado
+  </a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('rh.activos_area') }}" style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <label class="form-label">Departamento / Área</label>
+        <select name="depto_id" class="form-control" onchange="this.form.submit()">
+          <option value="">— Selecciona un área —</option>
+          {% for d in departamentos %}
+          <option value="{{ d.id }}" {% if did == d.id %}selected{% endif %}>{{ d.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if did %}
+      <a href="{{ url_for('rh.activos_area') }}" class="btn btn-outline">✕ Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{% if depto_sel %}
+<div class="card mb-4" style="border-left:4px solid var(--accent)">
+  <div class="card-body" style="display:flex;align-items:center;gap:16px">
+    <div style="font-size:36px">🏢</div>
+    <div>
+      <div style="font-size:18px;font-weight:700">{{ depto_sel.nombre }}</div>
+      <div style="color:var(--muted);font-size:13px">{{ activos|length }} activo(s) registrado(s)</div>
+    </div>
+  </div>
+</div>
+
+{% if activos %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Inventario del área</h3>
+    <span class="badge">{{ activos|length }}</span>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Valor</th>
+          <th>Asignado a</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activos %}
+        <tr>
+          <td>
+            {% if a.TipoActivo == 'electronico' %}
+              <span class="badge badge-blue">💻 TI</span>
+            {% else %}
+              <span class="badge badge-yellow">📦 General</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:500">{{ a.NombreActivo }}</td>
+          <td><code>{{ a.NumeroSerie or '—' }}</code></td>
+          <td>
+            <span class="badge {% if a.Estado in ('activo','asignado') %}badge-green
+                               {% elif a.Estado == 'mantenimiento' %}badge-yellow
+                               {% else %}badge-red{% endif %}">
+              {{ a.Estado }}
+            </span>
+          </td>
+          <td>${{ "{:,.0f}".format(a.Valor or 0) }}</td>
+          <td>{{ a.AsignadoA or '<span style="color:var(--muted)">Sin asignar</span>' | safe }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div style="font-size:48px">📭</div>
+  <p>No hay activos registrados en esta área.</p>
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state" style="padding:48px">
+  <div style="font-size:48px">👆</div>
+  <p style="color:var(--muted)">Selecciona un departamento para ver sus activos.</p>
+</div>
+{% endif %}
+
+<style>
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+</style>
+{% endblock %}

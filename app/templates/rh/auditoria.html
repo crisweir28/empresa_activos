@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Auditoría — Resguardo{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Acceso a Auditoría</h1>
+    <p class="page-sub">Activos en resguardo y estado del inventario</p>
+  </div>
+  <a href="{{ url_for('rh.auditoria_usuarios') }}" class="btn btn-outline">
+    👥 Ver Usuarios
+  </a>
+</div>
+
+{# ── Stats ── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px">
+  {% for num, lbl, ico, color in [
+    (stats.total,      'Total activos',    '📦', '#6b7280'),
+    (stats.asignados,  'Asignados',        '👤', '#2563eb'),
+    (stats.en_almacen, 'En almacén',       '🏭', '#d97706'),
+    (stats.bueno,      'Buen estado',      '✅', '#16a34a'),
+    (stats.regular,    'Estado regular',   '⚠️',  '#f59e0b'),
+    (stats.danado,     'Dañados',          '❌', '#ef4444'),
+  ] %}
+  <div class="stat-box" style="--c:{{ color }}">
+    <span style="font-size:22px">{{ ico }}</span>
+    <span class="sn">{{ num or 0 }}</span>
+    <span class="sl">{{ lbl }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Filtros ── #}
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('rh.auditoria') }}"
+          style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div>
+        <label class="form-label">Tipo de activo</label>
+        <select name="tipo" class="form-control" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          <option value="electronico" {% if tipo_filter=='electronico' %}selected{% endif %}>💻 TI / Electrónico</option>
+          <option value="general"     {% if tipo_filter=='general' %}selected{% endif %}>📦 General</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Condición</label>
+        <select name="condicion" class="form-control" onchange="this.form.submit()">
+          <option value="">Todas</option>
+          <option value="bueno"   {% if cond_filter=='bueno' %}selected{% endif %}>✅ Bueno</option>
+          <option value="regular" {% if cond_filter=='regular' %}selected{% endif %}>⚠️ Regular</option>
+          <option value="dañado"  {% if cond_filter=='dañado' %}selected{% endif %}>❌ Dañado</option>
+        </select>
+      </div>
+      {% if tipo_filter or cond_filter %}
+      <a href="{{ url_for('rh.auditoria') }}" class="btn btn-outline">✕ Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{# ── Tabla ── #}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Inventario en resguardo</h3>
+    <span class="badge">{{ activos|length }}</span>
+  </div>
+  {% if activos %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Condición</th>
+          <th>Valor</th>
+          <th>Asignado a</th>
+          <th>Ubicación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activos %}
+        <tr>
+          <td>
+            {% if a.TipoActivo == 'electronico' %}
+              <span class="badge badge-blue">💻 TI</span>
+            {% else %}
+              <span class="badge badge-yellow">📦 General</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:500">{{ a.Nombre }}</td>
+          <td><code>{{ a.NumeroSerie or '—' }}</code></td>
+          <td>
+            <span class="badge {% if a.Estado in ('activo','asignado','almacen') %}badge-green
+                               {% elif a.Estado == 'mantenimiento' %}badge-yellow
+                               {% else %}badge-red{% endif %}">
+              {{ a.Estado }}
+            </span>
+          </td>
+          <td>
+            {% if a.Condicion == 'bueno' %}<span class="badge badge-green">✅ Bueno</span>
+            {% elif a.Condicion == 'regular' %}<span class="badge badge-yellow">⚠️ Regular</span>
+            {% elif a.Condicion == 'dañado' %}<span class="badge badge-red">❌ Dañado</span>
+            {% else %}<span style="color:var(--muted)">—</span>{% endif %}
+          </td>
+          <td>${{ "{:,.0f}".format(a.Valor or 0) }}</td>
+          <td>{{ a.AsignadoA or '<span style="color:var(--muted)">Sin asignar</span>' | safe }}</td>
+          <td style="font-size:12px;color:var(--muted)">{{ a.Ubicacion or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:48px">📭</div>
+    <p>No hay activos con los filtros seleccionados.</p>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.stat-box { display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:16px 8px;border-radius:10px;border:1px solid var(--border);background:var(--card); }
+.stat-box .sn { font-size:26px;font-weight:800;color:var(--c,var(--text)); }
+.stat-box .sl { font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#15803d; }
+.badge-yellow { background:#fef9c3; color:#a16207; }
+.badge-red    { background:#fee2e2; color:#b91c1c; }
+</style>
+{% endblock %}

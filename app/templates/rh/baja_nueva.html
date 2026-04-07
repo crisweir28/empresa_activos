@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Aviso de Baja{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Nuevo Aviso de Baja</h1>
+    <p class="page-sub">Registra el aviso de baja de un empleado</p>
+  </div>
+  <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+<div style="max-width:600px;margin:0 auto">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">🔔 Datos del aviso</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('rh.baja_nueva') }}">
+
+        <div class="form-group mb-3">
+          <label class="form-label">Empleado <span style="color:var(--accent)">*</span></label>
+          <select name="usuario_id" class="form-control" required id="sel-usuario"
+                  onchange="cargarActivos(this.value)">
+            <option value="">— Selecciona un empleado —</option>
+            {% for u in usuarios %}
+            <option value="{{ u.IdUsuario }}">{{ u.NombreCompleto }} — {{ u.Rol }}</option>
+            {% endfor %}
+          </select>
+          <small class="text-muted">Solo aparecen empleados sin proceso de baja activo.</small>
+        </div>
+
+        {# Preview de activos del empleado #}
+        <div id="preview-activos" style="display:none;margin-bottom:16px">
+          <div class="form-label">Activos que serán retirados al completar la baja</div>
+          <div id="lista-activos" style="border:1px solid var(--border);border-radius:8px;padding:12px;
+               background:var(--surface);font-size:13px;max-height:200px;overflow-y:auto">
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label class="form-label">Fecha de Aviso <span style="color:var(--accent)">*</span></label>
+          <input type="date" name="fecha_aviso" class="form-control"
+                 value="{{ now().strftime('%Y-%m-%d') if now else '' }}"
+                 max="{{ now().strftime('%Y-%m-%d') if now else '' }}" required>
+        </div>
+
+        <div class="form-group mb-4">
+          <label class="form-label">Motivo de Baja</label>
+          <textarea name="motivo" class="form-control" rows="3"
+                    placeholder="Describe el motivo de la baja (renuncia, término de contrato, etc.)"></textarea>
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-outline">Cancelar</a>
+          <button type="submit" class="btn btn-primary">🔔 Registrar Aviso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Flujo visual del proceso ── #}
+  <div class="card mt-4">
+    <div class="card-body">
+      <div class="form-label mb-3">Flujo del proceso de baja</div>
+      <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap">
+        {% for paso, desc in [
+          ('🔔 Aviso',    'Se registra el aviso'),
+          ('⚙️ Proceso',  'Se inicia la gestión'),
+          ('✅ Autorizar','RH autoriza la baja'),
+          ('📦 Retirar',  'Se recuperan los activos'),
+        ] %}
+        <div style="flex:1;min-width:100px;text-align:center;padding:8px 4px">
+          <div style="font-weight:700;font-size:13px">{{ paso }}</div>
+          <div style="font-size:11px;color:var(--muted)">{{ desc }}</div>
+        </div>
+        {% if not loop.last %}
+        <div style="color:var(--muted);font-size:18px;flex-shrink:0">→</div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+function cargarActivos(uid) {
+  const preview = document.getElementById('preview-activos');
+  const lista   = document.getElementById('lista-activos');
+
+  if (!uid) { preview.style.display = 'none'; return; }
+
+  fetch(`/rh/api/usuario/${uid}/activos`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.length) {
+        lista.innerHTML = '<span style="color:var(--muted)">Este empleado no tiene activos asignados.</span>';
+      } else {
+        const iconos = { electronico:'💻', herramienta:'🔧', general:'📦' };
+        lista.innerHTML = data.map(a =>
+          `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
+            ${iconos[a.TipoActivo] || '📦'} <strong>${a.NombreActivo}</strong>
+            <span style="color:var(--muted);margin-left:8px">${a.TipoActivo}</span>
+            ${a.NumeroSerie ? `<code style="margin-left:8px">${a.NumeroSerie}</code>` : ''}
+          </div>`
+        ).join('');
+      }
+      preview.style.display = 'block';
+    })
+    .catch(() => { preview.style.display = 'none'; });
+}
+</script>
+{% endblock %}
+{% endblock %}
