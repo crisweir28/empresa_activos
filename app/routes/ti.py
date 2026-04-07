@@ -1,3 +1,4 @@
+# app/routes/ti.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import date
@@ -24,6 +25,7 @@ def _check_acceso():
 # ── Dashboard TI ──────────────────────────────────────────────
 @ti_bp.route("/")
 @login_required
+@requiere_permiso('Equipos TI')
 def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

@@ -1,4 +1,6 @@
+# app/routes/usuarios.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from ..extensions import socketio
 from flask_login import login_required, current_user
 from passlib.context import CryptContext
 from ..extensions import db
@@ -84,6 +86,7 @@ def nuevo():
     db.session.add(u)
     db.session.commit()
     flash(f"Usuario '{username}' creado correctamente.", "success")
+    socketio.emit('usuarios_actualizados', {'accion': 'nuevo'})
     return redirect(url_for("usuarios.lista"))
 
 
@@ -126,6 +129,7 @@ def editar(id):
 
     db.session.commit()
     flash(f"Usuario '{username}' actualizado.", "success")
+    socketio.emit('usuarios_actualizados', {'accion': 'editar', 'usuario_id': id})
     return redirect(url_for("usuarios.lista"))
 
 
@@ -148,6 +152,7 @@ def toggle_estatus(id):
     db.session.commit()
     accion = "activado" if u.Estatus else "desactivado"
     flash(f"Usuario '{u.NombreUsuario}' {accion}.", "success")
+    socketio.emit('usuarios_actualizados', {'accion': accion, 'usuario_id': id})
     return redirect(url_for("usuarios.lista"))
 
 

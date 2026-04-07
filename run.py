@@ -1,6 +1,7 @@
 import os
 import socket
 from app import create_app
+from app.extensions import socketio
 from app.extensions import db
 from app.models.usuario import Usuario
 from app.models.departamento import Departamento
@@ -90,4 +91,4 @@ if __name__ == "__main__":
     print(f"  🌐  Red local:   http://{ip}:5000")
     print(f"  🗄️   DB: {app.config['SQLALCHEMY_DATABASE_URI']}\n")
 
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    socketio.run(app, debug=True, port=5000, host="0.0.0.0")

@@ -1,3 +1,4 @@
+# app/routes/almacenista.py
 import os
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
 from flask_login import login_required, current_user
@@ -12,7 +13,7 @@ from ..utils.permisos import requiere_permiso
 
 almacenista_bp = Blueprint("almacenista", __name__)
 
-ROLES_ALMACEN = ("ti", "almacenista")
+ROLES_ALMACEN = ("admin", "almacenista")
 UPLOAD_FOLDER = "app/static/evidencias"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 

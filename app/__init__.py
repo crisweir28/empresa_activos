@@ -1,6 +1,6 @@
 from flask import Flask
 from .config import config
-from .extensions import db, login_manager, migrate
+from .extensions import db, login_manager, migrate, socketio
 
 
 def create_app(env="default"):
@@ -11,6 +11,7 @@ def create_app(env="default"):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    socketio.init_app(app, cors_allowed_origins='*')
 
     # ── Blueprints ────────────────────────────────────────────────────────────
     from .routes.auth          import auth_bp
@@ -21,6 +22,7 @@ def create_app(env="default"):
     from .routes.ti             import ti_bp
     from .routes.usuarios       import usuarios_bp
     from .routes.permisos       import permisos_bp
+    from .routes.proyectos      import proyectos_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(activos_bp,       url_prefix="/activos")
@@ -30,6 +32,10 @@ def create_app(env="default"):
     app.register_blueprint(ti_bp,             url_prefix="/ti")
     app.register_blueprint(usuarios_bp,       url_prefix="/usuarios")
     app.register_blueprint(permisos_bp,       url_prefix="/permisos")
+    app.register_blueprint(proyectos_bp,      url_prefix="/proyectos")
+
+    # ── Socket events ─────────────────────────────────────────────────────────
+    from . import socket_events  # noqa
 
     # ── Funciones globales Jinja2 ──────────────────────────────────────────────
     from .utils.permisos import tiene_permiso

@@ -1,3 +1,4 @@
+# app/models/usuario.py
 from flask_login import UserMixin
 from passlib.context import CryptContext
 from ..extensions import db, login_manager

@@ -1,207 +1,186 @@
+<!-- app/templates/ti/equipos.html -->
 {% extends "base.html" %}
 {% block title %}Equipos TI{% endblock %}
 
 {% block content %}
 <div class="topbar">
-    <div>
-        <div class="page-title">💻 Equipos TI</div>
-        <div class="page-sub">Registro y gestión de equipos tecnológicos</div>
-    </div>
-    <!-- Botón nuevo equipo -->
-{% if tiene_permiso('Equipos TI', 'crear') %}
-<button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
-  + Nuevo equipo
-</button>
-{% endif %}
+  <div>
+    <div class="page-title">💻 Equipos TI</div>
+    <div class="page-sub">Registro y gestión de equipos tecnológicos</div>
+  </div>
+  {% if tiene_permiso('Equipos TI', 'crear') %}
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+    + Nuevo equipo
+  </button>
+  {% endif %}
 </div>
 
-<!-- Filtros -->
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-    <a href="{{ url_for('ti.equipos') }}" class="btn-sm {% if not tipo_filtro and not estado_filtro %}active{% endif %}"
-        style="{% if not tipo_filtro and not estado_filtro %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
-    {% for t in ['laptop','desktop','monitor','red'] %}
-    <a href="{{ url_for('ti.equipos', tipo=t) }}" class="btn-sm {% if tipo_filtro==t %}active{% endif %}"
-        style="{% if tipo_filtro==t %}border-color:var(--accent);color:#a78bfa{% endif %}">
-        {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐'} %}
-        {{ iconos.get(t,'📦') }} {{ t }}
-    </a>
-    {% endfor %}
-    <span style="color:var(--border)">|</span>
-    {% for e, label in [('almacen','Almacén'),('asignado','Asignado'),('mantenimiento','Mantenimiento'),('baja','Baja')]
-    %}
-    <a href="{{ url_for('ti.equipos', estado=e) }}" class="btn-sm {% if estado_filtro==e %}active{% endif %}"
-        style="{% if estado_filtro==e %}border-color:var(--accent);color:#a78bfa{% endif %}">{{ label }}</a>
-    {% endfor %}
+  <a href="{{ url_for('ti.equipos') }}" class="btn-sm {% if not tipo_filtro and not estado_filtro %}active{% endif %}"
+     style="{% if not tipo_filtro and not estado_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">Todos</a>
+  {% for t in ['laptop','desktop','monitor','red'] %}
+  <a href="{{ url_for('ti.equipos', tipo=t) }}" class="btn-sm {% if tipo_filtro==t %}active{% endif %}"
+     style="{% if tipo_filtro==t %}border-color:var(--accent);color:var(--accent){% endif %}">
+    {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐'} %}
+    {{ iconos.get(t,'📦') }} {{ t }}
+  </a>
+  {% endfor %}
+  <span style="color:var(--border)">|</span>
+  {% for e, label in [('almacen','Almacén'),('asignado','Asignado'),('mantenimiento','Mantenimiento'),('baja','Baja')] %}
+  <a href="{{ url_for('ti.equipos', estado=e) }}" class="btn-sm {% if estado_filtro==e %}active{% endif %}"
+     style="{% if estado_filtro==e %}border-color:var(--accent);color:var(--accent){% endif %}">{{ label }}</a>
+  {% endfor %}
 </div>
 
 <div class="panel">
-    {% if equipos %}
-    <div style="overflow-x:auto">
-        <table>
-            <thead>
-                <tr>
-                    <th>Equipo</th>
-                    <th>Tipo</th>
-                    <th>N° Serie</th>
-                    <th>Estado</th>
-                    <th>Condición</th>
-                    <th>Asignado a</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for e in equipos %}
-                <tr>
-                    <td>
-                        <strong>{{ e.Nombre }}</strong>
-                        <br><span style="font-size:11px;color:var(--muted)">{{ e.Marca or '' }} {{ e.Modelo or ''
-                            }}</span>
-                    </td>
-                    <td style="color:var(--muted)">
-                        {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
-                        {{ iconos.get(e.TipoEquipo,'📦') }} {{ e.TipoEquipo }}
-                    </td>
-                    <td style="font-family:monospace;color:var(--muted);font-size:12px">{{ e.NumeroSerie or '—' }}</td>
-                    <td>
-                        {% set colores =
-                        {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja'}
-                        %}
-                        <span class="badge {{ colores.get(e.Estado,'') }}"
-                            style="{% if e.Estado=='asignado' %}background:rgba(124,92,252,.15);color:#a78bfa{% endif %}">
-                            {{ e.Estado }}
-                        </span>
-                    </td>
-                    <td>
-                        {% set cond_color =
-                        {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
-                        <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">
-                            {{ e.Condicion }}
-                        </span>
-                    </td>
-                    <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
-                    <td>
-                        <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
-                        {% if tiene_permiso('Equipos TI', 'editar') %}
-                        <button class="btn-sm" onclick="editarEquipo(...)">✏️</button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin equipos registrados.</p>
-    {% endif %}
+  {% if equipos %}
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th><th>Condición</th><th>Asignado a</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in equipos %}
+        <tr>
+          <td>
+            <strong>{{ e.Nombre }}</strong>
+            <br><span style="font-size:11px;color:var(--muted)">{{ e.Marca or '' }} {{ e.Modelo or '' }}</span>
+          </td>
+          <td style="color:var(--muted)">
+            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+            {{ iconos.get(e.TipoEquipo,'📦') }} {{ e.TipoEquipo }}
+          </td>
+          <td style="font-family:monospace;color:var(--muted);font-size:12px">{{ e.NumeroSerie or '—' }}</td>
+          <td>
+            {% set colores = {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja'} %}
+            <span class="badge {{ colores.get(e.Estado,'') }}"
+                  style="{% if e.Estado=='asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
+              {{ e.Estado }}
+            </span>
+          </td>
+          <td>
+            {% set cond_color = {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
+            <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">{{ e.Condicion }}</span>
+          </td>
+          <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
+          <td>
+            <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
+            {% if tiene_permiso('Equipos TI', 'editar') %}
+            <button class="btn-sm" onclick="editarEquipo({{ e.IdElectronico }},'{{ e.Nombre }}','{{ e.TipoEquipo }}','{{ e.Marca or '' }}','{{ e.Modelo or '' }}','{{ e.NumeroSerie or '' }}','{{ e.Condicion }}',{{ e.Costo or 0 }},'{{ e.FechaAdquisicion or '' }}')">✏️</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin equipos registrados.</p>
+  {% endif %}
 </div>
 
 <!-- Modal Nuevo -->
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="modal" onclick="event.stopPropagation()">
-        <h2>💻 Nuevo equipo TI</h2>
-        <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}">
-            <div class="grid-2">
-                <div class="field"><label>Nombre *</label><input name="nombre" required
-                        placeholder="Ej: Laptop Dell 01"></div>
-                <div class="field"><label>Tipo *</label>
-                    <select name="tipo_equipo" required>
-                        <option value="laptop">💻 Laptop</option>
-                        <option value="desktop">🖥️ Desktop</option>
-                        <option value="monitor">🖵 Monitor</option>
-                        <option value="red">🌐 Red</option>
-                        <option value="otro">📦 Otro</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid-2">
-                <div class="field"><label>Marca</label><input name="marca" placeholder="Dell"></div>
-                <div class="field"><label>Modelo</label><input name="modelo" placeholder="Latitude 5520"></div>
-            </div>
-            <div class="grid-2">
-                <div class="field"><label>Número de serie</label><input name="numero_serie"></div>
-                <div class="field"><label>Costo ($)</label><input name="costo" type="number" step="0.01" min="0"
-                        placeholder="0.00"></div>
-            </div>
-            <div class="grid-2">
-                <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
-                <div class="field"><label>Ubicación</label>
-                    <select name="ubicacion_id">
-                        <option value="">— Sin ubicación —</option>
-                        {% for u in ubicaciones %}<option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>{% endfor
-                        %}
-                    </select>
-                </div>
-            </div>
-            <div class="field"><label>Descripción</label><textarea name="descripcion"></textarea></div>
-            <div class="modal-footer">
-                <button type="button" class="btn-cancel"
-                    onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar</button>
-            </div>
-        </form>
-    </div>
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>💻 Nuevo equipo TI</h2>
+    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input name="nombre" required placeholder="Ej: Laptop Dell 01"></div>
+        <div class="field"><label>Tipo *</label>
+          <select name="tipo_equipo" required>
+            <option value="laptop">💻 Laptop</option>
+            <option value="desktop">🖥️ Desktop</option>
+            <option value="monitor">🖵 Monitor</option>
+            <option value="red">🌐 Red</option>
+            <option value="otro">📦 Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Marca</label><input name="marca" placeholder="Dell"></div>
+        <div class="field"><label>Modelo</label><input name="modelo" placeholder="Latitude 5520"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Número de serie</label><input name="numero_serie"></div>
+        <div class="field"><label>Costo ($)</label><input name="costo" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
+        <div class="field"><label>Ubicación</label>
+          <select name="ubicacion_id">
+            <option value="">— Sin ubicación —</option>
+            {% for u in ubicaciones %}<option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Descripción</label><textarea name="descripcion"></textarea></div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Modal Editar -->
 <div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
-    <div class="modal" onclick="event.stopPropagation()">
-        <h2>✏️ Editar equipo</h2>
-        <form method="POST" id="form-editar">
-            <div class="grid-2">
-                <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
-                <div class="field"><label>Tipo</label>
-                    <select id="e-tipo" name="tipo_equipo">
-                        <option value="laptop">💻 Laptop</option>
-                        <option value="desktop">🖥️ Desktop</option>
-                        <option value="monitor">🖵 Monitor</option>
-                        <option value="red">🌐 Red</option>
-                        <option value="otro">📦 Otro</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid-2">
-                <div class="field"><label>Marca</label><input id="e-marca" name="marca"></div>
-                <div class="field"><label>Modelo</label><input id="e-modelo" name="modelo"></div>
-            </div>
-            <div class="grid-2">
-                <div class="field"><label>N° Serie</label><input id="e-serie" name="numero_serie"></div>
-                <div class="field"><label>Condición</label>
-                    <select id="e-condicion" name="condicion">
-                        <option value="bueno">Bueno</option>
-                        <option value="regular">Regular</option>
-                        <option value="malo">Malo</option>
-                        <option value="dañado">Dañado</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid-2">
-                <div class="field"><label>Costo ($)</label><input id="e-costo" name="costo" type="number" step="0.01">
-                </div>
-                <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion"
-                        type="date"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-cancel"
-                    onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar</button>
-            </div>
-        </form>
-    </div>
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✏️ Editar equipo</h2>
+    <form method="POST" id="form-editar">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
+        <div class="field"><label>Tipo</label>
+          <select id="e-tipo" name="tipo_equipo">
+            <option value="laptop">💻 Laptop</option>
+            <option value="desktop">🖥️ Desktop</option>
+            <option value="monitor">🖵 Monitor</option>
+            <option value="red">🌐 Red</option>
+            <option value="otro">📦 Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Marca</label><input id="e-marca" name="marca"></div>
+        <div class="field"><label>Modelo</label><input id="e-modelo" name="modelo"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>N° Serie</label><input id="e-serie" name="numero_serie"></div>
+        <div class="field"><label>Condición</label>
+          <select id="e-condicion" name="condicion">
+            <option value="bueno">Bueno</option>
+            <option value="regular">Regular</option>
+            <option value="malo">Malo</option>
+            <option value="dañado">Dañado</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Costo ($)</label><input id="e-costo" name="costo" type="number" step="0.01"></div>
+        <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion" type="date"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function editarEquipo(id, nombre, tipo, marca, modelo, serie, condicion, costo, fecha) {
-  document.getElementById('form-editar').action = `/ti/equipos/${id}/editar`;
-  document.getElementById('e-nombre').value    = nombre;
-  document.getElementById('e-tipo').value      = tipo;
-  document.getElementById('e-marca').value     = marca;
-  document.getElementById('e-modelo').value    = modelo;
-  document.getElementById('e-serie').value     = serie;
-  document.getElementById('e-condicion').value = condicion;
-  document.getElementById('e-costo').value     = costo;
-  document.getElementById('e-fecha').value     = fecha;
+function editarEquipo(id, nombre, tipo, marca, modelo, serie, condicion, costo, fecha) {
+  document.getElementById('form-editar').action    = `/ti/equipos/${id}/editar`;
+  document.getElementById('e-nombre').value        = nombre;
+  document.getElementById('e-tipo').value          = tipo;
+  document.getElementById('e-marca').value         = marca;
+  document.getElementById('e-modelo').value        = modelo;
+  document.getElementById('e-serie').value         = serie;
+  document.getElementById('e-condicion').value     = condicion;
+  document.getElementById('e-costo').value         = costo;
+  document.getElementById('e-fecha').value         = fecha;
   document.getElementById('modal-editar').classList.add('open');
 }
 </script>

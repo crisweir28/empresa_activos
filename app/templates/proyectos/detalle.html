@@ -1,0 +1,351 @@
+<!-- app/templates/proyectos/detalle.html -->
+{% extends "base.html" %}
+{% block title %}{{ proyecto.Nombre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .detalle-grid { display:grid; grid-template-columns:1fr 340px; gap:18px; align-items:start; }
+  .tabs { display:flex; border-bottom:1px solid var(--border); }
+  .tab-btn { padding:10px 20px; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--muted); font-family:'Inter',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; margin-bottom:-1px; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+  .tab-panel { display:none; padding:18px; }
+  .tab-panel.active { display:block; }
+  .info-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { color:var(--muted); font-weight:500; }
+  .info-val { color:var(--text); font-weight:600; text-align:right; }
+  .personal-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .personal-item:last-child { border-bottom:none; }
+  .personal-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+  .activo-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .activo-item:last-child { border-bottom:none; }
+  .audit-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .audit-item:last-child { border-bottom:none; }
+  .audit-icon { font-size:18px; flex-shrink:0; }
+  .audit-accion { font-weight:600; color:var(--text); }
+  .audit-detalle { color:var(--muted); font-size:12px; margin-top:2px; }
+  .audit-fecha { font-size:11px; color:var(--muted); margin-top:2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{{ url_for('proyectos.lista') }}" class="btn-sm">← Volver</a>
+    <div>
+      <div class="page-title">{{ proyecto.Nombre }}</div>
+      <div class="page-sub">
+        Creado por {{ proyecto.creador.Nombre }} {{ proyecto.creador.ApellidoPaterno }}
+        · {{ proyecto.CreadoEn.strftime('%d/%m/%Y') }}
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="badge" style="background:{{ proyecto.bg_estatus }};color:{{ proyecto.color_estatus }};font-size:13px;padding:5px 14px">
+      {{ proyecto.Estatus }}
+    </span>
+    {% if es_admin %}
+    <button class="btn btn-primary" onclick="abrirEditar()">✏️ Editar</button>
+    <button class="btn-sm btn-del" onclick="eliminarProyecto('{{ proyecto.Nombre }}', '{{ url_for('proyectos.eliminar', id=proyecto.IdProyecto) }}')">🗑️</button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Form oculto para eliminar -->
+<form id="form-eliminar" method="POST" style="display:none"></form>
+<!-- Forms ocultos para quitar personal -->
+<div id="forms-personal" style="display:none">
+  {% for p in personal %}
+  <form id="form-quitar-{{ p.IdAsignacion }}" method="POST"
+        action="{{ url_for('proyectos.quitar_personal', id=proyecto.IdProyecto, asignacion_id=p.IdAsignacion) }}"></form>
+  {% endfor %}
+</div>
+
+<div class="detalle-grid">
+  <div class="panel" style="padding:0">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('info',this)">📋 Información</button>
+      <button class="tab-btn" onclick="showTab('personal',this)">👥 Personal ({{ personal|length }})</button>
+      <button class="tab-btn" onclick="showTab('activos',this)">📦 Activos ({{ activos_asignados|length }})</button>
+      <button class="tab-btn" onclick="showTab('auditoria',this)">🕐 Historial ({{ auditoria|length }})</button>
+    </div>
+
+    <div id="tab-info" class="tab-panel active">
+      {% if proyecto.Descripcion %}
+      <p style="color:var(--text2);font-size:13px;line-height:1.7;margin-bottom:16px">{{ proyecto.Descripcion }}</p>
+      {% endif %}
+      <div class="info-row"><span class="info-label">Fecha inicio</span><span class="info-val">{{ proyecto.FechaInicio.strftime('%d/%m/%Y') }}</span></div>
+      <div class="info-row"><span class="info-label">Fecha término</span><span class="info-val">{{ proyecto.FechaTermino.strftime('%d/%m/%Y') }}</span></div>
+      <div class="info-row">
+        <span class="info-label">Días restantes</span>
+        <span class="info-val">
+          {% set dias = proyecto.dias_restantes %}
+          {% if proyecto.Estatus in ('Completado','Cancelado') %}—
+          {% elif dias < 0 %}<span style="color:#dc2626">Vencido hace {{ dias|abs }} días</span>
+          {% elif dias <= 7 %}<span style="color:#d97706">{{ dias }} días ⚡</span>
+          {% else %}{{ dias }} días{% endif %}
+        </span>
+      </div>
+      <div class="info-row"><span class="info-label">Personal asignado</span><span class="info-val">{{ personal|length }} persona(s)</span></div>
+      <div class="info-row"><span class="info-label">Activos asignados</span><span class="info-val">{{ activos_asignados|length }} activo(s)</span></div>
+    </div>
+
+    <div id="tab-personal" class="tab-panel">
+      {% if personal %}
+        {% for p in personal %}
+        <div class="personal-item">
+          <div class="personal-avatar">{{ p.usuario.Nombre[0]|upper }}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">{{ p.usuario.Nombre }} {{ p.usuario.ApellidoPaterno }}</div>
+            <div style="font-size:11px;color:var(--muted)">{{ p.Rol or 'Sin rol definido' }} · @{{ p.usuario.NombreUsuario }}</div>
+          </div>
+          <span style="font-size:11px;color:var(--muted)">{{ p.FechaAsignacion.strftime('%d/%m/%Y') }}</span>
+          <button class="btn-sm btn-del" style="margin-left:8px"
+                  onclick="quitarPersonal('{{ p.usuario.Nombre }}', {{ p.IdAsignacion }})">✕</button>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Sin personal asignado.</p>
+      {% endif %}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <button class="btn btn-primary" style="font-size:12px" onclick="document.getElementById('modal-personal').classList.add('open')">
+          + Asignar personal
+        </button>
+      </div>
+    </div>
+
+    <div id="tab-activos" class="tab-panel">
+      {% if activos_asignados %}
+        {% for a in activos_asignados %}
+        <div class="activo-item">
+          <div style="font-size:20px">
+            {% if a.TipoActivo == 'electronico' %}💻{% elif a.TipoActivo == 'vehiculo' %}🚗{% else %}🔧{% endif %}
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:600">{{ a.TipoActivo|capitalize }} #{{ a.IdActivo }}</div>
+            <div style="font-size:11px;color:var(--muted)">
+              Estado inicial: {{ a.EstadoInicial or '—' }}{% if a.EstadoFinal %} → Final: {{ a.EstadoFinal }}{% endif %}
+            </div>
+            {% if a.Observaciones %}
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ a.Observaciones }}</div>
+            {% endif %}
+          </div>
+          <div style="text-align:right;font-size:11px;color:var(--muted)">{{ a.FechaAsignacion.strftime('%d/%m/%Y') }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Sin activos asignados.</p>
+      {% endif %}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <button class="btn btn-primary" style="font-size:12px" onclick="document.getElementById('modal-activo').classList.add('open')">
+          + Asignar activo
+        </button>
+      </div>
+    </div>
+
+    <div id="tab-auditoria" class="tab-panel">
+      {% if auditoria %}
+        {% for a in auditoria %}
+        <div class="audit-item">
+          <div class="audit-icon">{{ a.icono_accion }}</div>
+          <div style="flex:1">
+            <div class="audit-accion">{{ a.Detalle or a.Accion }}</div>
+            {% if a.RazonCambio %}<div class="audit-detalle">Razón: {{ a.RazonCambio }}</div>{% endif %}
+            <div class="audit-fecha">{{ a.usuario.Nombre }} {{ a.usuario.ApellidoPaterno }} · {{ a.RealizadoEn.strftime('%d/%m/%Y %H:%M') }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Sin historial.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div class="panel">
+      <div class="panel-title">📊 Resumen</div>
+      {% for label, val, color in [('Personal', personal|length, '#2563eb'),('Activos', activos_asignados|length, '#16a34a'),('Cambios', auditoria|length, '#d97706')] %}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--text2)">{{ label }}</span>
+        <span style="font-size:20px;font-weight:800;color:{{ color }}">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if es_admin %}
+    <div class="panel">
+      <div class="panel-title">🔄 Cambiar estatus</div>
+      <form method="POST" action="{{ url_for('proyectos.editar', id=proyecto.IdProyecto) }}">
+        <input type="hidden" name="nombre" value="{{ proyecto.Nombre }}">
+        <input type="hidden" name="descripcion" value="{{ proyecto.Descripcion or '' }}">
+        <input type="hidden" name="fecha_inicio" value="{{ proyecto.FechaInicio.isoformat() }}">
+        <input type="hidden" name="fecha_termino" value="{{ proyecto.FechaTermino.isoformat() }}">
+        <div class="field">
+          <label>Nuevo estatus</label>
+          <select name="estatus">
+            {% for e in ESTATUS %}<option value="{{ e }}" {% if proyecto.Estatus == e %}selected{% endif %}>{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Razón del cambio</label>
+          <input name="razon" placeholder="Opcional...">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;font-size:13px">Actualizar estatus</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if es_admin %}
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+    <h2>✏️ Editar proyecto</h2>
+    <form method="POST" action="{{ url_for('proyectos.editar', id=proyecto.IdProyecto) }}">
+      <div class="field"><label>Nombre *</label><input name="nombre" required value="{{ proyecto.Nombre }}"></div>
+      <div class="field"><label>Descripción</label><textarea name="descripcion" rows="3">{{ proyecto.Descripcion or '' }}</textarea></div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha inicio *</label><input type="date" name="fecha_inicio" required value="{{ proyecto.FechaInicio.isoformat() }}"></div>
+        <div class="field"><label>Fecha término *</label><input type="date" name="fecha_termino" required value="{{ proyecto.FechaTermino.isoformat() }}"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Estatus</label>
+          <select name="estatus">{% for e in ESTATUS %}<option value="{{ e }}" {% if proyecto.Estatus == e %}selected{% endif %}>{{ e }}</option>{% endfor %}</select>
+        </div>
+        <div class="field"><label>Razón del cambio</label><input name="razon" placeholder="Opcional"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="overlay" id="modal-personal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>👤 Asignar personal</h2>
+    <form method="POST" action="{{ url_for('proyectos.asignar_personal', id=proyecto.IdProyecto) }}">
+      <div class="field"><label>Usuario *</label>
+        <select name="usuario_id" required>
+          <option value="">— Seleccionar —</option>
+          {% for u in usuarios_disponibles %}{% if u.IdUsuario not in ids_asignados %}
+          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }} (@{{ u.NombreUsuario }})</option>
+          {% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Rol en el proyecto</label><input name="rol_proyecto" placeholder="Ej: Líder técnico, Instalador..."></div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-personal').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Asignar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="overlay" id="modal-activo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+    <h2>📦 Asignar activo</h2>
+    <form method="POST" action="{{ url_for('proyectos.asignar_activo', id=proyecto.IdProyecto) }}">
+      <div class="grid-2">
+        <div class="field"><label>Tipo de activo *</label>
+          <select name="tipo_activo" required onchange="filtrarActivos(this.value)">
+            <option value="">— Seleccionar —</option>
+            {% if electronicos %}<option value="electronico">💻 Equipo TI</option>{% endif %}
+            {% if vehiculos %}<option value="vehiculo">🚗 Vehículo</option>{% endif %}
+            {% if herramientas %}<option value="herramienta">🔧 Herramienta</option>{% endif %}
+          </select>
+        </div>
+        <div class="field"><label>Activo *</label>
+          <select name="activo_id" id="select-activo" required disabled>
+            <option value="">— Primero selecciona tipo —</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Estado inicial</label><input name="estado_inicial" placeholder="Ej: bueno, regular..."></div>
+        <div class="field"><label>Observaciones</label><input name="observaciones" placeholder="Notas adicionales..."></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-activo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Asignar activo</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function abrirEditar() {
+  document.getElementById('modal-editar').classList.add('open');
+}
+
+function eliminarProyecto(nombre, url) {
+  Swal.fire({
+    title: '¿Eliminar proyecto?',
+    html: `El proyecto <strong>${nombre}</strong> y todos sus datos serán eliminados permanentemente.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: '🗑️ Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    focusCancel: true,
+  }).then(result => {
+    if (result.isConfirmed) {
+      const form = document.getElementById('form-eliminar');
+      form.action = url;
+      form.submit();
+    }
+  });
+}
+
+function quitarPersonal(nombre, asignacionId) {
+  Swal.fire({
+    title: '¿Quitar del proyecto?',
+    html: `<strong>${nombre}</strong> será removido de este proyecto.`,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Sí, quitar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    focusCancel: true,
+  }).then(result => {
+    if (result.isConfirmed) {
+      document.getElementById(`form-quitar-${asignacionId}`).submit();
+    }
+  });
+}
+
+const activos = {
+  electronico: [{% for e in electronicos %}{ id: {{ e.IdElectronico }}, nombre: "{{ e.Nombre }} ({{ e.Tipo }})" }{% if not loop.last %},{% endif %}{% endfor %}],
+  vehiculo:    [{% for v in vehiculos %}{ id: {{ v.IdVehiculo }}, nombre: "{{ v.Marca }} {{ v.Modelo }} - {{ v.Placa }}" }{% if not loop.last %},{% endif %}{% endfor %}],
+  herramienta: [{% for h in herramientas %}{ id: {{ h.IdHerramienta }}, nombre: "{{ h.Nombre }}" }{% if not loop.last %},{% endif %}{% endfor %}],
+};
+
+function filtrarActivos(tipo) {
+  const sel = document.getElementById('select-activo');
+  sel.innerHTML = '<option value="">— Seleccionar activo —</option>';
+  if (!tipo || !activos[tipo]) { sel.disabled = true; return; }
+  activos[tipo].forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id; opt.textContent = a.nombre;
+    sel.appendChild(opt);
+  });
+  sel.disabled = false;
+}
+</script>
+{% endblock %}

@@ -1,3 +1,4 @@
+# app/models/permiso.py
 from ..extensions import db
 
 

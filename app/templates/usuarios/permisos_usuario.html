@@ -1,3 +1,4 @@
+<!-- app/templates/usuarios/permisos_usuario.html -->
 {% extends "base.html" %}
 {% block title %}Permisos — {{ usuario.Nombre }}{% endblock %}
 
@@ -24,10 +25,10 @@
   .toggle-wrap { display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 4px; }
   .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
   .toggle input { opacity: 0; width: 0; height: 0; }
-  .slider { position: absolute; inset: 0; cursor: pointer; background: rgba(255,255,255,.08); border-radius: 20px; transition: .2s; }
-  .slider:before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .2s; }
-  input:checked + .slider { background: var(--accent); }
-  input:checked + .slider:before { transform: translateX(16px); }
+  .slider { position: absolute; inset: 0; cursor: pointer; background: #e2e8f0; border-radius: 20px; transition: .2s; border: 1.5px solid #cbd5e1; }
+  .slider:before { content: ''; position: absolute; height: 13px; width: 13px; left: 2px; bottom: 2px; background: #94a3b8; border-radius: 50%; transition: .2s; }
+  input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(15px); background: white; }
 
   .rol-ref { font-size: 9px; color: var(--muted); }
   .personalizado-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 4px; }
@@ -68,8 +69,7 @@
       </form>
       {% endif %}
       <button type="button" class="btn-cancel" onclick="history.back()">Cancelar</button>
-      <button type="button" class="btn btn-primary" 
-        onclick="hayChanges=false; document.getElementById('form-permisos').submit()">
+      <button type="button" class="btn btn-primary" onclick="document.getElementById('form-permisos').submit()">
         💾 Guardar permisos
       </button>
     </div>
@@ -150,9 +150,6 @@ function marcarCambio() {
   document.getElementById('sync-status').innerHTML =
     '● <span style="color:var(--yellow)">Cambios pendientes</span>';
 }
-document.getElementById('form-permisos').addEventListener('submit', function() {
-  hayChanges = false;
-});
 window.addEventListener('beforeunload', e => {
   if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
 });

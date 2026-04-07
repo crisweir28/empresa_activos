@@ -1,3 +1,4 @@
+# app/routes/administrativo.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import date
@@ -13,7 +14,7 @@ from ..utils.permisos import requiere_rol, requiere_permiso
 
 administrativo_bp = Blueprint("administrativo", __name__)
 
-ROLES_ADMIN_VEHICULOS = ("ti", "administrativo")
+ROLES_ADMIN_VEHICULOS = ("admin", "administrativo")
 
 
 def _check_acceso():

@@ -1,0 +1,164 @@
+<!-- app/templates/proyectos/lista.html -->
+{% extends "base.html" %}
+{% block title %}Proyectos{% endblock %}
+
+{% block extra_head %}
+<style>
+  .stats-grid-5 { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
+  .proyecto-card {
+    background:white; border:1px solid var(--border); border-radius:14px;
+    padding:20px; transition:all .2s; cursor:pointer; text-decoration:none; color:inherit;
+    display:block; box-shadow:var(--shadow);
+  }
+  .proyecto-card:hover { border-color:var(--accent); box-shadow:var(--shadow-md); transform:translateY(-2px); }
+  .proyecto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+  .proyecto-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .proyecto-nombre { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:700; color:var(--text); }
+  .proyecto-desc { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
+  .proyecto-meta { display:flex; gap:12px; font-size:11px; color:var(--muted); }
+  .proyecto-meta span { display:flex; align-items:center; gap:4px; }
+  .dias-tag { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; }
+  .filtros { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <div class="page-title">📋 Proyectos</div>
+    <div class="page-sub">Gestión y supervisión de proyectos activos</div>
+  </div>
+  {% if es_admin %}
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+    + Nuevo proyecto
+  </button>
+  {% endif %}
+</div>
+
+<!-- Stats -->
+<div class="stats-grid-5">
+  {% for label, key, icon, color in [
+    ('Total','total','📋','#6366f1'),
+    ('Activos','activos','🟢','#16a34a'),
+    ('En progreso','en_progreso','🔵','#2563eb'),
+    ('Completados','completados','✅','#6366f1'),
+    ('Pausados','pausados','⏸️','#d97706'),
+  ] %}
+  <div class="stat-card">
+    <div class="stat-label">{{ label }}</div>
+    <div class="stat-val" style="color:{{ color }}">{{ stats[key] }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Filtros -->
+<div class="filtros">
+  <a href="{{ url_for('proyectos.lista') }}"
+     class="btn-sm {% if not estatus_filtro %}active{% endif %}"
+     style="{% if not estatus_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">Todos</a>
+  {% for e in ESTATUS %}
+  <a href="{{ url_for('proyectos.lista', estatus=e) }}"
+     class="btn-sm {% if estatus_filtro == e %}active{% endif %}"
+     style="{% if estatus_filtro == e %}border-color:var(--accent);color:var(--accent){% endif %}">{{ e }}</a>
+  {% endfor %}
+</div>
+
+<!-- Lista de proyectos -->
+{% if proyectos %}
+<div class="proyecto-grid">
+  {% for p in proyectos %}
+  <a href="{{ url_for('proyectos.detalle', id=p.IdProyecto) }}" class="proyecto-card">
+    <div class="proyecto-header">
+      <div class="proyecto-nombre">{{ p.Nombre }}</div>
+      <span class="badge dias-tag"
+            style="background:{{ p.bg_estatus }};color:{{ p.color_estatus }}">
+        {{ p.Estatus }}
+      </span>
+    </div>
+
+    {% if p.Descripcion %}
+    <div class="proyecto-desc">{{ p.Descripcion[:80] }}{% if p.Descripcion|length > 80 %}…{% endif %}</div>
+    {% endif %}
+
+    <div class="proyecto-meta">
+      <span>📅 {{ p.FechaInicio.strftime('%d/%m/%Y') }} → {{ p.FechaTermino.strftime('%d/%m/%Y') }}</span>
+    </div>
+    <div class="proyecto-meta" style="margin-top:8px">
+      <span>👤 {{ p.creador.Nombre }} {{ p.creador.ApellidoPaterno }}</span>
+      <span>👥 {{ p.personal.count() }} personas</span>
+      <span>📦 {{ p.activos.count() }} activos</span>
+    </div>
+
+    {% set dias = p.dias_restantes %}
+    {% if dias is not none and p.Estatus not in ('Completado','Cancelado') %}
+    <div style="margin-top:10px">
+      {% if dias < 0 %}
+      <span style="font-size:11px;font-weight:600;color:#dc2626">⚠️ Vencido hace {{ dias|abs }} días</span>
+      {% elif dias <= 7 %}
+      <span style="font-size:11px;font-weight:600;color:#d97706">⚡ {{ dias }} días restantes</span>
+      {% else %}
+      <span style="font-size:11px;color:var(--muted)">⏳ {{ dias }} días restantes</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="panel" style="text-align:center;padding:60px">
+  <div style="font-size:48px;margin-bottom:12px">📋</div>
+  <div style="font-size:15px;font-weight:600;color:var(--text2)">Sin proyectos</div>
+  <div style="font-size:13px;color:var(--muted);margin-top:4px">
+    {% if estatus_filtro %}No hay proyectos con estatus "{{ estatus_filtro }}"
+    {% else %}Crea el primer proyecto para comenzar{% endif %}
+  </div>
+</div>
+{% endif %}
+
+
+<!-- Modal: Nuevo proyecto -->
+{% if es_admin %}
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+    <h2>📋 Nuevo proyecto</h2>
+    <form method="POST" action="{{ url_for('proyectos.nuevo') }}">
+      <div class="field">
+        <label>Nombre del proyecto *</label>
+        <input name="nombre" required placeholder="Ej: Instalación de red corporativa">
+      </div>
+      <div class="field">
+        <label>Descripción</label>
+        <textarea name="descripcion" placeholder="Describe el objetivo del proyecto..." rows="3"></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Fecha de inicio *</label>
+          <input type="date" name="fecha_inicio" required>
+        </div>
+        <div class="field">
+          <label>Fecha de término *</label>
+          <input type="date" name="fecha_termino" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear proyecto</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Recargar si otro usuario crea un proyecto
+if (typeof socket !== 'undefined') {
+  socket.on('proyectos_actualizados', function() {
+    if (window.location.pathname.includes('/proyectos')) {
+      setTimeout(() => location.reload(), 800);
+    }
+  });
+}
+</script>
+{% endblock %}

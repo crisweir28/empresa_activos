@@ -1,4 +1,6 @@
+# app/routes/permisos.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from ..extensions import socketio
 from flask_login import login_required, current_user
 from sqlalchemy import text as sqla_text
 from ..extensions import db
@@ -154,6 +156,8 @@ def usuario_permisos_guardar(usuario_id):
             return redirect(url_for("permisos.usuario_permisos", usuario_id=usuario_id))
 
     flash("Permisos individuales guardados correctamente.", "success")
+    # Notificar al usuario en tiempo real
+    socketio.emit("permisos_actualizados", {"usuario_id": usuario_id}, room=f"user_{usuario_id}")
     return redirect(url_for("permisos.usuario_permisos", usuario_id=usuario_id))
 
 

@@ -1,3 +1,4 @@
+<!-- app/templates/administrativo/vehiculos.html -->
 {% extends "base.html" %}
 {% block title %}Vehículos{% endblock %}
 
@@ -16,11 +17,11 @@
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
   <a href="{{ url_for('administrativo.vehiculos') }}"
     class="btn-sm {% if not request.args.get('estado') %}active{% endif %}"
-    style="{% if not request.args.get('estado') %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
+    style="{% if not request.args.get('estado') %}border-color:var(--accent);color:var(--accent){% endif %}">Todos</a>
   {% for e in ['activo','mantenimiento','baja'] %}
   <a href="{{ url_for('administrativo.vehiculos', estado=e) }}"
     class="btn-sm {% if request.args.get('estado')==e %}active{% endif %}"
-    style="{% if request.args.get('estado')==e %}border-color:var(--accent);color:#a78bfa{% endif %}">
+    style="{% if request.args.get('estado')==e %}border-color:var(--accent);color:var(--accent){% endif %}">
     {{ e|capitalize }}
   </a>
   {% endfor %}
@@ -70,10 +71,10 @@
             <button class="btn-sm" onclick="editarVehiculo({{ v.id }},'{{ v.nombre }}','{{ v.matricula }}','{{ v.marca or '' }}',
                 '{{ v.modelo or '' }}',{{ v.kilometraje or 0 }},'{{ v.tipo_adquisicion or '' }}','{{ v.estado }}',{{ v.valor or 0 }},
                 '{{ v.fecha_adquisicion or '' }}')">✏️ Editar</button>
-            <form method="POST" action="{{ url_for('administrativo.vehiculo_eliminar', id=v.id) }}"
-              style="display:inline" onsubmit="return confirm('¿Eliminar {{ v.nombre }}?')">
-              <button type="submit" class="btn-sm btn-del">🗑️</button>
-            </form>
+            <button class="btn-sm btn-del"
+                    onclick="eliminarVehiculo('{{ v.nombre }}', '{{ url_for('administrativo.vehiculo_eliminar', id=v.id) }}')">
+              🗑️
+            </button>
           </td>
         </tr>
         {% endfor %}
@@ -84,6 +85,9 @@
   <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin vehículos registrados.</p>
   {% endif %}
 </div>
+
+<!-- Form oculto para eliminar -->
+<form id="form-eliminar" method="POST" style="display:none"></form>
 
 <!-- Modal Nuevo -->
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
@@ -99,8 +103,7 @@
         <div class="field"><label>Modelo</label><input name="modelo" placeholder="NP300 2022"></div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Kilometraje</label><input name="kilometraje" type="number" min="0" placeholder="0">
-        </div>
+        <div class="field"><label>Kilometraje</label><input name="kilometraje" type="number" min="0" placeholder="0"></div>
         <div class="field"><label>Tipo adquisición</label>
           <select name="tipo_adquisicion">
             <option value="">— Seleccionar —</option>
@@ -118,8 +121,7 @@
             <option value="baja">Baja</option>
           </select>
         </div>
-        <div class="field"><label>Valor ($)</label><input name="valor" type="number" step="0.01" min="0"
-            placeholder="0.00"></div>
+        <div class="field"><label>Valor ($)</label><input name="valor" type="number" step="0.01" min="0" placeholder="0.00"></div>
       </div>
       <div class="grid-2">
         <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
@@ -131,8 +133,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-          onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
@@ -171,12 +172,10 @@
             <option value="baja">Baja</option>
           </select>
         </div>
-        <div class="field"><label>Valor ($)</label><input id="e-valor" name="valor" type="number" step="0.01" min="0">
-        </div>
+        <div class="field"><label>Valor ($)</label><input id="e-valor" name="valor" type="number" step="0.01" min="0"></div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion" type="date">
-        </div>
+        <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion" type="date"></div>
         <div class="field"><label>Ubicación</label>
           <select id="e-ubicacion" name="ubicacion_id">
             <option value="">— Sin ubicación —</option>
@@ -185,8 +184,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-          onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar cambios</button>
       </div>
     </form>
@@ -196,18 +194,39 @@
 
 {% block scripts %}
 <script>
-  function editarVehiculo(id, nombre, matricula, marca, modelo, km, tipo, estado, valor, fecha) {
-  document.getElementById('form-editar').action = `/administrativo/vehiculos/${id}/editar`;
-  document.getElementById('e-nombre').value    = nombre;
-  document.getElementById('e-matricula').value = matricula;
-  document.getElementById('e-marca').value     = marca;
-  document.getElementById('e-modelo').value    = modelo;
-  document.getElementById('e-km').value        = km;
-  document.getElementById('e-tipo').value      = tipo;
-  document.getElementById('e-estado').value    = estado;
-  document.getElementById('e-valor').value     = valor;
-  document.getElementById('e-fecha').value     = fecha;
+function editarVehiculo(id, nombre, matricula, marca, modelo, km, tipo, estado, valor, fecha) {
+  document.getElementById('form-editar').action    = `/administrativo/vehiculos/${id}/editar`;
+  document.getElementById('e-nombre').value        = nombre;
+  document.getElementById('e-matricula').value     = matricula;
+  document.getElementById('e-marca').value         = marca;
+  document.getElementById('e-modelo').value        = modelo;
+  document.getElementById('e-km').value            = km;
+  document.getElementById('e-tipo').value          = tipo;
+  document.getElementById('e-estado').value        = estado;
+  document.getElementById('e-valor').value         = valor;
+  document.getElementById('e-fecha').value         = fecha;
   document.getElementById('modal-editar').classList.add('open');
+}
+
+function eliminarVehiculo(nombre, url) {
+  Swal.fire({
+    title: '¿Eliminar vehículo?',
+    html: `El vehículo <strong>${nombre}</strong> será eliminado permanentemente.<br>Esta acción no se puede deshacer.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: '🗑️ Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    focusCancel: true,
+  }).then(result => {
+    if (result.isConfirmed) {
+      const form = document.getElementById('form-eliminar');
+      form.action = url;
+      form.submit();
+    }
+  });
 }
 </script>
 {% endblock %}

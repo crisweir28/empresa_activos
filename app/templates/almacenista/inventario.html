@@ -1,3 +1,5 @@
+<!-- app/templates/almacenista/inventario.html -->
+<!-- app/templates/almacenista/inventario.html -->
 {% extends "base.html" %}
 {% block title %}Inventario{% endblock %}
 
@@ -12,12 +14,11 @@
   </button>
 </div>
 
-<!-- Filtros por estado -->
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
   {% for e, label in [('','Todos'),('disponible','Disponible'),('asignado','Asignado'),('dañado','Dañado'),('perdido','Perdido')] %}
   <a href="{{ url_for('almacenista.inventario', estado=e) }}"
      class="btn-sm {% if estado_filtro == e %}active{% endif %}"
-     style="{% if estado_filtro == e %}border-color:var(--accent);color:#a78bfa{% endif %}">
+     style="{% if estado_filtro == e %}border-color:var(--accent);color:var(--accent){% endif %}">
     {{ label }}
   </a>
   {% endfor %}
@@ -43,7 +44,7 @@
           <td>
             {% set colores = {'disponible':'badge-activo','asignado':'','dañado':'badge-baja','perdido':'badge-baja','mantenimiento':'badge-mantenimiento'} %}
             <span class="badge {{ colores.get(h.Estado, '') }}"
-                  style="{% if h.Estado == 'asignado' %}background:rgba(124,92,252,.15);color:#a78bfa{% endif %}">
+                  style="{% if h.Estado == 'asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
               {{ h.Estado }}
             </span>
           </td>
@@ -122,9 +123,6 @@
 
 {% block scripts %}
 <script>
-// Necesitamos pasar los usuarios al modal de asignar
-const usuarios = {{ usuarios|tojson if usuarios is defined else '[]' }};
-
 function asignarHerr(id, nombre) {
   document.getElementById('asignar-titulo').textContent = `👤 Asignar: ${nombre}`;
   document.getElementById('form-asignar').action = `/almacen/herramientas/${id}/asignar`;
