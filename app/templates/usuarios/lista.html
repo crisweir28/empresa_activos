@@ -4,394 +4,394 @@
 
 {% block content %}
 <div class="topbar">
-  <div>
-    <div class="page-title">👥 Gestión de Usuarios</div>
-    <div class="page-sub">Administración de cuentas y áreas del sistema</div>
-  </div>
-  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
-    + Nuevo usuario
-  </button>
+    <div>
+        <div class="page-title">👥 Gestión de Usuarios</div>
+        <div class="page-sub">
+            {% if current_user.IdRol == 1 %}
+            Administración de cuentas y áreas del sistema
+            {% else %}
+            Usuarios de {{ current_user.area_nombre }}
+            {% endif %}
+        </div>
+    </div>
+    <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+        + Nuevo usuario
+    </button>
 </div>
 
-<!-- Filtros -->
+<!-- Filtros — solo super admin ve todos los filtros -->
+{% if current_user.IdRol == 1 %}
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
-
-  <a href="{{ url_for('usuarios.lista') }}"
-     class="btn-sm {% if not area_filtro and not tipo_filtro %}active{% endif %}"
-     style="{% if not area_filtro and not tipo_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">
-    Todos
-  </a>
-
-  {% for d in departamentos %}
-  <a href="{{ url_for('usuarios.lista', area=d.id) }}"
-     class="btn-sm {% if area_filtro|string == d.id|string %}active{% endif %}"
-     style="{% if area_filtro|string == d.id|string %}border-color:var(--accent);color:var(--accent){% endif %}">
-    {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
-  </a>
-  {% endfor %}
-
-  <span style="color:var(--border)">|</span>
-
-  <a href="{{ url_for('usuarios.lista', tipo='administrador') }}"
-     class="btn-sm {% if tipo_filtro == 'administrador' %}active{% endif %}"
-     style="{% if tipo_filtro == 'administrador' %}border-color:var(--accent);color:var(--accent){% endif %}">
-    ⭐ Administradores
-  </a>
-  <a href="{{ url_for('usuarios.lista', tipo='empleado') }}"
-     class="btn-sm {% if tipo_filtro == 'empleado' %}active{% endif %}"
-     style="{% if tipo_filtro == 'empleado' %}border-color:var(--accent);color:var(--accent){% endif %}">
-    👤 Empleados
-  </a>
-
+    <a href="{{ url_for('usuarios.lista') }}"
+        class="btn-sm {% if not area_filtro and not tipo_filtro %}active{% endif %}"
+        style="{% if not area_filtro and not tipo_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">
+        Todos
+    </a>
+    {% for d in departamentos %}
+    <a href="{{ url_for('usuarios.lista', area=d.id) }}"
+        class="btn-sm {% if area_filtro|string == d.id|string %}active{% endif %}"
+        style="{% if area_filtro|string == d.id|string %}border-color:var(--accent);color:var(--accent){% endif %}">
+        {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
+    </a>
+    {% endfor %}
+    <span style="color:var(--border)">|</span>
+    <a href="{{ url_for('usuarios.lista', tipo='administrador') }}"
+        class="btn-sm {% if tipo_filtro == 'administrador' %}active{% endif %}"
+        style="{% if tipo_filtro == 'administrador' %}border-color:var(--accent);color:var(--accent){% endif %}">
+        ⭐ Administradores
+    </a>
+    <a href="{{ url_for('usuarios.lista', tipo='empleado') }}"
+        class="btn-sm {% if tipo_filtro == 'empleado' %}active{% endif %}"
+        style="{% if tipo_filtro == 'empleado' %}border-color:var(--accent);color:var(--accent){% endif %}">
+        👤 Empleados
+    </a>
 </div>
+{% endif %}
 
 <div class="panel">
-  {% if usuarios %}
-  <div style="overflow-x:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>Usuario</th>
-          <th>Nombre completo</th>
-          <th>Correo</th>
-          <th>Área</th>
-          <th>Tipo</th>
-          <th>Estatus</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for u in usuarios %}
-        <tr style="opacity:{% if not u.Estatus %}0.55{% else %}1{% endif %}">
-          <td>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div style="width:32px;height:32px;border-radius:50%;
+    {% if usuarios %}
+    <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre completo</th>
+                    <th>Correo</th>
+                    {% if current_user.IdRol == 1 %}<th>Área</th>{% endif %}
+                    <th>Tipo</th>
+                    <th>Estatus</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr style="opacity:{% if not u.Estatus %}0.55{% else %}1{% endif %}">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <div style="width:32px;height:32px;border-radius:50%;
                           background:linear-gradient(135deg,var(--accent),var(--accent2));
                           display:flex;align-items:center;justify-content:center;
                           font-weight:700;font-size:13px;color:#fff;flex-shrink:0">
-                {{ u.Nombre[0]|upper }}
-              </div>
-              <div>
-                <strong>{{ u.NombreUsuario }}</strong>
-                {% if u.IdRol == 1 %}
-                <span style="display:inline-block;margin-left:6px;background:#fef9c3;
+                                {{ u.Nombre[0]|upper }}
+                            </div>
+                            <div>
+                                <strong>{{ u.NombreUsuario }}</strong>
+                                {% if u.IdRol == 1 %}
+                                <span style="display:inline-block;margin-left:6px;background:#fef9c3;
                              color:#a16207;font-size:10px;font-weight:700;padding:2px 7px;
                              border-radius:20px">⭐ Super Admin</span>
-                {% endif %}
-                {% if u.BloqueadoHasta and u.BloqueadoHasta.year == 9999 %}
-                <span style="display:inline-block;margin-left:6px;background:#fee2e2;
+                                {% endif %}
+                                {% if u.BloqueadoHasta and u.BloqueadoHasta.year == 9999 %}
+                                <span style="display:inline-block;margin-left:6px;background:#fee2e2;
                              color:#b91c1c;font-size:10px;font-weight:700;padding:2px 7px;
                              border-radius:20px">🔒 Bloqueado</span>
-                {% endif %}
-              </div>
-            </div>
-          </td>
-          <td style="color:var(--text2)">
-            {{ u.Nombre }} {{ u.ApellidoPaterno }}
-            {% if u.ApellidoMaterno %} {{ u.ApellidoMaterno }}{% endif %}
-          </td>
-          <td style="color:var(--muted);font-size:12px">{{ u.Correo }}</td>
-          <td>
-            {% if u.departamento_obj %}
-            <span style="font-size:13px">
-              {% if u.departamento_obj.nombre in areas_modulo %}🏢{% else %}👤{% endif %}
-              {{ u.departamento_obj.nombre }}
-            </span>
-            {% elif u.IdRol == 1 %}
-            <span style="color:var(--muted);font-size:12px">— Todas —</span>
-            {% else %}
-            <span style="color:var(--muted);font-size:12px">Sin área</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if u.TipoUsuario == 'administrador' %}
-            <span class="badge" style="background:#dbeafe;color:#1d4ed8">⭐ Administrador</span>
-            {% else %}
-            <span class="badge" style="background:#f3f4f6;color:#374151">👤 Empleado</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if u.Estatus %}
-            <span class="badge badge-activo">Activo</span>
-            {% else %}
-            <span class="badge badge-baja">Inactivo</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if u.IdUsuario != current_user.id %}
-            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-              <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}"
-                 class="btn-sm" title="Ver permisos">🔐 Permisos</a>
-              <button class="btn-sm" onclick="editarUsuario({{ u.IdUsuario }})"
-                      title="Editar">✏️ Editar</button>
-              {% if current_user.IdRol == 1 %}
-              <button class="btn-sm btn-del" title="Eliminar"
-                      onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
-                🗑️
-              </button>
-              {% endif %}
-            </div>
-            {% else %}
-            <span style="color:var(--muted);font-size:12px">Tu cuenta</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin usuarios registrados.</p>
-  {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color:var(--text2)">
+                        {{ u.Nombre }} {{ u.ApellidoPaterno }}
+                        {% if u.ApellidoMaterno %} {{ u.ApellidoMaterno }}{% endif %}
+                    </td>
+                    <td style="color:var(--muted);font-size:12px">{{ u.Correo }}</td>
+                    {% if current_user.IdRol == 1 %}
+                    <td>
+                        {% if u.departamento_obj %}
+                        <span style="font-size:13px">
+                            {% if u.departamento_obj.nombre in areas_modulo %}🏢{% else %}👤{% endif %}
+                            {{ u.departamento_obj.nombre }}
+                        </span>
+                        {% elif u.IdRol == 1 %}
+                        <span style="color:var(--muted);font-size:12px">— Todas —</span>
+                        {% else %}
+                        <span style="color:var(--muted);font-size:12px">Sin área</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td>
+                        {% if u.TipoUsuario == 'administrador' %}
+                        <span class="badge" style="background:#dbeafe;color:#1d4ed8">⭐ Administrador</span>
+                        {% else %}
+                        <span class="badge" style="background:#f3f4f6;color:#374151">👤 Empleado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.Estatus %}
+                        <span class="badge badge-activo">Activo</span>
+                        {% else %}
+                        <span class="badge badge-baja">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.IdUsuario != current_user.id %}
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                            <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" class="btn-sm"
+                                title="Ver permisos">🔐 Permisos</a>
+                            <button class="btn-sm" onclick="editarUsuario({{ u.IdUsuario }})" title="Editar">✏️
+                                Editar</button>
+                            {% if current_user.IdRol == 1 or (current_user.es_administrador_area and u.IdRol != 1) %}
+                            <button class="btn-sm btn-del" title="Eliminar"
+                                onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
+                                🗑️
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span style="color:var(--muted);font-size:12px">Tu cuenta</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin usuarios registrados.</p>
+    {% endif %}
 </div>
 
-<!-- Form oculto para eliminar -->
-<form id="form-eliminar"     method="POST" style="display:none"></form>
-<form id="form-desbloquear"  method="POST" style="display:none"></form>
+<!-- Forms ocultos -->
+<form id="form-eliminar" method="POST" style="display:none"></form>
+<form id="form-desbloquear" method="POST" style="display:none"></form>
 
-<!-- Modal: Nuevo usuario -->
+
+<!-- ══ Modal: Nuevo usuario ══════════════════════════════════ -->
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>👤 Nuevo usuario</h2>
-    <form method="POST" action="{{ url_for('usuarios.nuevo') }}">
-      <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input name="nombre" required placeholder="Juan"></div>
-        <div class="field"><label>Apellido paterno *</label><input name="apellido_paterno" required placeholder="García"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Apellido materno</label><input name="apellido_materno" placeholder="López"></div>
-        <div class="field"><label>Teléfono</label><input name="telefono" placeholder="555-0000"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Usuario *</label><input name="username" required placeholder="jgarcia"></div>
-        <div class="field"><label>Correo *</label><input name="correo" type="email" required placeholder="juan@empresa.mx"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Contraseña *</label>
-          <input name="password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres">
-        </div>
-        <div class="field"><label>Área *</label>
-          <select name="departamento_id" required>
-            <option value="">— Seleccionar —</option>
-            {% for d in departamentos %}
-            <option value="{{ d.id }}">
-              {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
+    <div class="modal" onclick="event.stopPropagation()">
+        <h2>👤 Nuevo usuario</h2>
+        <form method="POST" action="{{ url_for('usuarios.nuevo') }}">
+            <div class="grid-2">
+                <div class="field"><label>Nombre *</label>
+                    <input name="nombre" required placeholder="Juan">
+                </div>
+                <div class="field"><label>Apellido paterno *</label>
+                    <input name="apellido_paterno" required placeholder="García">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label>Apellido materno</label>
+                    <input name="apellido_materno" placeholder="López">
+                </div>
+                <div class="field"><label>Teléfono</label>
+                    <input name="telefono" placeholder="555-0000">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label>Usuario *</label>
+                    <input name="username" required placeholder="jgarcia">
+                </div>
+                <div class="field"><label>Correo *</label>
+                    <input name="correo" type="email" required placeholder="juan@empresa.mx">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label>Contraseña *</label>
+                    <input name="password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+                </div>
 
-      {% if current_user.IdRol == 1 %}
-      <div class="grid-2">
-        <div class="field"><label>Tipo *</label>
-          <select name="tipo_usuario" required>
-            <option value="empleado">👤 Empleado</option>
-            <option value="administrador">⭐ Administrador del área</option>
-          </select>
-        </div>
-        <div class="field"><label>Rol sistema</label>
-          <select name="rol_id">
-            {% for r in roles %}<option value="{{ r.IdRol }}">{{ r.NombreRol }}</option>{% endfor %}
-          </select>
-        </div>
-      </div>
-      {% endif %}
+                {# Área: super admin elige, admin de área la tiene fija #}
+                {% if current_user.IdRol == 1 %}
+                <div class="field"><label>Área *</label>
+                    <select name="departamento_id" required>
+                        <option value="">— Seleccionar —</option>
+                        {% for d in departamentos %}
+                        <option value="{{ d.id }}">
+                            {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% else %}
+                <div class="field"><label>Área</label>
+                    <input type="text" value="{{ current_user.area_nombre }}" disabled
+                        style="background:var(--surface);color:var(--muted)">
+                    <input type="hidden" name="departamento_id" value="{{ current_user.IdDepartamento }}">
+                </div>
+                {% endif %}
+            </div>
 
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Crear usuario</button>
-      </div>
-    </form>
-  </div>
+            {# Tipo y rol: solo super admin #}
+            {% if current_user.IdRol == 1 %}
+            <div class="grid-2">
+                <div class="field"><label>Tipo *</label>
+                    <select name="tipo_usuario" required>
+                        <option value="empleado">👤 Empleado</option>
+                        <option value="administrador">⭐ Administrador del área</option>
+                    </select>
+                </div>
+            </div>
+            {% else %}
+            {# Admin de área siempre crea empleados #}
+            <input type="hidden" name="tipo_usuario" value="empleado">
+            {% endif %}
+
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel"
+                    onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Crear usuario</button>
+            </div>
+        </form>
+    </div>
 </div>
 
-<!-- Modal: Editar usuario -->
-<!-- Modal: Editar usuario -->
+
+<!-- ══ Modal: Editar usuario ═════════════════════════════════ -->
 <div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>✏️ Editar usuario</h2>
-    <form method="POST" id="form-editar">
-      
-      <div class="grid-2">
-        <div class="field">
-          <label>Nombre *</label>
-          <input id="e-nombre" name="nombre" required>
-        </div>
-        <div class="field">
-          <label>Apellido paterno *</label>
-          <input id="e-ap" name="apellido_paterno" required>
-        </div>
-      </div>
+    <div class="modal" onclick="event.stopPropagation()">
+        <h2>✏️ Editar usuario</h2>
+        <form method="POST" id="form-editar">
+            <div class="grid-2">
+                <div class="field"><label>Nombre *</label>
+                    <input id="e-nombre" name="nombre" required>
+                </div>
+                <div class="field"><label>Apellido paterno *</label>
+                    <input id="e-ap" name="apellido_paterno" required>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label>Apellido materno</label>
+                    <input id="e-am" name="apellido_materno">
+                </div>
+                <div class="field"><label>Teléfono</label>
+                    <input id="e-tel" name="telefono">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field"><label>Usuario *</label>
+                    <input id="e-user" name="username" required>
+                </div>
+                <div class="field"><label>Correo *</label>
+                    <input id="e-correo" name="correo" type="email" required>
+                </div>
+            </div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label>Apellido materno</label>
-          <input id="e-am" name="apellido_materno">
-        </div>
-        <div class="field">
-          <label>Teléfono</label>
-          <input id="e-tel" name="telefono">
-        </div>
-      </div>
+            {# Super admin puede cambiar área y tipo #}
+            {% if current_user.IdRol == 1 %}
+            <div class="grid-2">
+                <div class="field"><label>Área</label>
+                    <select id="e-depto" name="departamento_id">
+                        <option value="">— Sin área (Super Admin) —</option>
+                        {% for d in departamentos %}
+                        <option value="{{ d.id }}">
+                            {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field"><label>Tipo</label>
+                    <select id="e-tipo" name="tipo_usuario">
+                        <option value="empleado">👤 Empleado</option>
+                        <option value="administrador">⭐ Administrador del área</option>
+                    </select>
+                </div>
+            </div>
+            <input type="hidden" id="e-rol" name="rol_id">
+            {% endif %}
 
-      <div class="grid-2">
-        <div class="field">
-          <label>Usuario *</label>
-          <input id="e-user" name="username" required>
-        </div>
-        <div class="field">
-          <label>Correo *</label>
-          <input id="e-correo" name="correo" type="email" required>
-        </div>
-      </div>
+            <div class="field"><label>Estatus</label>
+                <select id="e-estatus" name="estatus">
+                    <option value="1">Activo</option>
+                    <option value="0">Inactivo</option>
+                </select>
+            </div>
 
-      {% if current_user.IdRol == 1 %}
-      <div class="grid-2">
-        <div class="field">
-          <label>Área</label>
-          <select id="e-depto" name="departamento_id">
-            <option value="">— Sin área (Super Admin) —</option>
-            {% for d in departamentos %}
-            <option value="{{ d.id }}">
-              {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="field">
-          <label>Tipo</label>
-          <select id="e-tipo" name="tipo_usuario">
-            <option value="empleado">👤 Empleado</option>
-            <option value="administrador">⭐ Administrador del área</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <!-- 🔥 Campo oculto para evitar errores -->
-        <input type="hidden" id="e-rol" name="rol_id">
-
-        <div class="field">
-          <label>Estatus</label>
-          <select id="e-estatus" name="estatus">
-            <option value="1">Activo</option>
-            <option value="0">Inactivo</option>
-          </select>
-        </div>
-      </div>
-      {% else %}
-      <div class="field">
-        <label>Estatus</label>
-        <select id="e-estatus" name="estatus">
-          <option value="1">Activo</option>
-          <option value="0">Inactivo</option>
-        </select>
-      </div>
-      {% endif %}
-
-      {% if current_user.IdRol == 1 %}
-      <div id="panel-bloqueado"
-           style="display:none;background:#fff5f5;border:1px solid #fca5a5;
-                  border-radius:8px;padding:12px 16px;margin-bottom:4px;
+            {# Panel bloqueado — solo super admin #}
+            {% if current_user.IdRol == 1 %}
+            <div id="panel-bloqueado" style="display:none;background:#fff5f5;border:1px solid #fca5a5;
+                  border-radius:8px;padding:12px 16px;margin-top:8px;
                   align-items:center;justify-content:space-between;gap:12px">
-        <div style="font-size:13px;color:#b91c1c">
-          🔒 Esta cuenta está <strong>bloqueada</strong> por múltiples intentos fallidos.
-        </div>
-        <button type="button" class="btn-sm"
-                style="background:#f59e0b;color:#fff;border-color:#f59e0b;white-space:nowrap;flex-shrink:0"
-                onclick="desbloquearConfirm()">
-          🔓 Desbloquear
-        </button>
-      </div>
-      {% endif %}
+                <div style="font-size:13px;color:#b91c1c">
+                    🔒 Esta cuenta está <strong>bloqueada</strong> por múltiples intentos fallidos.
+                </div>
+                <button type="button" class="btn-sm"
+                    style="background:#f59e0b;color:#fff;border-color:#f59e0b;white-space:nowrap;flex-shrink:0"
+                    onclick="desbloquearConfirm()">
+                    🔓 Desbloquear
+                </button>
+            </div>
+            {% endif %}
 
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-editar').classList.remove('open')">
-          Cancelar
-        </button>
-        <button type="submit" class="btn btn-primary">
-          Guardar cambios
-        </button>
-      </div>
-
-    </form>
-  </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel"
+                    onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-async function editarUsuario(id) {
-  const res = await fetch(`/usuarios/api/${id}`);
-  const u   = await res.json();
+    async function editarUsuario(id) {
+        const res = await fetch(`/usuarios/api/${id}`);
+        const u = await res.json();
 
-  document.getElementById('form-editar').action = `/usuarios/${id}/editar`;
-  document.getElementById('e-nombre').value     = u.nombre;
-  document.getElementById('e-ap').value         = u.apellido_paterno;
-  document.getElementById('e-am').value         = u.apellido_materno;
-  document.getElementById('e-tel').value        = u.telefono;
-  document.getElementById('e-user').value       = u.username;
-  document.getElementById('e-correo').value     = u.correo;
+        document.getElementById('form-editar').action = `/usuarios/${id}/editar`;
+        document.getElementById('e-nombre').value = u.nombre;
+        document.getElementById('e-ap').value = u.apellido_paterno;
+        document.getElementById('e-am').value = u.apellido_materno;
+        document.getElementById('e-tel').value = u.telefono;
+        document.getElementById('e-user').value = u.username;
+        document.getElementById('e-correo').value = u.correo;
 
-  // Campos solo para super admin
-  if (document.getElementById('e-depto')) {
-    document.getElementById('e-depto').value  = u.departamento_id || '';
-    document.getElementById('e-tipo').value   = u.tipo_usuario || 'empleado';
-    document.getElementById('e-rol').value    = u.rol_id;
-  }
-  if (document.getElementById('e-estatus')) {
-    document.getElementById('e-estatus').value = u.estatus ? '1' : '0';
-  }
+        if (document.getElementById('e-estatus')) {
+            document.getElementById('e-estatus').value = u.estatus ? '1' : '0';
+        }
 
-  // Panel bloqueado
-  const panel = document.getElementById('panel-bloqueado');
-  if (panel) {
-    panel.style.display = u.bloqueado ? 'flex' : 'none';
-    document.getElementById('form-desbloquear').action = `/admin/desbloquear/${id}`;
-  }
+        // Solo super admin tiene estos campos
+        if (document.getElementById('e-depto')) {
+            document.getElementById('e-depto').value = u.departamento_id || '';
+            document.getElementById('e-tipo').value = u.tipo_usuario || 'empleado';
+            document.getElementById('e-rol').value = u.rol_id;
+        }
 
-  document.getElementById('modal-editar').classList.add('open');
-}
+        // Panel bloqueado
+        const panel = document.getElementById('panel-bloqueado');
+        if (panel) {
+            panel.style.display = u.bloqueado ? 'flex' : 'none';
+            document.getElementById('form-desbloquear').action = `/admin/desbloquear/${id}`;
+        }
 
-function desbloquearConfirm() {
-  Swal.fire({
-    title: '¿Desbloquear cuenta?',
-    html: 'El usuario podrá volver a iniciar sesión normalmente.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#f59e0b',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: '🔓 Sí, desbloquear',
-    cancelButtonText: 'Cancelar',
-    reverseButtons: true,
-  }).then(result => {
-    if (result.isConfirmed) document.getElementById('form-desbloquear').submit();
-  });
-}
-
-function eliminarUsuario(username, url) {
-  Swal.fire({
-    title: '¿Eliminar usuario?',
-    html: `El usuario <strong>${username}</strong> será eliminado permanentemente.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: '🗑️ Sí, eliminar',
-    cancelButtonText: 'Cancelar',
-    reverseButtons: true,
-    focusCancel: true,
-  }).then(result => {
-    if (result.isConfirmed) {
-      const form = document.getElementById('form-eliminar');
-      form.action = url;
-      form.submit();
+        document.getElementById('modal-editar').classList.add('open');
     }
-  });
-}
+
+    function desbloquearConfirm() {
+        Swal.fire({
+            title: '¿Desbloquear cuenta?',
+            html: 'El usuario podrá volver a iniciar sesión normalmente.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: '🔓 Sí, desbloquear',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+        }).then(result => {
+            if (result.isConfirmed) document.getElementById('form-desbloquear').submit();
+        });
+    }
+
+    function eliminarUsuario(username, url) {
+        Swal.fire({
+            title: '¿Eliminar usuario?',
+            html: `El usuario <strong>${username}</strong> será eliminado permanentemente.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: '🗑️ Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            focusCancel: true,
+        }).then(result => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('form-eliminar');
+                form.action = url;
+                form.submit();
+            }
+        });
+    }
 </script>
 {% endblock %}

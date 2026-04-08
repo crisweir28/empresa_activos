@@ -11,13 +11,12 @@ import smtplib
 import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from ..extensions import socketio
 
 auth_bp = Blueprint("auth", __name__)
 
 # ─── Configuración de bloqueo ─────────────────────────────────
 MAX_INTENTOS    = 3
-
-
 
 # ─── Generador de contraseña ──────────────────────────────────
 ESPECIALES = ['!', '@', '#', '$', '%', '&', '*', '?', ',', '.', '-', '_', '|', '=', '+', '^']
@@ -60,9 +59,12 @@ def _registrar_fallo(user: Usuario):
     """Suma un intento fallido y bloquea si llega al límite."""
     user.IntentosFallidos = (user.IntentosFallidos or 0) + 1
     if user.IntentosFallidos >= MAX_INTENTOS:
-        user.BloqueadoHasta = datetime(9999, 12, 31)
+        user.BloqueadoHasta   = datetime(9999, 12, 31)
         user.IntentosFallidos = 0
     db.session.commit()
+    # ── Notificar en tiempo real si quedó bloqueado ──
+    if user.BloqueadoHasta:
+        socketio.emit('usuario_bloqueado', {'usuario_id': user.IdUsuario})
 
 
 def _resetear_intentos(user: Usuario):
@@ -135,12 +137,6 @@ def _enviar_correo_desbloqueo(usuario_bloqueado: Usuario):
         <tr>
           <td style="color:#6b6b8a;padding:4px 0">Correo</td>
           <td style="color:#1a1a2e">{usuario_bloqueado.Correo}</td>
-        </tr>
-        <tr>
-          <td style="color:#6b6b8a;padding:4px 0">Bloqueado hasta</td>
-          <td style="color:#e53e3e;font-weight:600">
-            {usuario_bloqueado.BloqueadoHasta.strftime('%d/%m/%Y %H:%M') if usuario_bloqueado.BloqueadoHasta else 'indefinido'}
-          </td>
         </tr>
       </table>
     </div>
@@ -259,7 +255,7 @@ def solicitar_desbloqueo():
         ok = _enviar_correo_desbloqueo(user)
         if ok:
             flash(
-                "✅ Solicitud enviada. Un administrador de TI recibirá tu solicitud "
+                "Solicitud enviada. Un administrador de TI recibirá tu solicitud "
                 "y desbloqueará tu cuenta en breve.",
                 "success"
             )

@@ -191,6 +191,27 @@
     </div>
     {% endif %}
 
+    {# ── Gestión de área — para admins de área (no super admin) #}
+{% if current_user.IdRol != 1 and current_user.es_administrador_area %}
+<div class="sb-group">
+  <button class="sb-group-btn {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
+          onclick="toggleGroup(this)">
+    Mi Área <span class="sb-group-arrow">▾</span>
+  </button>
+  <div class="sb-group-body {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
+       style="max-height:200px">
+    <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
+       href="{{ url_for('usuarios.lista') }}">
+      <span class="ic">👥</span> Usuarios del área
+    </a>
+    <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
+       href="{{ url_for('permisos.index') }}">
+      <span class="ic">🔐</span> Permisos
+    </a>
+  </div>
+</div>
+{% endif %}
+
   {% if current_user.rol in ('admin', 'rh') and tiene_permiso('Recursos Humanos') %}
     <div class="sb-group">
     <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}"
@@ -207,7 +228,7 @@
        href="{{ url_for('rh.bajas_lista') }}"><span class="ic">📋</span> Procesos de Baja</a>
     <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
        href="{{ url_for('rh.auditoria') }}"><span class="ic">🔍</span> Auditoría</a>
-    <a class="nav-link ..." href="{{ url_for('rh.reporte_consolidado') }}"><span class="ic">📊</span> Reporte consolidado</a>
+    <a class="nav-link {% if request.endpoint == 'rh.reporte_consolidado' %}active{% endif %}" href="{{ url_for('rh.reporte_consolidado') }}"><span class="ic">📊</span> Reporte consolidado</a>
   </div>
 </div>
 {% endif %}
@@ -315,6 +336,12 @@ socket.on('proyectos_actualizados', function(data) {
   if (window.location.pathname.includes('/proyectos')) {
     toast('info', '📋 Proyectos actualizados');
     setTimeout(() => location.reload(), 2000);
+  }
+});
+
+socket.on('usuario_bloqueado', function(data) {
+  if (window.location.pathname.includes('/usuarios')) {
+    location.reload();
   }
 });
 </script>

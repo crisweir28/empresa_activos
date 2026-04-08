@@ -59,7 +59,10 @@ def lista():
 
     # Admin de área solo ve usuarios de su área
     if current_user.IdRol != 1 and current_user.IdDepartamento:
-        query = query.filter(Usuario.IdDepartamento == current_user.IdDepartamento)
+        query = query.filter(
+        Usuario.IdDepartamento == current_user.IdDepartamento,
+        Usuario.IdRol != 1  # ← ocultar ninjas
+    )
 
     usuarios      = query.order_by(Usuario.Nombre).all()
     roles         = Rol.query.all()
@@ -202,6 +205,7 @@ def eliminar(id):
     db.session.delete(u)
     db.session.commit()
     flash(f"Usuario '{nombre}' eliminado.", "success")
+    socketio.emit('usuarios_actualizados', {'accion': 'eliminar', 'usuario_id': id})  # ← agrega esto
     return redirect(url_for("usuarios.lista"))
 
 

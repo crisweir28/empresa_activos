@@ -10,19 +10,53 @@ from ..models.permiso import Modulo, PermisoRol, PermisoUsuario
 permisos_bp = Blueprint("permisos", __name__)
 
 
-def _check_admin():
-    if current_user.rol != "admin":
-        flash("Solo el Administrador puede gestionar permisos de roles.", "error")
+def _check_super_admin():
+    """Solo el super administrador puede gestionar permisos de roles globales."""
+    if current_user.IdRol != 1:
+        flash("Solo el Super Administrador puede gestionar permisos de roles.", "error")
         return False
     return True
 
 
-# ── Permisos por rol ──────────────────────────────────────────
+def _check_puede_editar_usuario(usuario_id):
+    """
+    Verifica si el usuario actual puede editar permisos de otro usuario.
+    - Super admin: puede editar cualquiera.
+    - Admin de área: solo puede editar usuarios de su mismo departamento
+      que no sean super admins.
+    """
+    if current_user.IdRol == 1:
+        return True
+
+    if not current_user.es_administrador_area:
+        flash("No tienes permiso para gestionar permisos.", "error")
+        return False
+
+    usuario = Usuario.query.get(usuario_id)
+    if not usuario:
+        flash("Usuario no encontrado.", "error")
+        return False
+
+    # No puede tocar super admins
+    if usuario.IdRol == 1:
+        flash("No puedes modificar permisos de un Super Administrador.", "error")
+        return False
+
+    # Solo puede tocar usuarios de su área
+    if usuario.IdDepartamento != current_user.IdDepartamento:
+        flash("Solo puedes gestionar permisos de usuarios de tu área.", "error")
+        return False
+
+    return True
+
+
+# ── Permisos por rol (solo super admin) ───────────────────────
 @permisos_bp.route("/")
 @login_required
 def index():
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
+    if not _check_super_admin():
+        # Admin de área → redirigir a lista de usuarios de su área
+        return redirect(url_for("usuarios.lista"))
 
     roles   = Rol.query.order_by(Rol.IdRol).all()
     modulos = Modulo.query.order_by(Modulo.Orden).all()
@@ -56,7 +90,7 @@ def index():
 @permisos_bp.route("/guardar", methods=["POST"])
 @login_required
 def guardar():
-    if not _check_admin():
+    if not _check_super_admin():
         return redirect(url_for("activos.dashboard"))
 
     rol_id  = int(request.form.get("rol_id"))
@@ -89,13 +123,18 @@ def guardar():
 @permisos_bp.route("/usuario/<int:usuario_id>")
 @login_required
 def usuario_permisos(usuario_id):
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
+    if not _check_puede_editar_usuario(usuario_id):
+        return redirect(url_for("usuarios.lista"))
 
     usuario = Usuario.query.get_or_404(usuario_id)
     modulos = Modulo.query.order_by(Modulo.Orden).all()
 
-    # Permisos individuales del usuario
+    # Si es admin de área, filtrar solo módulos relevantes a su área
+    if current_user.IdRol != 1 and current_user.es_administrador_area:
+        modulos_ids_area = _modulos_de_area(current_user.area_nombre)
+        if modulos_ids_area:
+            modulos = [m for m in modulos if m.IdModulo in modulos_ids_area]
+
     permisos_raw = PermisoUsuario.query.filter_by(IdUsuario=usuario_id).all()
     permisos_map = {
         p.IdModulo: {
@@ -107,7 +146,6 @@ def usuario_permisos(usuario_id):
         } for p in permisos_raw
     }
 
-    # Si no tiene permisos individuales, mostrar los del rol como referencia
     permisos_rol = {
         p.IdModulo: {
             'PuedeVer':      p.PuedeVer,
@@ -120,10 +158,10 @@ def usuario_permisos(usuario_id):
     tiene_personalizados = len(permisos_raw) > 0
 
     return render_template("usuarios/permisos_usuario.html",
-        usuario             = usuario,
-        modulos             = modulos,
-        permisos_map        = permisos_map,
-        permisos_rol        = permisos_rol,
+        usuario              = usuario,
+        modulos              = modulos,
+        permisos_map         = permisos_map,
+        permisos_rol         = permisos_rol,
         tiene_personalizados = tiene_personalizados,
     )
 
@@ -131,8 +169,8 @@ def usuario_permisos(usuario_id):
 @permisos_bp.route("/usuario/<int:usuario_id>/guardar", methods=["POST"])
 @login_required
 def usuario_permisos_guardar(usuario_id):
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
+    if not _check_puede_editar_usuario(usuario_id):
+        return redirect(url_for("usuarios.lista"))
 
     modulos = Modulo.query.all()
 
@@ -156,7 +194,6 @@ def usuario_permisos_guardar(usuario_id):
             return redirect(url_for("permisos.usuario_permisos", usuario_id=usuario_id))
 
     flash("Permisos individuales guardados correctamente.", "success")
-    # Notificar al usuario en tiempo real
     socketio.emit("permisos_actualizados", {"usuario_id": usuario_id}, room=f"user_{usuario_id}")
     return redirect(url_for("permisos.usuario_permisos", usuario_id=usuario_id))
 
@@ -164,9 +201,8 @@ def usuario_permisos_guardar(usuario_id):
 @permisos_bp.route("/usuario/<int:usuario_id>/reset", methods=["POST"])
 @login_required
 def usuario_permisos_reset(usuario_id):
-    """Reinicializa permisos del usuario desde su rol."""
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
+    if not _check_puede_editar_usuario(usuario_id):
+        return redirect(url_for("usuarios.lista"))
 
     try:
         db.session.execute(
@@ -181,11 +217,28 @@ def usuario_permisos_reset(usuario_id):
     return redirect(url_for("permisos.usuario_permisos", usuario_id=usuario_id))
 
 
+# ── Helper: módulos relevantes por área ───────────────────────
+def _modulos_de_area(area_nombre: str) -> list:
+    """
+    Devuelve los IdModulo relevantes para un área.
+    El admin de área solo puede asignar permisos de su módulo + Dashboard + Portal Empleado.
+    """
+    base = [1, 11]  # Dashboard + Portal Empleado siempre visibles
+    mapa = {
+        'TI':               [6],   # Equipos TI
+        'Tecnología':       [6],
+        'Recursos Humanos': [10],  # RH
+        'Administrativo':   [3, 4],# Vehículos + Mantenimiento
+        'Almacén':          [5],   # Almacén
+    }
+    return base + mapa.get(area_nombre, [])
+
+
 # ── API ───────────────────────────────────────────────────────
 @permisos_bp.route("/api/rol/<int:rol_id>")
 @login_required
 def api_permisos_rol(rol_id):
-    if not _check_admin():
+    if current_user.IdRol != 1:
         return jsonify({"error": "Sin acceso"}), 403
     permisos = PermisoRol.query.filter_by(IdRol=rol_id).all()
     return jsonify([p.to_dict() for p in permisos])
@@ -194,7 +247,7 @@ def api_permisos_rol(rol_id):
 @permisos_bp.route("/api/usuario/<int:usuario_id>")
 @login_required
 def api_permisos_usuario(usuario_id):
-    if not _check_admin():
+    if not _check_puede_editar_usuario(usuario_id):
         return jsonify({"error": "Sin acceso"}), 403
     permisos = PermisoUsuario.query.filter_by(IdUsuario=usuario_id).all()
     return jsonify([p.to_dict() for p in permisos])
