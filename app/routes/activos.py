@@ -113,28 +113,32 @@ def dashboard():
     elif rol == "administrativo":
         return redirect(url_for("administrativo.dashboard"))
 
-    else:
-        # Otros roles — dashboard filtrado por departamento
-        depto_id  = current_user.departamento_id
-        todos     = VActivo.query.filter_by(departamento_id=depto_id).all() if depto_id else []
-        recientes = sorted(todos, key=lambda a: a.creado_en or 0, reverse=True)[:8]
-        alertas   = [a for a in todos if a.estado == "mantenimiento"]
+    elif rol == "almacenista":
+        return redirect(url_for("almacenista.dashboard"))
 
-        return render_template("dashboard_depto.html",
-            depto_nombre  = tema["nombre"],
-            depto_icon    = tema["icon"],
-            depto_color   = tema["color"],
-            depto_color2  = tema["color2"],
-            depto_rgb     = tema["rgb"],
-            depto_rgb2    = tema["rgb2"],
-            depto_glow    = f"rgba({tema['rgb']},.15)",
-            total         = len(todos),
-            activos_ok    = sum(1 for a in todos if a.estado == "activo"),
-            mantenimiento = sum(1 for a in todos if a.estado == "mantenimiento"),
-            bajas         = sum(1 for a in todos if a.estado == "baja"),
-            valor_total   = sum(a.valor or 0 for a in todos),
-            recientes     = recientes,
-            alertas_mant  = alertas,
+    elif rol == "rh":
+        return redirect(url_for("rh.activos_usuario"))
+    
+    else:
+        # ── Empleados corporativos (Contabilidad, Ventas, SGI, etc.) ──
+        # o cualquier usuario sin módulo propio
+        from ..utils.permisos import tiene_permiso
+        uid       = current_user.id
+        depto_id  = current_user.IdDepartamento
+        area      = current_user.area_nombre or "Mi área"
+
+        # Sus activos asignados directamente
+        activos = db.session.execute(text("""
+            SELECT a.nombre, a.categoria, a.estado, a.valor, a.creado_en
+            FROM activos a
+            WHERE a.usuario_id = :uid
+            ORDER BY a.creado_en DESC
+            LIMIT 20
+        """), {'uid': uid}).fetchall()
+
+        return render_template("portal_empleado.html",
+            area_nombre   = area,
+            activos       = activos,
         )
 
 @activos_bp.route("/")

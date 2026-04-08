@@ -1,0 +1,92 @@
+<!-- app/templates/portal_empleado.html -->
+{% extends "base.html" %}
+{% block title %}Portal Empleado{% endblock %}
+
+{% block content %}
+
+{# ── Header de bienvenida ── #}
+<div style="background:linear-gradient(135deg,var(--accent),var(--accent2));
+            border-radius:16px;padding:28px 32px;margin-bottom:24px;
+            display:flex;align-items:center;gap:20px">
+  <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.2);
+              display:flex;align-items:center;justify-content:center;font-size:26px;
+              flex-shrink:0">
+    👤
+  </div>
+  <div>
+    <div style="font-size:22px;font-weight:800;color:#fff">
+      Bienvenido, {{ current_user.Nombre }}
+    </div>
+    <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:2px">
+      {{ area_nombre }} · Empleado
+    </div>
+  </div>
+</div>
+
+{# ── Mis activos asignados ── #}
+<div class="panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;
+              margin-bottom:16px">
+    <div>
+      <div style="font-weight:700;font-size:15px">📦 Mis activos asignados</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">
+        Equipos y herramientas bajo tu resguardo
+      </div>
+    </div>
+    <span style="background:var(--surface2);color:var(--text2);font-size:12px;
+                 font-weight:600;padding:4px 12px;border-radius:20px">
+      {{ activos|length }} activo{{ 's' if activos|length != 1 else '' }}
+    </span>
+  </div>
+
+  {% if activos %}
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Estado</th>
+          <th>Valor</th>
+          <th>Registrado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activos %}
+        <tr>
+          <td><strong>{{ a.nombre }}</strong></td>
+          <td style="color:var(--text2);font-size:13px">{{ a.categoria or '—' }}</td>
+          <td>
+            {% if a.estado == 'activo' %}
+            <span class="badge badge-activo">Activo</span>
+            {% elif a.estado == 'mantenimiento' %}
+            <span class="badge badge-mant">Mantenimiento</span>
+            {% else %}
+            <span class="badge badge-baja">Baja</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:600;color:var(--accent)">
+            ${{ '{:,.2f}'.format(a.valor or 0) }}
+          </td>
+          <td style="color:var(--muted);font-size:12px">
+            {{ a.creado_en.strftime('%d/%m/%Y') if a.creado_en else '—' }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px 20px">
+    <div style="font-size:40px;margin-bottom:12px">📭</div>
+    <div style="font-weight:600;color:var(--text2);margin-bottom:6px">
+      Sin activos asignados
+    </div>
+    <div style="font-size:13px;color:var(--muted)">
+      Cuando se te asigne un equipo o herramienta aparecerá aquí.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
