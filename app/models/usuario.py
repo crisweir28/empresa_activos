@@ -1,9 +1,13 @@
 # app/models/usuario.py
 from flask_login import UserMixin
 from passlib.context import CryptContext
+from .departamento import Departamento
 from ..extensions import db, login_manager
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Departamentos que tienen módulo propio en el sistema
+AREAS_CON_MODULO = {'TI', 'Tecnología', 'Recursos Humanos', 'Administrativo', 'Almacén'}
 
 
 class Rol(db.Model):
@@ -18,29 +22,44 @@ class Rol(db.Model):
 class Usuario(UserMixin, db.Model):
     __tablename__ = "Usuario"
 
-    IdUsuario       = db.Column(db.Integer,     primary_key=True)
-    NombreUsuario   = db.Column(db.String(50),  unique=True, nullable=False)
-    Nombre          = db.Column(db.String(100), nullable=False)
-    ApellidoPaterno = db.Column(db.String(100), nullable=False)
-    ApellidoMaterno = db.Column(db.String(100), nullable=True)
-    NumeroTelefono  = db.Column(db.String(15),  nullable=True)
-    Correo          = db.Column(db.String(150), unique=True, nullable=False)
-    Contrasena      = db.Column(db.String(255), nullable=False)
-    Estatus         = db.Column(db.Boolean,     nullable=False, default=True)
-    PrimerLogin     = db.Column(db.Boolean,     nullable=False, default=True)
-    IdRol           = db.Column(db.Integer, db.ForeignKey("Rol.IdRol"), nullable=False)
-    CreadoEn        = db.Column(db.DateTime, server_default=db.func.now())
+    IdUsuario        = db.Column(db.Integer,     primary_key=True)
+    NombreUsuario    = db.Column(db.String(50),  unique=True, nullable=False)
+    Nombre           = db.Column(db.String(100), nullable=False)
+    ApellidoPaterno  = db.Column(db.String(100), nullable=False)
+    ApellidoMaterno  = db.Column(db.String(100), nullable=True)
+    NumeroTelefono   = db.Column(db.String(15),  nullable=True)
+    Correo           = db.Column(db.String(150), unique=True, nullable=False)
+    Contrasena       = db.Column(db.String(255), nullable=False)
+    Estatus          = db.Column(db.Boolean,     nullable=False, default=True)
+    PrimerLogin      = db.Column(db.Boolean,     nullable=False, default=True)
+    IdRol            = db.Column(db.Integer, db.ForeignKey("Rol.IdRol"), nullable=False)
+    CreadoEn         = db.Column(db.DateTime, server_default=db.func.now())
     IntentosFallidos = db.Column(db.Integer,  nullable=False, default=0)
     BloqueadoHasta   = db.Column(db.DateTime, nullable=True,  default=None)
 
-    rol_obj = db.relationship("Rol", backref="usuarios", lazy="joined")
+    # ── Nuevas columnas ───────────────────────────────────────
+    IdDepartamento = db.Column(
+        db.Integer,
+        db.ForeignKey("departamentos.id"),
+        nullable=True,
+        default=None
+    )
+    TipoUsuario = db.Column(
+        db.Enum('administrador', 'empleado'),
+        nullable=False,
+        default='empleado'
+    )
 
-    # ── Flask-Login requiere 'id' como propiedad ──────────────
+    # ── Relaciones ────────────────────────────────────────────
+    rol_obj         = db.relationship("Rol",          backref="usuarios",     lazy="joined")
+    departamento_obj = db.relationship("Departamento", backref="usuarios",     lazy="joined")
+
+    # ── Flask-Login ───────────────────────────────────────────
     @property
     def id(self):
         return self.IdUsuario
 
-    # ── Compatibilidad con código existente ───────────────────
+    # ── Compatibilidad ────────────────────────────────────────
     @property
     def username(self):
         return self.NombreUsuario
@@ -69,42 +88,71 @@ class Usuario(UserMixin, db.Model):
     def password_hash(self):
         return self.Contrasena
 
-    # ── Rol helpers ───────────────────────────────────────────
+    # ── Área ─────────────────────────────────────────────────
+    @property
+    def area_nombre(self):
+        """Nombre del área/departamento asignado."""
+        return self.departamento_obj.nombre if self.departamento_obj else None
+
+    @property
+    def tiene_modulo(self):
+        """True si el área del usuario tiene módulo propio en el sistema."""
+        return self.area_nombre in AREAS_CON_MODULO if self.area_nombre else False
+
+    @property
+    def es_administrador_area(self):
+        return self.TipoUsuario == 'administrador'
+
+    @property
+    def es_empleado(self):
+        return self.TipoUsuario == 'empleado'
+
+    # ── Rol helpers (compatibilidad con código existente) ─────
     @property
     def rol(self):
-        """Retorna el nombre del rol en formato slug para permisos."""
+        """
+        Slug del rol para compatibilidad con permisos existentes.
+        El super admin (IdRol=1) sigue siendo 'admin'.
+        Para el resto, el slug se deriva del área.
+        """
         if not self.rol_obj:
             return "viewer"
-        nombre = self.rol_obj.NombreRol.lower()
-        mapa = {
-            "administrador":  "admin",   # Super admin — acceso total
-            "usuario ti":     "ti",      # TI — solo equipos TI
-            "administrativo": "administrativo",
-            "almacenista":    "almacenista",
-            "recursos humanos": "rh",
-            "supervisor":     "supervisor",
+
+        # Super admin — acceso total
+        if self.IdRol == 1:
+            return "admin"
+
+        # Derivar slug del área
+        area = self.area_nombre or ""
+        mapa_area = {
+            "TI":               "ti",
+            "Tecnología":       "ti",
+            "Recursos Humanos": "rh",
+            "Administrativo":   "administrativo",
+            "Almacén":          "almacenista",
         }
-        return mapa.get(nombre, "viewer")
+        return mapa_area.get(area, "empleado")
 
     @property
     def es_admin(self):
-        return self.rol == "admin"  # Solo Administrador (IdRol=1)
+        return self.IdRol == 1
 
     @property
     def puede_gestionar_usuarios(self):
-        return self.rol in ("admin", "rh", "ti")
+        return self.IdRol == 1 or self.es_administrador_area
 
     @property
     def rol_label(self):
-        return self.rol_obj.NombreRol if self.rol_obj else "Sin rol"
+        """Etiqueta legible para mostrar en UI."""
+        if self.IdRol == 1:
+            return "Super Administrador"
+        area  = self.area_nombre or "Sin área"
+        tipo  = "Administrador" if self.es_administrador_area else "Empleado"
+        return f"{tipo} — {area}"
 
     @property
     def departamento_id(self):
-        """
-        Compatibilidad — en la nueva estructura el rol define el departamento.
-        Retorna None ya que el acceso se controla por IdRol.
-        """
-        return None
+        return self.IdDepartamento
 
     # ── Contraseña ────────────────────────────────────────────
     def set_password(self, password: str):
@@ -116,7 +164,7 @@ class Usuario(UserMixin, db.Model):
         return pwd_context.verify(password, self.Contrasena)
 
     def __repr__(self):
-        return f"<Usuario {self.NombreUsuario}>"
+        return f"<Usuario {self.NombreUsuario} [{self.area_nombre}/{self.TipoUsuario}]>"
 
 
 @login_manager.user_loader

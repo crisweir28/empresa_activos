@@ -4,24 +4,39 @@ from ..extensions import socketio
 from flask_login import login_required, current_user
 from passlib.context import CryptContext
 from ..extensions import db
-from ..models.usuario import Usuario, Rol
+from ..models.usuario import Usuario, Rol, AREAS_CON_MODULO
+from ..models.departamento import Departamento
 from datetime import datetime
 
 usuarios_bp = Blueprint("usuarios", __name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# ── Mapa área → IdRol automático ──────────────────────────────
+AREA_ROL_MAP = {
+    'TI':               5,  # Usuario TI
+    'Tecnología':       5,  # Usuario TI
+    'Recursos Humanos': 4,  # Recursos Humanos
+    'Administrativo':   2,  # Administrativo
+    'Almacén':          3,  # Almacenista
+}
 
-ROLES_GESTION_USUARIOS = ("admin", "rh", "ti")
+def _rol_por_area(nombre_area: str, tipo: str) -> int:
+    """Asigna IdRol automáticamente según área y tipo."""
+    if nombre_area in AREA_ROL_MAP:
+        return AREA_ROL_MAP[nombre_area]
+    return 6  # Supervisor para áreas corporativas sin módulo
+
 
 def _check_admin():
-    if current_user.rol not in ROLES_GESTION_USUARIOS:
+    if not (current_user.IdRol == 1 or current_user.es_administrador_area):
         flash("No tienes permiso para gestionar usuarios.", "error")
         return False
     return True
 
-def _solo_admin():
-    if current_user.rol != "admin":
-        flash("Solo el Administrador puede realizar esta acción.", "error")
+
+def _solo_super_admin():
+    if current_user.IdRol != 1:
+        flash("Solo el Super Administrador puede realizar esta acción.", "error")
         return False
     return True
 
@@ -33,18 +48,30 @@ def lista():
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
 
-    rol_filtro = request.args.get("rol", "")
-    query      = Usuario.query
-    if rol_filtro:
-        query = query.join(Rol).filter(Rol.IdRol == rol_filtro)
+    area_filtro = request.args.get("area", "")
+    tipo_filtro = request.args.get("tipo", "")
+    query       = Usuario.query
 
-    usuarios = query.order_by(Usuario.Nombre).all()
-    roles    = Rol.query.all()
+    if area_filtro:
+        query = query.filter(Usuario.IdDepartamento == area_filtro)
+    if tipo_filtro:
+        query = query.filter(Usuario.TipoUsuario == tipo_filtro)
+
+    # Admin de área solo ve usuarios de su área
+    if current_user.IdRol != 1 and current_user.IdDepartamento:
+        query = query.filter(Usuario.IdDepartamento == current_user.IdDepartamento)
+
+    usuarios      = query.order_by(Usuario.Nombre).all()
+    roles         = Rol.query.all()
+    departamentos = Departamento.query.order_by(Departamento.nombre).all()
 
     return render_template("usuarios/lista.html",
-        usuarios   = usuarios,
-        roles      = roles,
-        rol_filtro = rol_filtro,
+        usuarios      = usuarios,
+        roles         = roles,
+        departamentos = departamentos,
+        area_filtro   = area_filtro,
+        tipo_filtro   = tipo_filtro,
+        areas_modulo  = AREAS_CON_MODULO,
     )
 
 
@@ -56,7 +83,7 @@ def nuevo():
         return redirect(url_for("activos.dashboard"))
 
     username = request.form.get("username", "").strip()
-    correo   = request.form.get("correo", "").strip()
+    correo   = request.form.get("correo",   "").strip()
 
     if Usuario.query.filter_by(NombreUsuario=username).first():
         flash(f"El usuario '{username}' ya existe.", "error")
@@ -70,6 +97,18 @@ def nuevo():
         flash("La contraseña debe tener al menos 6 caracteres.", "error")
         return redirect(url_for("usuarios.lista"))
 
+    depto_id = request.form.get("departamento_id")
+    tipo     = request.form.get("tipo_usuario", "empleado")
+
+    # Admin de área solo puede crear empleados de su área
+    if current_user.IdRol != 1:
+        depto_id = current_user.IdDepartamento
+        tipo     = "empleado"
+
+    # Asignar IdRol automáticamente según área
+    depto    = Departamento.query.get(int(depto_id)) if depto_id else None
+    id_rol   = _rol_por_area(depto.nombre if depto else '', tipo)
+
     u = Usuario(
         NombreUsuario   = username,
         Nombre          = request.form.get("nombre", "").strip(),
@@ -80,7 +119,9 @@ def nuevo():
         Contrasena      = pwd_context.hash(password),
         Estatus         = True,
         PrimerLogin     = True,
-        IdRol           = int(request.form.get("rol_id")),
+        IdRol           = id_rol,
+        IdDepartamento  = int(depto_id) if depto_id else None,
+        TipoUsuario     = tipo,
     )
     db.session.add(u)
     db.session.commit()
@@ -98,15 +139,13 @@ def editar(id):
 
     u        = Usuario.query.get_or_404(id)
     username = request.form.get("username", "").strip()
-    correo   = request.form.get("correo", "").strip()
+    correo   = request.form.get("correo",   "").strip()
 
     dup_user = Usuario.query.filter(
-        Usuario.NombreUsuario == username,
-        Usuario.IdUsuario != id
+        Usuario.NombreUsuario == username, Usuario.IdUsuario != id
     ).first()
     dup_mail = Usuario.query.filter(
-        Usuario.Correo == correo,
-        Usuario.IdUsuario != id
+        Usuario.Correo == correo, Usuario.IdUsuario != id
     ).first()
 
     if dup_user:
@@ -122,8 +161,17 @@ def editar(id):
     u.ApellidoMaterno = request.form.get("apellido_materno", "").strip() or None
     u.NumeroTelefono  = request.form.get("telefono", "").strip() or None
     u.Correo          = correo
-    u.IdRol           = int(request.form.get("rol_id"))
     u.Estatus         = request.form.get("estatus") == "1"
+
+    # Solo super admin puede cambiar área y tipo
+    if current_user.IdRol == 1:
+        depto_id = request.form.get("departamento_id")
+        tipo     = request.form.get("tipo_usuario", "empleado")
+
+        depto          = Departamento.query.get(int(depto_id)) if depto_id else None
+        u.IdDepartamento = int(depto_id) if depto_id else None
+        u.TipoUsuario    = tipo
+        u.IdRol          = _rol_por_area(depto.nombre if depto else '', tipo)
 
     db.session.commit()
     flash(f"Usuario '{username}' actualizado.", "success")
@@ -131,41 +179,26 @@ def editar(id):
     return redirect(url_for("usuarios.lista"))
 
 
-# ── Desactivar / Activar ──────────────────────────────────────
-@usuarios_bp.route("/<int:id>/toggle", methods=["POST"])
-@login_required
-def toggle_estatus(id):
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
-    if not _solo_admin():
-        return redirect(url_for("usuarios.lista"))
-    if id == current_user.id:
-        flash("No puedes desactivar tu propia cuenta.", "error")
-        return redirect(url_for("usuarios.lista"))
-
-    u = Usuario.query.get_or_404(id)
-    u.Estatus = not u.Estatus
-    db.session.commit()
-    accion = "activado" if u.Estatus else "desactivado"
-    flash(f"Usuario '{u.NombreUsuario}' {accion}.", "success")
-    socketio.emit('usuarios_actualizados', {'accion': accion, 'usuario_id': id})
-    return redirect(url_for("usuarios.lista"))
-
-
 # ── Eliminar ──────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>/eliminar", methods=["POST"])
 @login_required
 def eliminar(id):
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
-    if not _solo_admin():
+    if not _solo_super_admin():
         return redirect(url_for("usuarios.lista"))
     if id == current_user.id:
         flash("No puedes eliminar tu propia cuenta.", "error")
         return redirect(url_for("usuarios.lista"))
 
-    u      = Usuario.query.get_or_404(id)
+    u = Usuario.query.get_or_404(id)
     nombre = u.NombreUsuario
+
+    # Limpiar relaciones antes de eliminar
+    db.session.execute(db.text("DELETE FROM permisousuario WHERE IdUsuario = :uid"),           {'uid': id})
+    db.session.execute(db.text("DELETE FROM proyectopersonal WHERE IdUsuario = :uid"),         {'uid': id})
+    db.session.execute(db.text("UPDATE electronico SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
+    db.session.execute(db.text("UPDATE asignacionherramienta SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
+    db.session.execute(db.text("UPDATE activos SET usuario_id = NULL WHERE usuario_id = :uid"), {'uid': id})
+
     db.session.delete(u)
     db.session.commit()
     flash(f"Usuario '{nombre}' eliminado.", "success")
@@ -207,11 +240,11 @@ def api_usuario(id):
         "telefono":         u.NumeroTelefono or "",
         "correo":           u.Correo,
         "rol_id":           u.IdRol,
+        "departamento_id":  u.IdDepartamento,
+        "tipo_usuario":     u.TipoUsuario,
         "estatus":          u.Estatus,
         "primer_login":     u.PrimerLogin,
-        # ── NUEVO: campo bloqueado para el modal ──
-        "bloqueado": bool(
-            u.BloqueadoHasta and
-            u.BloqueadoHasta > datetime.now()
-        ),
+        "area_nombre":      u.area_nombre or "",
+        "tiene_modulo":     u.tiene_modulo,
+        "bloqueado":        bool(u.BloqueadoHasta and u.BloqueadoHasta > datetime.now()),
     })
