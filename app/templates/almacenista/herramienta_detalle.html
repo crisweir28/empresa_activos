@@ -18,6 +18,7 @@
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
   <!-- Info -->
   <div class="panel">
     <div class="panel-title">📋 Información</div>
@@ -48,13 +49,15 @@
       Desde: {{ asignacion.FechaAsignacion }}<br>
       {% if asignacion.Observaciones %}Notas: {{ asignacion.Observaciones }}{% endif %}
     </div>
-    <button class="btn-sm" style="margin-top:12px" onclick="document.getElementById('modal-devolver').classList.add('open')">
+    <button class="btn-sm" style="margin-top:12px"
+            onclick="document.getElementById('modal-devolver').classList.add('open')">
       📥 Registrar devolución
     </button>
     {% else %}
     <p style="color:var(--muted);font-size:13px">Sin asignación activa.</p>
     {% endif %}
   </div>
+
 </div>
 
 <!-- Tabs -->
@@ -76,9 +79,12 @@
         <td>{{ h.UsuarioNombre }}</td>
         <td style="color:var(--muted);font-size:12px">{{ h.FechaAsignacion }}</td>
         <td style="color:var(--muted);font-size:12px">{{ h.FechaDevolucion or '—' }}</td>
-        <td><span class="badge {% if h.EstadoAsignacion == 'activa' %}badge-activo{% else %}{% endif %}"
-                  style="{% if h.EstadoAsignacion != 'activa' %}background:rgba(96,96,122,.15);color:var(--muted){% endif %}">
-          {{ h.EstadoAsignacion }}</span></td>
+        <td>
+          <span class="badge {% if h.EstadoAsignacion == 'activa' %}badge-activo{% endif %}"
+                style="{% if h.EstadoAsignacion != 'activa' %}background:rgba(96,96,122,.15);color:var(--muted){% endif %}">
+            {{ h.EstadoAsignacion }}
+          </span>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -92,23 +98,41 @@
 <div id="tab-evidencias" class="tab-content panel" style="display:none;border-top:none;border-radius:0 0 16px 16px">
   <div class="panel-title" style="margin-top:4px">
     Evidencias fotográficas
+    <span style="color:var(--muted);font-size:12px;font-weight:400">
+      ({{ evidencias|length }} archivo{{ 's' if evidencias|length != 1 else '' }})
+    </span>
     <button class="btn btn-primary" style="font-size:12px;padding:6px 14px"
             onclick="document.getElementById('modal-evidencia').classList.add('open')">+ Subir</button>
   </div>
+
   {% if evidencias %}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:4px 0">
     {% for ev in evidencias %}
-    <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden">
-      <img src="{{ ev.ArchivoUrl }}" alt="{{ ev.NombreArchivo }}"
-           style="width:100%;height:100px;object-fit:cover;display:block">
-      <div style="padding:8px;font-size:11px;color:var(--muted)">
-        {{ ev.Tipo }} · {{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}
+    <div class="ev-card"
+         onclick="abrirLightbox('{{ ev.ArchivoUrl }}','{{ ev.Tipo }}','{{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}','{{ ev.NombreArchivo }}')">
+      <div class="ev-img-wrap">
+        <img src="{{ ev.ArchivoUrl }}" alt="{{ ev.NombreArchivo }}" loading="lazy">
+        <div class="ev-overlay"><span style="font-size:28px">🔍</span></div>
+      </div>
+      <div class="ev-info">
+        <span class="badge {% if ev.Tipo == 'daño' %}badge-baja{% elif ev.Tipo in ('devolucion','entrega') %}badge-activo{% endif %}"
+              style="font-size:10px">{{ ev.Tipo }}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:4px">
+          {{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}
+        </span>
+      </div>
+      <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+           title="{{ ev.NombreArchivo }}">
+        {{ ev.NombreArchivo }}
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <p style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Sin evidencias.</p>
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
+    Sin evidencias registradas. Sube la primera imagen.
+  </p>
   {% endif %}
 </div>
 
@@ -116,8 +140,11 @@
 <div id="tab-reportes" class="tab-content panel" style="display:none;border-top:none;border-radius:0 0 16px 16px">
   <div class="panel-title" style="margin-top:4px">
     Reportes de daño / faltante
-    <button class="btn btn-primary" style="font-size:12px;padding:6px 14px;background:linear-gradient(135deg,var(--red),#fb923c)"
-            onclick="document.getElementById('modal-reporte').classList.add('open')">⚠️ Nuevo reporte</button>
+    <button class="btn btn-primary"
+            style="font-size:12px;padding:6px 14px;background:linear-gradient(135deg,var(--red),#fb923c)"
+            onclick="document.getElementById('modal-reporte').classList.add('open')">
+      ⚠️ Nuevo reporte
+    </button>
   </div>
   {% if reportes %}
   <table>
@@ -129,7 +156,9 @@
         <td><strong>{{ r.NombreMaterial }}</strong></td>
         <td style="color:var(--muted)">{{ r.Caracteristica[:60] }}</td>
         <td style="color:var(--muted)">{{ r.Razon[:60] }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ r.CreadoEn.strftime('%d/%m/%Y') if r.CreadoEn else '' }}</td>
+        <td style="color:var(--muted);font-size:12px">
+          {{ r.CreadoEn.strftime('%d/%m/%Y') if r.CreadoEn else '' }}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -140,21 +169,65 @@
 </div>
 
 
+<!-- ══ LIGHTBOX — sin style inline, el CSS lo controla ══════ -->
+<div id="lightbox" onclick="cerrarLightbox()">
+
+  <button onclick="cerrarLightbox()" style="
+    position:fixed;top:20px;right:24px;
+    background:rgba(255,255,255,.15);border:none;color:#fff;
+    font-size:22px;width:40px;height:40px;border-radius:50%;
+    cursor:pointer;z-index:10000;line-height:1">✕</button>
+
+  <img id="lb-img" src="" alt=""
+       onclick="event.stopPropagation()"
+       style="max-width:90vw;max-height:80vh;border-radius:10px;
+              object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+
+  <div onclick="event.stopPropagation()"
+       style="margin-top:16px;text-align:center;color:#fff">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap">
+      <span id="lb-tipo"
+            style="background:rgba(255,255,255,.15);padding:3px 10px;
+                   border-radius:20px;font-size:12px"></span>
+      <span id="lb-fecha" style="font-size:13px;color:rgba(255,255,255,.7)"></span>
+    </div>
+    <div id="lb-nombre" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px"></div>
+    <a id="lb-download" href="" download
+       onclick="event.stopPropagation()"
+       style="display:inline-block;margin-top:12px;padding:7px 18px;
+              background:rgba(255,255,255,.15);color:#fff;border-radius:8px;
+              font-size:13px;text-decoration:none;border:1px solid rgba(255,255,255,.2)">
+      ⬇ Descargar
+    </a>
+  </div>
+</div>
+
+
+<!-- ══ Modales ══════════════════════════════════════════════ -->
+
 <!-- Modal: Asignar -->
 <div class="overlay" id="modal-asignar" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>👤 Asignar herramienta</h2>
     <form method="POST" action="{{ url_for('almacenista.herramienta_asignar', id=herramienta.IdHerramienta) }}">
-      <div class="field"><label>Asignar a *</label>
+      <div class="field">
+        <label>Asignar a *</label>
         <select name="usuario_id" required>
           <option value="">— Seleccionar —</option>
-          {% for u in usuarios %}<option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>{% endfor %}
+          {% for u in usuarios %}
+          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
+          {% endfor %}
         </select>
       </div>
-      <div class="field"><label>Fecha de asignación</label><input name="fecha_asignacion" type="date" value="{{ today }}"></div>
-      <div class="field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>
+      <div class="field"><label>Fecha de asignación</label>
+        <input name="fecha_asignacion" type="date" value="{{ today }}">
+      </div>
+      <div class="field"><label>Observaciones</label>
+        <textarea name="observaciones"></textarea>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Asignar</button>
       </div>
     </form>
@@ -167,7 +240,9 @@
     <h2>📥 Registrar devolución</h2>
     {% if asignacion %}
     <form method="POST" action="{{ url_for('almacenista.herramienta_devolver', id=asignacion.IdAsignacion) }}">
-      <div class="field"><label>Fecha de devolución</label><input name="fecha_devolucion" type="date" value="{{ today }}"></div>
+      <div class="field"><label>Fecha de devolución</label>
+        <input name="fecha_devolucion" type="date" value="{{ today }}">
+      </div>
       <div class="field"><label>Estado final de la herramienta</label>
         <select name="estado_final">
           <option value="disponible">Disponible (buen estado)</option>
@@ -176,9 +251,12 @@
           <option value="mantenimiento">Requiere mantenimiento</option>
         </select>
       </div>
-      <div class="field"><label>Observaciones</label><textarea name="observaciones"></textarea></div>
+      <div class="field"><label>Observaciones</label>
+        <textarea name="observaciones"></textarea>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-devolver').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-devolver').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar</button>
       </div>
     </form>
@@ -190,7 +268,9 @@
 <div class="overlay" id="modal-evidencia" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>🖼️ Subir evidencia</h2>
-    <form method="POST" action="{{ url_for('almacenista.subir_evidencia', id=herramienta.IdHerramienta) }}" enctype="multipart/form-data">
+    <form method="POST"
+          action="{{ url_for('almacenista.subir_evidencia', id=herramienta.IdHerramienta) }}"
+          enctype="multipart/form-data">
       <div class="field"><label>Tipo de evidencia</label>
         <select name="tipo">
           <option value="daño">Daño</option>
@@ -199,12 +279,21 @@
           <option value="devolucion">Devolución</option>
         </select>
       </div>
-      <div class="field"><label>Imagen (PNG o JPG) *</label>
+      <div class="field">
+        <label>Imagen (PNG o JPG) *</label>
         <input type="file" name="archivo" accept=".png,.jpg,.jpeg" required
+               id="input-archivo" onchange="previewAntes(this)"
                style="color:var(--text);font-size:13px">
       </div>
+      <div id="preview-wrap" style="display:none;margin-top:8px;text-align:center">
+        <img id="preview-img" src="" alt="preview"
+             style="max-width:100%;max-height:200px;border-radius:8px;
+                    border:1px solid var(--border);object-fit:contain">
+        <div id="preview-nombre" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-evidencia').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-evidencia').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Subir</button>
       </div>
     </form>
@@ -224,41 +313,133 @@
         </select>
       </div>
       <div class="field"><label>Nombre del material *</label>
-        <input name="nombre_material" value="{{ herramienta.Nombre }}" required></div>
+        <input name="nombre_material" value="{{ herramienta.Nombre }}" required>
+      </div>
       <div class="field"><label>Característica del daño *</label>
-        <textarea name="caracteristica" placeholder="Describe el daño o faltante..." required></textarea></div>
+        <textarea name="caracteristica" placeholder="Describe el daño o faltante..." required></textarea>
+      </div>
       <div class="field"><label>Razón *</label>
-        <textarea name="razon" placeholder="¿Por qué ocurrió?" required></textarea></div>
+        <textarea name="razon" placeholder="¿Por qué ocurrió?" required></textarea>
+      </div>
       <div class="field"><label>Usuario responsable</label>
         <select name="responsable_id">
           <option value="">— Sin responsable —</option>
-          {% for u in usuarios %}<option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>{% endfor %}
+          {% for u in usuarios %}
+          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
+          {% endfor %}
         </select>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-reporte').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,var(--red),#fb923c)">Guardar reporte</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-reporte').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary"
+                style="background:linear-gradient(135deg,var(--red),#fb923c)">Guardar reporte</button>
       </div>
     </form>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_head %}
 <style>
-  .tab-btn { padding:10px 20px; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--muted); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; transition:all .18s; margin-bottom:-1px; }
-  .tab-btn:hover { color:var(--text); }
+  /* ── Tabs ── */
+  .tab-btn {
+    padding:10px 20px; background:transparent; border:none;
+    border-bottom:2px solid transparent; color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:13px;
+    cursor:pointer; transition:all .18s; margin-bottom:-1px;
+  }
+  .tab-btn:hover  { color:var(--text); }
   .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* ── Tarjetas evidencia ── */
+  .ev-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden; cursor:pointer;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .ev-card:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+    border-color:var(--accent);
+  }
+  .ev-img-wrap { position:relative; height:120px; overflow:hidden; background:var(--bg); }
+  .ev-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
+  .ev-card:hover .ev-img-wrap img { transform:scale(1.05); }
+  .ev-overlay {
+    position:absolute; inset:0;
+    background:rgba(0,0,0,.35);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .2s;
+  }
+  .ev-card:hover .ev-overlay { opacity:1; }
+  .ev-info { padding:8px 8px 4px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
+
+  /* ── Lightbox — TODO el control aquí, sin style inline en el div ── */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,.88);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 24px;
+  }
+  #lightbox.open { display: flex; }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
+// ── Tabs ─────────────────────────────────────────────────────
 function showTab(name, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).style.display = 'block';
   btn.classList.add('active');
 }
+
+// ── Preview antes de subir ────────────────────────────────────
+function previewAntes(input) {
+  const wrap = document.getElementById('preview-wrap');
+  const img  = document.getElementById('preview-img');
+  const nom  = document.getElementById('preview-nombre');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      nom.textContent = input.files[0].name;
+      wrap.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+// ── Lightbox ──────────────────────────────────────────────────
+function abrirLightbox(url, tipo, fecha, nombre) {
+  document.getElementById('lb-img').src               = url;
+  document.getElementById('lb-tipo').textContent      = tipo;
+  document.getElementById('lb-fecha').textContent     = fecha;
+  document.getElementById('lb-nombre').textContent    = nombre;
+  document.getElementById('lb-download').href         = url;
+  document.getElementById('lb-download').download     = nombre;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cerrarLightbox();
+});
 </script>
 {% endblock %}

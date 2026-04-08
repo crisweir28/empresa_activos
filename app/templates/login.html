@@ -1,13 +1,17 @@
 <!-- app/templates/login.html -->
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Iniciar sesión — ActivosApp</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
+
 <body>
   <!-- Círculos decorativos -->
   <div class="geo-circle-1"></div>
@@ -27,30 +31,75 @@
       <p class="auth-sub">Inicia sesión para gestionar los activos.</p>
 
       {% with messages = get_flashed_messages(with_categories=True) %}
-        {% for cat, msg in messages %}
-          <div class="flash flash-{{ cat }}">⚠️ {{ msg }}</div>
-        {% endfor %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">
+        {% if cat == 'success' %}✅{% else %}⚠️{% endif %} {{ msg }}
+      </div>
+      {% endfor %}
       {% endwith %}
 
-      <form method="POST">
-        <div class="field">
-          <label>Usuario</label>
-          <input type="text" name="username" placeholder="tu_usuario"
-                 autocomplete="username" required>
-        </div>
-        <div class="field">
-          <label>Contraseña</label>
-          <input type="password" name="password" placeholder="••••••••"
-                 autocomplete="current-password" required>
+      {# ── Panel cuenta bloqueada ── #}
+      {% if bloqueado %}
+      <div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:12px;
+                  padding:18px;margin-bottom:20px">
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:22px">🔒</span>
+          <div style="font-size:12px;color:#7f1d1d">
+            Cuenta bloqueada por seguridad · Contacta al área de TI
+          </div>
         </div>
 
-        <label class="remember" style="margin-bottom:16px">
-          <input type="checkbox" name="remember">
-          Mantener sesión
-        </label>
+        <p style="font-size:12px;color:#7f1d1d;margin:0 0 14px 0;line-height:1.6">
+          Puedes esperar a que expire el bloqueo o solicitar al área de
+          <strong>TI / Administración</strong> que lo desbloquee manualmente.
+        </p>
 
-        <button class="btn-auth" type="submit">Entrar →</button>
-      </form>
+        <form method="POST" action="{{ url_for('auth.solicitar_desbloqueo') }}">
+          <input type="hidden" name="username" value="{{ username or '' }}">
+          <button type="submit" style="width:100%;background:#9B2335;color:#fff;border:none;
+                         border-radius:8px;padding:10px 16px;font-size:13px;
+                         font-weight:600;cursor:pointer;font-family:inherit;
+                         letter-spacing:.02em;transition:background .15s" onmouseover="this.style.background='#7a1a28'"
+            onmouseout="this.style.background='#9B2335'">
+            📧 Solicitar desbloqueo a TI
+          </button>
+        </form>
+
+        <div style="text-align:center;margin-top:10px">
+          <span style="font-size:11px;color:#b91c1c;opacity:.7">
+            Se enviará un correo a los administradores del sistema
+          </span>
+        </div>
+      </div>
+
+      {# ── Formulario deshabilitado visualmente cuando está bloqueado ── #}
+      <div style="opacity:.45;pointer-events:none;user-select:none">
+        {% endif %}
+
+        <form method="POST">
+          <div class="field">
+            <label>Usuario</label>
+            <input type="text" name="username" value="{{ username or '' }}" placeholder="tu_usuario"
+              autocomplete="username" {% if not bloqueado %}required{% endif %}>
+          </div>
+          <div class="field">
+            <label>Contraseña</label>
+            <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" {% if not
+              bloqueado %}required{% endif %}>
+          </div>
+
+          <label class="remember" style="margin-bottom:16px">
+            <input type="checkbox" name="remember">
+            Mantener sesión
+          </label>
+
+          <button class="btn-auth" type="submit">Entrar →</button>
+        </form>
+
+        {% if bloqueado %}
+      </div>
+      {% endif %}
 
       <div class="auth-link">
         <a href="{{ url_for('auth.recuperar') }}">¿Olvidaste tu contraseña?</a>
@@ -59,4 +108,5 @@
     </div>
   </div>
 </body>
+
 </html>

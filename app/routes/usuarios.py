@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 from passlib.context import CryptContext
 from ..extensions import db
 from ..models.usuario import Usuario, Rol
+from datetime import datetime
 
 usuarios_bp = Blueprint("usuarios", __name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -19,7 +20,6 @@ def _check_admin():
     return True
 
 def _solo_admin():
-    """Solo el super admin puede eliminar usuarios y gestionar permisos."""
     if current_user.rol != "admin":
         flash("Solo el Administrador puede realizar esta acción.", "error")
         return False
@@ -58,7 +58,6 @@ def nuevo():
     username = request.form.get("username", "").strip()
     correo   = request.form.get("correo", "").strip()
 
-    # Verificar duplicados
     if Usuario.query.filter_by(NombreUsuario=username).first():
         flash(f"El usuario '{username}' ya existe.", "error")
         return redirect(url_for("usuarios.lista"))
@@ -97,11 +96,10 @@ def editar(id):
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
 
-    u = Usuario.query.get_or_404(id)
-
-    # Verificar duplicado de username (excluyendo el mismo)
+    u        = Usuario.query.get_or_404(id)
     username = request.form.get("username", "").strip()
     correo   = request.form.get("correo", "").strip()
+
     dup_user = Usuario.query.filter(
         Usuario.NombreUsuario == username,
         Usuario.IdUsuario != id
@@ -139,10 +137,8 @@ def editar(id):
 def toggle_estatus(id):
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
-
     if not _solo_admin():
         return redirect(url_for("usuarios.lista"))
-
     if id == current_user.id:
         flash("No puedes desactivar tu propia cuenta.", "error")
         return redirect(url_for("usuarios.lista"))
@@ -162,15 +158,13 @@ def toggle_estatus(id):
 def eliminar(id):
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
-
     if not _solo_admin():
         return redirect(url_for("usuarios.lista"))
-
     if id == current_user.id:
         flash("No puedes eliminar tu propia cuenta.", "error")
         return redirect(url_for("usuarios.lista"))
 
-    u = Usuario.query.get_or_404(id)
+    u      = Usuario.query.get_or_404(id)
     nombre = u.NombreUsuario
     db.session.delete(u)
     db.session.commit()
@@ -185,8 +179,8 @@ def reset_password(id):
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
 
-    u        = Usuario.query.get_or_404(id)
-    nueva    = request.form.get("nueva_password", "").strip()
+    u     = Usuario.query.get_or_404(id)
+    nueva = request.form.get("nueva_password", "").strip()
 
     if len(nueva) < 6:
         flash("La contraseña debe tener al menos 6 caracteres.", "error")
@@ -195,7 +189,7 @@ def reset_password(id):
     u.Contrasena  = pwd_context.hash(nueva)
     u.PrimerLogin = True
     db.session.commit()
-    flash(f"Contraseña de '{u.NombreUsuario}' restablecida. El usuario deberá cambiarla al iniciar sesión.", "success")
+    flash(f"Contraseña de '{u.NombreUsuario}' restablecida.", "success")
     return redirect(url_for("usuarios.lista"))
 
 
@@ -215,4 +209,9 @@ def api_usuario(id):
         "rol_id":           u.IdRol,
         "estatus":          u.Estatus,
         "primer_login":     u.PrimerLogin,
+        # ── NUEVO: campo bloqueado para el modal ──
+        "bloqueado": bool(
+            u.BloqueadoHasta and
+            u.BloqueadoHasta > datetime.now()
+        ),
     })

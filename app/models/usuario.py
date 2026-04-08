@@ -30,6 +30,8 @@ class Usuario(UserMixin, db.Model):
     PrimerLogin     = db.Column(db.Boolean,     nullable=False, default=True)
     IdRol           = db.Column(db.Integer, db.ForeignKey("Rol.IdRol"), nullable=False)
     CreadoEn        = db.Column(db.DateTime, server_default=db.func.now())
+    IntentosFallidos = db.Column(db.Integer,  nullable=False, default=0)
+    BloqueadoHasta   = db.Column(db.DateTime, nullable=True,  default=None)
 
     rol_obj = db.relationship("Rol", backref="usuarios", lazy="joined")
 

@@ -91,4 +91,5 @@ if __name__ == "__main__":
     print(f"  🌐  Red local:   http://{ip}:5000")
     print(f"  🗄️   DB: {app.config['SQLALCHEMY_DATABASE_URI']}\n")
 
-    socketio.run(app, debug=True, port=5000, host="0.0.0.0")
+    socketio.run(app, debug=True, port=5000, host="0.0.0.0",
+             use_reloader=True, reloader_type='watchdog')

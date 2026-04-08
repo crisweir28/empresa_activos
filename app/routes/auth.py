@@ -4,6 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import text
 from ..models.usuario import Usuario, pwd_context
 from ..extensions import db
+from datetime import datetime, timedelta
 import random
 import secrets
 import smtplib
@@ -13,8 +14,12 @@ from email.mime.text import MIMEText
 
 auth_bp = Blueprint("auth", __name__)
 
+# ─── Configuración de bloqueo ─────────────────────────────────
+MAX_INTENTOS    = 3
 
-# ─── Generador de contraseña ──────────────────────────────────────────────────
+
+
+# ─── Generador de contraseña ──────────────────────────────────
 ESPECIALES = ['!', '@', '#', '$', '%', '&', '*', '?', ',', '.', '-', '_', '|', '=', '+', '^']
 
 def generar_password(frase: str) -> str:
@@ -46,7 +51,140 @@ def analizar_password(password: str) -> dict:
     return {"fortaleza": puntos, "nivel": nivel, "longitud": n}
 
 
-# ─── Rutas principales ────────────────────────────────────────────────────────
+# ─── Helpers de bloqueo ───────────────────────────────────────
+def _esta_bloqueado(user: Usuario) -> bool:
+    return bool(user.BloqueadoHasta and user.BloqueadoHasta > datetime.now())
+
+
+def _registrar_fallo(user: Usuario):
+    """Suma un intento fallido y bloquea si llega al límite."""
+    user.IntentosFallidos = (user.IntentosFallidos or 0) + 1
+    if user.IntentosFallidos >= MAX_INTENTOS:
+        user.BloqueadoHasta = datetime(9999, 12, 31)
+        user.IntentosFallidos = 0
+    db.session.commit()
+
+
+def _resetear_intentos(user: Usuario):
+    """Limpia intentos al hacer login exitoso."""
+    if user.IntentosFallidos or user.BloqueadoHasta:
+        user.IntentosFallidos = 0
+        user.BloqueadoHasta   = None
+        db.session.commit()
+
+
+def _obtener_admins_ti():
+    """Obtiene los correos de todos los Administradores (IdRol=1)."""
+    admins = db.session.execute(text("""
+        SELECT CONCAT(Nombre,' ',ApellidoPaterno) AS NombreCompleto, Correo
+        FROM usuario
+        WHERE IdRol = 1 AND Estatus = 1
+    """)).fetchall()
+    return admins
+
+
+def _enviar_correo_desbloqueo(usuario_bloqueado: Usuario):
+    """Manda correo a todos los admins pidiendo desbloqueo."""
+    admins = _obtener_admins_ti()
+    if not admins:
+        return False
+
+    smtp_server = current_app.config.get("MAIL_SERVER",        "smtp.gmail.com")
+    smtp_port   = int(current_app.config.get("MAIL_PORT",      587))
+    smtp_user   = current_app.config.get("MAIL_USERNAME")
+    smtp_pass   = current_app.config.get("MAIL_PASSWORD")
+    remitente   = current_app.config.get("MAIL_DEFAULT_SENDER", smtp_user)
+
+    nombre_bloqueado = f"{usuario_bloqueado.Nombre} {usuario_bloqueado.ApellidoPaterno}"
+    user_bloqueado   = usuario_bloqueado.NombreUsuario
+
+    for admin in admins:
+        asunto = f"🔒 Solicitud de desbloqueo — {nombre_bloqueado}"
+
+        cuerpo_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="font-family:'DM Sans',Arial,sans-serif;background:#f4f4f8;margin:0;padding:40px 20px">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0ef;
+              border-radius:16px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.06)">
+
+    <div style="margin-bottom:24px">
+      <span style="font-weight:800;font-size:18px;color:#9B2335">🏢 ActivosApp</span>
+    </div>
+
+    <h1 style="color:#1a1a2e;font-size:20px;font-weight:800;margin-bottom:8px">
+      Solicitud de desbloqueo de cuenta
+    </h1>
+    <p style="color:#6b6b8a;font-size:14px;line-height:1.7;margin-bottom:24px">
+      Hola <strong style="color:#1a1a2e">{admin.NombreCompleto}</strong>,<br>
+      el siguiente usuario ha sido bloqueado por múltiples intentos fallidos
+      de inicio de sesión y solicita que se desbloquee su cuenta.
+    </p>
+
+    <div style="background:#f8f8fc;border:1px solid #e0e0ef;border-radius:10px;
+                padding:18px 20px;margin-bottom:28px">
+      <table style="font-size:13px;width:100%">
+        <tr>
+          <td style="color:#6b6b8a;padding:4px 0;width:130px">Usuario</td>
+          <td style="font-weight:700;color:#1a1a2e;font-family:monospace">{user_bloqueado}</td>
+        </tr>
+        <tr>
+          <td style="color:#6b6b8a;padding:4px 0">Nombre</td>
+          <td style="font-weight:600;color:#1a1a2e">{nombre_bloqueado}</td>
+        </tr>
+        <tr>
+          <td style="color:#6b6b8a;padding:4px 0">Correo</td>
+          <td style="color:#1a1a2e">{usuario_bloqueado.Correo}</td>
+        </tr>
+        <tr>
+          <td style="color:#6b6b8a;padding:4px 0">Bloqueado hasta</td>
+          <td style="color:#e53e3e;font-weight:600">
+            {usuario_bloqueado.BloqueadoHasta.strftime('%d/%m/%Y %H:%M') if usuario_bloqueado.BloqueadoHasta else 'indefinido'}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="color:#6b6b8a;font-size:13px;line-height:1.7;margin-bottom:20px">
+      Para desbloquearlo, ingresa al sistema con tu cuenta de administrador,
+      ve a <strong>Administración → Usuarios</strong> y usa el botón
+      <strong>"Desbloquear"</strong> en la fila de este usuario.
+    </p>
+
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;
+                padding:12px 16px;font-size:12px;color:#856404">
+      ⚠️ Si no reconoces a este usuario o sospechas de actividad maliciosa,
+      no desbloquees la cuenta y repórtalo al administrador del sistema.
+    </div>
+
+    <p style="color:#b0b0c8;font-size:11px;margin-top:24px;border-top:1px solid #f0f0f8;
+              padding-top:16px">
+      Este correo fue generado automáticamente por ActivosApp.
+    </p>
+  </div>
+</body>
+</html>"""
+
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = asunto
+            msg["From"]    = remitente
+            msg["To"]      = admin.Correo
+            msg.attach(MIMEText(cuerpo_html, "html", "utf-8"))
+
+            context = ssl.create_default_context()
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.ehlo()
+                server.starttls(context=context)
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(remitente, admin.Correo, msg.as_string())
+        except Exception as e:
+            current_app.logger.error(f"Error enviando correo a {admin.Correo}: {e}")
+
+    return True
+
+
+# ─── Rutas principales ────────────────────────────────────────
 @auth_bp.route("/")
 def index():
     if current_user.is_authenticated:
@@ -63,22 +201,94 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
-        # ── Nueva tabla Usuario ──────────────────────────────
         user = Usuario.query.filter_by(
             NombreUsuario=username,
             Estatus=True
         ).first()
 
-        if user and user.check_password(password):
+        if not user:
+            flash("Usuario o contraseña incorrectos.", "error")
+            return render_template("login.html")
+
+        # ── Verificar si está bloqueado ──────────────────────
+        bloqueado = _esta_bloqueado(user)
+        if bloqueado:
+            return render_template("login.html",
+                                   bloqueado=True,
+                                   username=username)
+
+        # ── Verificar contraseña ─────────────────────────────
+        if user.check_password(password):
+            _resetear_intentos(user)
             login_user(user, remember=request.form.get("remember") == "on")
             if user.PrimerLogin:
                 return redirect(url_for("auth.sugerir_cambio"))
             return redirect(request.args.get("next") or url_for("activos.dashboard"))
 
-        flash("Usuario o contraseña incorrectos.", "error")
+        # ── Contraseña incorrecta ────────────────────────────
+        _registrar_fallo(user)
+
+        bloqueado = _esta_bloqueado(user)
+        if bloqueado:
+            return render_template("login.html",
+                           bloqueado=True,
+                           username=username)
+        flash(
+            f"Usuario o contraseña incorrectos. ")
 
     return render_template("login.html")
 
+
+# ─── Solicitar desbloqueo (sin login) ────────────────────────
+@auth_bp.route("/solicitar-desbloqueo", methods=["POST"])
+def solicitar_desbloqueo():
+    username = request.form.get("username", "").strip()
+
+    user = Usuario.query.filter_by(NombreUsuario=username, Estatus=True).first()
+
+    if not user:
+        flash("Usuario no encontrado.", "error")
+        return redirect(url_for("auth.login"))
+
+    bloqueado = _esta_bloqueado(user)
+    if not bloqueado:
+        flash("Esta cuenta no está bloqueada.", "info")
+        return redirect(url_for("auth.login"))
+
+    try:
+        ok = _enviar_correo_desbloqueo(user)
+        if ok:
+            flash(
+                "✅ Solicitud enviada. Un administrador de TI recibirá tu solicitud "
+                "y desbloqueará tu cuenta en breve.",
+                "success"
+            )
+        else:
+            flash(
+                "No se encontraron administradores disponibles. "
+                "Contacta directamente al área de TI.",
+                "warning"
+            )
+    except Exception as e:
+        current_app.logger.error(f"Error al enviar solicitud de desbloqueo: {e}")
+        flash("Error al enviar la solicitud. Contacta directamente al área de TI.", "error")
+
+    return redirect(url_for("auth.login"))
+
+# ─── Desbloquear usuario (solo admin) ────────────────────────
+@auth_bp.route("/admin/desbloquear/<int:uid>", methods=["POST"])
+@login_required
+def desbloquear_usuario(uid):
+    if current_user.rol != 'admin':
+        flash("Sin permiso para esta acción.", "error")
+        return redirect(url_for("activos.dashboard"))
+
+    user = Usuario.query.get_or_404(uid)
+    user.IntentosFallidos = 0
+    user.BloqueadoHasta   = None
+    db.session.commit()
+    flash(f"Usuario {user.NombreUsuario} desbloqueado correctamente.", "success")
+    return redirect(url_for("usuarios.lista"))
 
 @auth_bp.route("/sugerir-cambio", methods=["GET", "POST"])
 @login_required
@@ -128,7 +338,7 @@ def cambiar_password():
     return render_template("cambiar_password.html", error=error)
 
 
-# ─── Recuperación de contraseña ───────────────────────────────────────────────
+# ─── Recuperación de contraseña ───────────────────────────────
 @auth_bp.route("/recuperar", methods=["GET", "POST"])
 def recuperar():
     if current_user.is_authenticated:
@@ -146,7 +356,6 @@ def recuperar():
         else:
             token = secrets.token_urlsafe(48)
             try:
-                # Buscar por Correo en nueva tabla
                 user = Usuario.query.filter(
                     Usuario.Correo.ilike(email),
                     Usuario.Estatus == True
@@ -162,7 +371,7 @@ def recuperar():
                         {"uid": user.IdUsuario, "token": token}
                     )
                     db.session.commit()
-                    # Usar IP de red para que el link funcione desde cualquier equipo
+
                     import os
                     host = request.host_url
                     if 'localhost' in host or '127.0.0.1' in host:
@@ -215,7 +424,6 @@ def reset_password(token):
             error = "Las contraseñas no coinciden."
         else:
             try:
-                # Buscar usuario por token y actualizar contraseña directamente
                 row = db.session.execute(
                     text("""
                         SELECT usuario_id FROM password_reset_tokens
@@ -231,7 +439,9 @@ def reset_password(token):
                     user = Usuario.query.get(row.usuario_id)
                     if user:
                         user.set_password(nueva)
-                        user.PrimerLogin = False
+                        user.PrimerLogin      = False
+                        user.IntentosFallidos = 0
+                        user.BloqueadoHasta   = None
                         db.session.execute(
                             text("UPDATE password_reset_tokens SET usado = 1 WHERE token = :token"),
                             {"token": token}
@@ -249,8 +459,8 @@ def reset_password(token):
 
 
 def _enviar_correo_reset(email: str, nombre: str, link: str):
-    smtp_server = current_app.config.get("MAIL_SERVER",   "smtp.gmail.com")
-    smtp_port   = int(current_app.config.get("MAIL_PORT", 587))
+    smtp_server = current_app.config.get("MAIL_SERVER",        "smtp.gmail.com")
+    smtp_port   = int(current_app.config.get("MAIL_PORT",      587))
     smtp_user   = current_app.config.get("MAIL_USERNAME")
     smtp_pass   = current_app.config.get("MAIL_PASSWORD")
     remitente   = current_app.config.get("MAIL_DEFAULT_SENDER", smtp_user)
@@ -298,7 +508,7 @@ def _enviar_correo_reset(email: str, nombre: str, link: str):
         server.sendmail(remitente, email, msg.as_string())
 
 
-# ─── APIs ─────────────────────────────────────────────────────────────────────
+# ─── APIs ─────────────────────────────────────────────────────
 @auth_bp.route("/api/reforzar-publico")
 def api_reforzar_publico():
     frase = request.args.get("frase", "").strip()
