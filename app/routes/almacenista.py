@@ -1,21 +1,22 @@
 # app/routes/almacenista.py
 import os
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from datetime import date
-from werkzeug.utils import secure_filename
 from sqlalchemy import text as sqla_text
 from ..extensions import db
 from ..models.herramienta import Herramienta, AsignacionHerramienta, EvidenciaHerramienta, ReporteDanio
 from ..models.usuario import Usuario
+from ..models.vehiculo import Categoria, Ubicacion
+from ..models.departamento import Departamento
 from ..views.almacen_vistas import VInventario, VHistorialAsignaciones
 from ..utils.permisos import requiere_permiso
+from ..utils.archivos import guardar_archivo
 
 almacenista_bp = Blueprint("almacenista", __name__)
 
 ROLES_ALMACEN = ("admin", "almacenista")
-UPLOAD_FOLDER = "app/static/evidencias"
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+
 
 
 def _check_acceso():
@@ -23,11 +24,6 @@ def _check_acceso():
         flash("No tienes acceso al módulo de almacén.", "error")
         return False
     return True
-
-
-def _allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 # ── Dashboard ─────────────────────────────────────────────────
 @almacenista_bp.route("/")
@@ -65,15 +61,19 @@ def dashboard():
 def inventario():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-
+ 
     estado = request.args.get("estado", "")
     query  = VInventario.query
     if estado:
         query = query.filter_by(Estado=estado)
-
+ 
     return render_template("almacenista/inventario.html",
-        herramientas = query.order_by(VInventario.Nombre).all(),
+        herramientas  = query.order_by(VInventario.Nombre).all(),
         estado_filtro = estado,
+        usuarios      = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all(),
+        categorias    = Categoria.query.order_by(Categoria.Nombre).all(),
+        ubicaciones   = Ubicacion.query.order_by(Ubicacion.Nombre).all(),
+        departamentos = Departamento.query.order_by(Departamento.nombre).all(),
     )
 
 
@@ -83,27 +83,54 @@ def inventario():
 def herramienta_nueva():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-
+ 
     try:
-        db.session.execute(
-            sqla_text("CALL sp_alta_herramienta(:nom,:marc,:mod,:serie,:costo,:fecha,:desc,@res,@id)"),
-            {
-                "nom":   request.form.get("nombre", "").strip(),
-                "marc":  request.form.get("marca", "").strip() or None,
-                "mod":   request.form.get("modelo", "").strip() or None,
-                "serie": request.form.get("numero_serie", "").strip() or None,
-                "costo": float(request.form.get("costo") or 0),
-                "fecha": request.form.get("fecha_alta") or None,
-                "desc":  request.form.get("descripcion", "").strip() or None,
-            }
+        # Crear la herramienta directamente con ORM
+        h = Herramienta(
+            Nombre          = request.form.get("nombre", "").strip(),
+            Marca           = request.form.get("marca", "").strip() or None,
+            Modelo          = request.form.get("modelo", "").strip() or None,
+            NumeroSerie     = request.form.get("numero_serie", "").strip() or None,
+            Estado          = request.form.get("estado", "disponible"),
+            Costo           = float(request.form.get("costo") or 0),
+            FechaAlta       = request.form.get("fecha_alta") or None,
+            Descripcion     = request.form.get("descripcion", "").strip() or None,
+            TipoHerramienta = request.form.get("tipo_herramienta", "").strip() or None,
+            IdCategoria     = int(request.form.get("categoria_id")) if request.form.get("categoria_id") else None,
+            IdUbicacion     = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None,
+            IdDepartamento  = int(request.form.get("departamento_id")) if request.form.get("departamento_id") else None,
+            Subarea         = request.form.get("subarea", "").strip() or None,
         )
-        db.session.execute(sqla_text("COMMIT"))
-        row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        flash("Herramienta registrada correctamente." if row and row.r == "OK" else f"Error: {row.r}.", "success" if row and row.r == "OK" else "error")
+        db.session.add(h)
+        db.session.flush()  # para obtener el IdHerramienta antes del commit
+ 
+        # Evidencia fotográfica opcional
+        evidencia = request.files.get("evidencia")
+        if evidencia and evidencia.filename:
+            info = guardar_archivo(
+                archivo = evidencia,
+                prefijo = f"herr_{h.IdHerramienta}",
+                carpeta = "static/evidencias"
+            )
+            ev = EvidenciaHerramienta(
+                IdHerramienta = h.IdHerramienta,
+                ArchivoUrl    = info["url"],
+                NombreArchivo = info["filename"],
+                Tipo          = "entrega",
+                TipoArchivo   = "imagen",
+                MimeType      = info["mime_type"],
+                Descripcion   = "Foto inicial al dar de alta",
+                CreadoPor     = current_user.id,
+            )
+            db.session.add(ev)
+ 
+        db.session.commit()
+        flash(f"Herramienta '{h.Nombre}' registrada correctamente.", "success")
+ 
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
-
+ 
     return redirect(url_for("almacenista.inventario"))
 
 
@@ -207,47 +234,46 @@ def historial():
     )
 
 
-# ── Subir evidencia ───────────────────────────────────────────
+# ── Subir evidencia (imágenes Y documentos) ───────────────────
 @almacenista_bp.route("/herramientas/<int:id>/evidencia", methods=["POST"])
 @login_required
 def subir_evidencia(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-
+ 
     archivo = request.files.get("archivo")
     if not archivo or archivo.filename == "":
         flash("Selecciona un archivo.", "error")
-        return redirect(url_for("almacenista.inventario"))
-
-    if not _allowed_file(archivo.filename):
-        flash("Solo se permiten archivos PNG y JPG.", "error")
-        return redirect(url_for("almacenista.inventario"))
-
+        return redirect(url_for("almacenista.herramienta_detalle", id=id))
+ 
     try:
-        # Crear carpeta si no existe
-        upload_path = os.path.join(current_app.root_path, "static", "evidencias")
-        os.makedirs(upload_path, exist_ok=True)
-
-        filename    = secure_filename(f"herr_{id}_{int(date.today().strftime('%Y%m%d'))}_{archivo.filename}")
-        filepath    = os.path.join(upload_path, filename)
-        archivo.save(filepath)
-
-        url_relativa = f"/static/evidencias/{filename}"
-
+        info = guardar_archivo(
+            archivo  = archivo,
+            prefijo  = f"herr_{id}",
+            carpeta  = "documents" if not archivo.filename.rsplit(".", 1)[-1].lower()
+                       in {"png","jpg","jpeg","gif","webp"} else "static/evidencias"
+        )
+ 
         ev = EvidenciaHerramienta(
             IdHerramienta = id,
-            ArchivoUrl    = url_relativa,
-            NombreArchivo = filename,
+            ArchivoUrl    = info["url"],
+            NombreArchivo = info["filename"],
             Tipo          = request.form.get("tipo", "daño"),
+            TipoArchivo   = info["tipo_archivo"],
+            MimeType      = info["mime_type"],
+            Descripcion   = request.form.get("descripcion", "").strip() or None,
             CreadoPor     = current_user.id,
         )
         db.session.add(ev)
         db.session.commit()
-        flash("Evidencia subida correctamente.", "success")
+        flash("Archivo subido correctamente.", "success")
+ 
+    except ValueError as e:
+        flash(str(e), "error")
     except Exception as e:
         db.session.rollback()
         flash(f"Error al subir archivo: {str(e)}", "error")
-
+ 
     return redirect(url_for("almacenista.herramienta_detalle", id=id))
 
 
@@ -257,7 +283,7 @@ def subir_evidencia(id):
 def reporte_danio(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-
+ 
     herr = Herramienta.query.get_or_404(id)
     try:
         r = ReporteDanio(
@@ -269,17 +295,35 @@ def reporte_danio(id):
             IdUsuarioResponsable = int(request.form.get("responsable_id")) if request.form.get("responsable_id") else None,
             CreadoPor            = current_user.id,
         )
+ 
+        # ── Archivo adjunto opcional ──────────────────────────
+        archivo = request.files.get("archivo")
+        if archivo and archivo.filename:
+            info = guardar_archivo(
+                archivo = archivo,
+                prefijo = f"reporte_{id}",
+                carpeta = "documents" if not archivo.filename.rsplit(".", 1)[-1].lower()
+                          in {"png","jpg","jpeg","gif","webp"} else "static/evidencias"
+            )
+            r.ArchivoUrl    = info["url"]
+            r.NombreArchivo = info["filename"]
+            r.TipoArchivo   = info["tipo_archivo"]
+            r.MimeType      = info["mime_type"]
+ 
         db.session.add(r)
-
+ 
         # Actualizar estado de la herramienta
         nuevo_estado = "dañado" if r.Tipo == "daño" else "perdido"
         herr.Estado  = nuevo_estado
         db.session.commit()
         flash("Reporte de daño registrado.", "success")
+ 
+    except ValueError as e:
+        flash(str(e), "error")
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
-
+ 
     return redirect(url_for("almacenista.herramienta_detalle", id=id))
 
 

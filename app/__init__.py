@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from .config import config
 from .extensions import db, login_manager, migrate, socketio
 
@@ -106,5 +106,9 @@ def create_app(env="default"):
     def make_shell_context():
         return {"db": db, "Usuario": Usuario, "Activo": Activo,
                 "Departamento": Departamento}
+        
+    @app.route('/documents/<path:filename>')
+    def serve_document(filename):
+        return send_from_directory('documents', filename)
 
     return app
