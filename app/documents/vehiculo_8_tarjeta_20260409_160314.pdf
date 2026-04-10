@@ -1,0 +1,433 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 841.8899999999999864 595.2799999999999727]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 3437
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 18 Tf
+20.6999999999999993 TL
+0.545 0.361 0.965 rg
+316.0275590551181608 552.7603149606298985 Td
+(REPORTE DE EVENTOS) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.392 g
+343.5775590551181722 532.9177952755904926 Td
+(Generado: 18/02/2026, 02:57 p.m.) Tj
+ET
+BT
+/F1 10 Tf
+11.5 TL
+0.392 g
+385.8775590551181267 518.744566929133839 Td
+(Usuario: glaura) Tj
+ET
+BT
+/F1 11 Tf
+12.6499999999999986 TL
+0. g
+39.6850393700787407 496.0674015748031138 Td
+(Filtros Aplicados:) Tj
+ET
+BT
+/F1 9 Tf
+10.3499999999999996 TL
+0.314 g
+39.6850393700787407 479.0595275590550841 Td
+(• Estado: ATENDIDO) Tj
+ET
+0. G
+0.5670000000000001 w
+0. G
+0.5670000000000001 w
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+28.3464566929133888 450.7130708661416634 39.2323550164447994 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+44.4026342011357897 438.913070866141652 Td
+(id) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+67.5788117093581917 450.7130708661416634 75.5314498447441736 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+93.8645366317302603 438.913070866141652 Td
+(Fecha) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+143.1102615541023511 450.7130708661416634 64.5317241391989285 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+166.296123623701817 438.913070866141652 Td
+(Hora) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+207.6419856933012795 450.7130708661416634 83.5979153621440503 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+236.2009433743733098 438.913070866141652 Td
+(Evento) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+291.2399010554453298 450.7130708661416634 61.5984639510535033 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+313.5991330309720979 438.913070866141652 Td
+(Tipo) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+352.8383650064988615 450.7130708661416634 73.6981622271532899 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+378.6074461200755081 438.913070866141652 Td
+(Lugar) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+426.536527233652123 450.7130708661416634 73.8814909889123754 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+452.3572727281082848 438.913070866141652 Td
+(Anillo) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+500.4180182225644558 450.7130708661416634 83.5979153621440361 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+528.9769759036364576 438.913070866141652 Td
+(Estado) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+584.0159335847084776 450.7130708661416634 102.1141202998119013 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+617.7929937346143561 438.913070866141652 Td
+(Atendido) Tj
+ET
+0.55 0.36 0.96 rg
+0.78 G
+0. w
+0.55 0.36 0.96 rg
+686.1300538845204073 450.7130708661416634 127.4134894225660588 -19.1999999999999957 re
+f
+BT
+/F2 8 Tf
+9.1999999999999993 TL
+1. g
+727.0367985958033614 438.913070866141652 Td
+(Descripcion) Tj
+ET
+0. G
+0.5670000000000001 w
+0. G
+0.5670000000000001 w
+0.78 G
+0. w
+0. G
+0.5670000000000001 w
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+39.6850393700787407 28.3464566929134207 Td
+(Pagina 1 de 1) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+391.2075590551181676 28.3464566929134207 Td
+(Total eventos: 0) Tj
+ET
+BT
+/F1 8 Tf
+9.1999999999999993 TL
+0.588 g
+672.1807874015748894 28.3464566929134207 Td
+(Generado: 18/02/2026, 02:57 p.m.) Tj
+ET
+0. G
+0.5670000000000001 w
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R ]
+/Count 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 5 0 R
+/F2 6 0 R
+/F3 7 0 R
+/F4 8 0 R
+/F5 9 0 R
+/F6 10 0 R
+/F7 11 0 R
+/F8 12 0 R
+/F9 13 0 R
+/F10 14 0 R
+/F11 15 0 R
+/F12 16 0 R
+/F13 17 0 R
+/F14 18 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+19 0 obj
+<<
+/Producer (jsPDF 3.0.4)
+/CreationDate (D:20260218145754-06'00')
+>>
+endobj
+20 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000003641 00000 n 
+0000005458 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000003698 00000 n 
+0000003823 00000 n 
+0000003953 00000 n 
+0000004086 00000 n 
+0000004223 00000 n 
+0000004346 00000 n 
+0000004475 00000 n 
+0000004607 00000 n 
+0000004743 00000 n 
+0000004871 00000 n 
+0000004998 00000 n 
+0000005127 00000 n 
+0000005260 00000 n 
+0000005362 00000 n 
+0000005706 00000 n 
+0000005792 00000 n 
+trailer
+<<
+/Size 21
+/Root 20 0 R
+/Info 19 0 R
+/ID [ <014D057B2E2E64CF07570156A4085153> <014D057B2E2E64CF07570156A4085153> ]
+>>
+startxref
+5896
+%%EOF

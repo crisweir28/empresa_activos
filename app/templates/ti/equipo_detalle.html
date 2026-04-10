@@ -6,7 +6,7 @@
 <div class="topbar">
   <div>
     <div class="page-title">
-      {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+      {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐','otro':'📦'} %}
       {{ iconos.get(equipo.TipoEquipo,'📦') }} {{ equipo.Nombre }}
     </div>
     <div class="page-sub">
@@ -27,8 +27,12 @@
   <div class="panel">
     <div class="panel-title">📋 Información</div>
     <table style="font-size:13px">
-      <tr><td style="color:var(--muted);padding:5px 0;width:130px">Tipo</td>
+      <tr><td style="color:var(--muted);padding:5px 0;width:140px">Tipo</td>
           <td>{{ equipo.tipo_label }}</td></tr>
+      {% if equipo.Gama %}
+      <tr><td style="color:var(--muted);padding:5px 0">Gama</td>
+          <td>{{ equipo.Gama }}</td></tr>
+      {% endif %}
       <tr><td style="color:var(--muted);padding:5px 0">Marca / Modelo</td>
           <td>{{ equipo.Marca or '—' }} {{ equipo.Modelo or '' }}</td></tr>
       <tr><td style="color:var(--muted);padding:5px 0">Condición</td>
@@ -40,6 +44,42 @@
           <td>${{ "%.2f"|format(equipo.Costo or 0) }}</td></tr>
       <tr><td style="color:var(--muted);padding:5px 0">Adquisición</td>
           <td>{{ equipo.FechaAdquisicion or '—' }}</td></tr>
+      {% if equipo.Garantia %}
+      <tr><td style="color:var(--muted);padding:5px 0">Garantía</td>
+          <td>{{ equipo.Garantia }}</td></tr>
+      {% endif %}
+      {% if equipo.Procesador %}
+      <tr><td style="color:var(--muted);padding:5px 0">Procesador</td>
+          <td>{{ equipo.Procesador }}</td></tr>
+      {% endif %}
+      {% if equipo.MemoriaRAM %}
+      <tr><td style="color:var(--muted);padding:5px 0">RAM</td>
+          <td>{{ equipo.MemoriaRAM }}</td></tr>
+      {% endif %}
+      {% if equipo.Almacenamiento %}
+      <tr><td style="color:var(--muted);padding:5px 0">Almacenamiento</td>
+          <td>{{ equipo.Almacenamiento }}</td></tr>
+      {% endif %}
+      {% if equipo.SistemaOperativo %}
+      <tr><td style="color:var(--muted);padding:5px 0">SO</td>
+          <td>{{ equipo.SistemaOperativo }}</td></tr>
+      {% endif %}
+      {% if equipo.IMEI %}
+      <tr><td style="color:var(--muted);padding:5px 0">IMEI</td>
+          <td>{{ equipo.IMEI }}</td></tr>
+      {% endif %}
+      {% if equipo.Accesorios %}
+      <tr><td style="color:var(--muted);padding:5px 0">Accesorios</td>
+          <td>{{ equipo.Accesorios }}</td></tr>
+      {% endif %}
+      {% if equipo.Arrendamiento %}
+      <tr><td style="color:var(--muted);padding:5px 0">Arrendamiento</td>
+          <td>
+            <span style="color:var(--accent);font-weight:600">Sí</span>
+            {% if equipo.ProveedorArrendamiento %} · {{ equipo.ProveedorArrendamiento }}{% endif %}
+            {% if equipo.FechaRenovacion %} · Renovación: {{ equipo.FechaRenovacion }}{% endif %}
+          </td></tr>
+      {% endif %}
       {% if equipo.Descripcion %}
       <tr><td style="color:var(--muted);padding:5px 0">Descripción</td>
           <td>{{ equipo.Descripcion }}</td></tr>
@@ -72,11 +112,21 @@
 
 </div>
 
-<!-- Tab mantenimiento -->
+<!-- Tabs -->
 <div style="display:flex;border-bottom:1px solid var(--border)">
   <button class="tab-btn active" onclick="showTab('mantenimiento',this)">🔧 Mantenimiento</button>
+  <button class="tab-btn" onclick="showTab('evidencias',this)">
+    📎 Evidencias
+    {% if evidencias %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ evidencias|length }}
+    </span>
+    {% endif %}
+  </button>
 </div>
 
+<!-- ── Tab Mantenimiento ──────────────────────────────────── -->
 <div id="tab-mantenimiento" class="tab-content panel" style="border-top:none;border-radius:0 0 16px 16px">
   <div class="panel-title" style="margin-top:4px">
     Historial de mantenimiento
@@ -133,15 +183,105 @@
   {% endif %}
 </div>
 
+<!-- ── Tab Evidencias ─────────────────────────────────────── -->
+<div id="tab-evidencias" class="tab-content panel"
+     style="display:none;border-top:none;border-radius:0 0 16px 16px">
+  <div class="panel-title" style="margin-top:4px">
+    Evidencias y documentos
+    <span style="color:var(--muted);font-size:12px;font-weight:400">
+      ({{ evidencias|length }} archivo{{ 's' if evidencias|length != 1 else '' }})
+    </span>
+  </div>
+
+  {% if evidencias %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:4px 0">
+    {% for ev in evidencias %}
+
+    {% if ev.TipoArchivo == 'imagen' %}
+    <div class="ev-card"
+         onclick="abrirLightbox('{{ ev.ArchivoUrl }}','{{ ev.Tipo }}','{{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}','{{ ev.NombreArchivo }}')">
+      <div class="ev-img-wrap">
+        <img src="{{ ev.ArchivoUrl }}" alt="{{ ev.NombreArchivo }}" loading="lazy">
+        <div class="ev-overlay"><span style="font-size:28px">🔍</span></div>
+      </div>
+      <div class="ev-info">
+        <span class="badge badge-activo" style="font-size:10px">{{ ev.Tipo }}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:4px">
+          {{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}
+        </span>
+      </div>
+      <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+           title="{{ ev.NombreArchivo }}">{{ ev.NombreArchivo }}</div>
+    </div>
+
+    {% else %}
+    <div class="ev-card" onclick="window.open('{{ ev.ArchivoUrl }}','_blank')"
+         title="{{ ev.NombreArchivo }}">
+      <div style="height:120px;display:flex;align-items:center;justify-content:center;
+                  background:var(--surface2);font-size:48px">
+        {{ ev.icono }}
+      </div>
+      <div class="ev-info">
+        <span class="badge badge-activo" style="font-size:10px">{{ ev.Tipo }}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:4px">
+          {{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}
+        </span>
+      </div>
+      <div style="padding:0 8px 4px;font-size:10px;color:var(--muted);
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+           title="{{ ev.NombreArchivo }}">{{ ev.NombreArchivo }}</div>
+      {% if ev.Descripcion %}
+      <div style="padding:0 8px 4px;font-size:10px;color:var(--muted)">{{ ev.Descripcion[:40] }}</div>
+      {% endif %}
+      <div style="padding:0 8px 8px">
+        <a href="{{ ev.ArchivoUrl }}" download="{{ ev.NombreArchivo }}"
+           onclick="event.stopPropagation()"
+           style="font-size:11px;color:var(--accent);text-decoration:none">⬇ Descargar</a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
+    Sin evidencias registradas.
+  </p>
+  {% endif %}
+</div>
+
+<!-- ══ LIGHTBOX ══════════════════════════════════════════════ -->
+<div id="lightbox" onclick="cerrarLightbox()">
+  <button onclick="cerrarLightbox()" style="
+    position:fixed;top:20px;right:24px;background:rgba(255,255,255,.15);
+    border:none;color:#fff;font-size:22px;width:40px;height:40px;
+    border-radius:50%;cursor:pointer;z-index:10000;line-height:1">✕</button>
+  <img id="lb-img" src="" alt="" onclick="event.stopPropagation()"
+       style="max-width:90vw;max-height:80vh;border-radius:10px;
+              object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+  <div onclick="event.stopPropagation()" style="margin-top:16px;text-align:center;color:#fff">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center">
+      <span id="lb-tipo" style="background:rgba(255,255,255,.15);padding:3px 10px;
+                                  border-radius:20px;font-size:12px"></span>
+      <span id="lb-fecha" style="font-size:13px;color:rgba(255,255,255,.7)"></span>
+    </div>
+    <div id="lb-nombre" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:6px"></div>
+    <a id="lb-download" href="" download onclick="event.stopPropagation()"
+       style="display:inline-block;margin-top:12px;padding:7px 18px;
+              background:rgba(255,255,255,.15);color:#fff;border-radius:8px;
+              font-size:13px;text-decoration:none;border:1px solid rgba(255,255,255,.2)">
+      ⬇ Descargar
+    </a>
+  </div>
+</div>
 
 <!-- ── Modal: Asignar ── -->
 <div class="overlay" id="modal-asignar" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>👤 Asignar equipo</h2>
     <form method="POST" action="{{ url_for('ti.equipo_asignar', id=equipo.IdElectronico) }}">
-
-      <div class="field">
-        <label>Asignar a *</label>
+      <div class="field"><label>Asignar a *</label>
         <select name="usuario_id" required>
           <option value="">— Seleccionar usuario —</option>
           {% for u in usuarios %}
@@ -149,7 +289,6 @@
           {% endfor %}
         </select>
       </div>
-
       <div class="field">
         <label>Ligar a proyecto <span style="color:var(--muted);font-size:11px">(opcional)</span></label>
         <select name="proyecto_id">
@@ -159,18 +298,14 @@
           {% endfor %}
         </select>
       </div>
-
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-asignar').classList.remove('open')">
-          Cancelar
-        </button>
+                onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Asignar</button>
       </div>
     </form>
   </div>
 </div>
-
 
 <!-- ── Modal: Liberar ── -->
 <div class="overlay" id="modal-liberar" onclick="if(event.target===this)this.classList.remove('open')">
@@ -182,15 +317,12 @@
     <form method="POST" action="{{ url_for('ti.equipo_liberar', id=equipo.IdElectronico) }}">
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-liberar').classList.remove('open')">
-          Cancelar
-        </button>
+                onclick="document.getElementById('modal-liberar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Confirmar</button>
       </div>
     </form>
   </div>
 </div>
-
 
 <!-- ── Modal: Nuevo mantenimiento ── -->
 <div class="overlay" id="modal-mant" onclick="if(event.target===this)this.classList.remove('open')">
@@ -204,64 +336,51 @@
             <option value="correctivo">Correctivo</option>
           </select>
         </div>
-        <div class="field">
-          <label>Técnico</label>
+        <div class="field"><label>Técnico</label>
           <input name="tecnico" placeholder="Nombre del técnico">
         </div>
       </div>
-      <div class="field">
-        <label>Diagnóstico *</label>
+      <div class="field"><label>Diagnóstico *</label>
         <textarea name="diagnostico" required
                   placeholder="Describe el problema o el mantenimiento a realizar..."></textarea>
       </div>
-      <div class="field">
-        <label>Descripción del trabajo</label>
+      <div class="field"><label>Descripción del trabajo</label>
         <textarea name="descripcion" placeholder="Trabajo a realizar..."></textarea>
       </div>
       <div class="grid-2">
-        <div class="field">
-          <label>Fecha inicio *</label>
+        <div class="field"><label>Fecha inicio *</label>
           <input name="fecha_inicio" type="date" value="{{ today }}" required>
         </div>
-        <div class="field">
-          <label>Fecha término</label>
+        <div class="field"><label>Fecha término</label>
           <input name="fecha_termino" type="date">
         </div>
       </div>
-      <div class="field">
-        <label>Costo ($)</label>
+      <div class="field"><label>Costo ($)</label>
         <input name="costo" type="number" step="0.01" min="0" placeholder="0.00">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-mant').classList.remove('open')">
-          Cancelar
-        </button>
+                onclick="document.getElementById('modal-mant').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
   </div>
 </div>
 
-
 <!-- ── Modal: Completar mantenimiento ── -->
 <div class="overlay" id="modal-completar" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>✅ Completar mantenimiento</h2>
     <form method="POST" id="form-completar">
-      <div class="field">
-        <label>Fecha de término *</label>
+      <div class="field"><label>Fecha de término *</label>
         <input name="fecha_termino" type="date" value="{{ today }}" required>
       </div>
-      <div class="field">
-        <label>Descripción del trabajo realizado</label>
+      <div class="field"><label>Descripción del trabajo realizado</label>
         <textarea name="descripcion"></textarea>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-completar').classList.remove('open')">
-          Cancelar
-        </button>
+                onclick="document.getElementById('modal-completar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
@@ -273,19 +392,41 @@
 {% block extra_head %}
 <style>
   .tab-btn {
-    padding: 10px 20px;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: var(--muted);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all .18s;
-    margin-bottom: -1px;
+    padding:10px 20px; background:transparent; border:none;
+    border-bottom:2px solid transparent; color:var(--muted);
+    font-family:'DM Sans',sans-serif; font-size:13px;
+    cursor:pointer; transition:all .18s; margin-bottom:-1px;
   }
-  .tab-btn:hover  { color: var(--text); }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover  { color:var(--text); }
+  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  .ev-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; overflow:hidden; cursor:pointer;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .ev-card:hover {
+    transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.12);
+    border-color:var(--accent);
+  }
+  .ev-img-wrap { position:relative; height:120px; overflow:hidden; background:var(--bg); }
+  .ev-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
+  .ev-card:hover .ev-img-wrap img { transform:scale(1.05); }
+  .ev-overlay {
+    position:absolute; inset:0; background:rgba(0,0,0,.35);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .2s;
+  }
+  .ev-card:hover .ev-overlay { opacity:1; }
+  .ev-info { padding:8px 8px 4px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
+
+  #lightbox {
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,.88); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center;
+    flex-direction:column; padding:24px;
+  }
+  #lightbox.open { display:flex; }
 </style>
 {% endblock %}
 
@@ -297,9 +438,28 @@ function showTab(name, btn) {
   document.getElementById('tab-' + name).style.display = 'block';
   btn.classList.add('active');
 }
+
 function completarMant(id) {
   document.getElementById('form-completar').action = `/ti/mantenimiento/${id}/completar`;
   document.getElementById('modal-completar').classList.add('open');
 }
+
+function abrirLightbox(url, tipo, fecha, nombre) {
+  document.getElementById('lb-img').src            = url;
+  document.getElementById('lb-tipo').textContent   = tipo;
+  document.getElementById('lb-fecha').textContent  = fecha;
+  document.getElementById('lb-nombre').textContent = nombre;
+  document.getElementById('lb-download').href      = url;
+  document.getElementById('lb-download').download  = nombre;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarLightbox(); });
 </script>
 {% endblock %}

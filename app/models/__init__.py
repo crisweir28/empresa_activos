@@ -12,3 +12,4 @@ from .herramienta import Herramienta, AsignacionHerramienta, EvidenciaHerramient
 from .electronico import Electronico, MantenimientoElectronico
 from .permiso import Modulo, PermisoRol, PermisoUsuario
 from .proyecto import Proyecto, ProyectoPersonal, ProyectoActivo, ProyectoAuditoria
+from .baja_activo import BajaActivo

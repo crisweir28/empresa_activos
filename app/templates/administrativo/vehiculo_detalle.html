@@ -21,14 +21,62 @@
   <div class="panel">
     <div class="panel-title">📋 Información</div>
     <table style="font-size:13px">
-      <tr><td style="color:var(--muted);padding:6px 0;width:140px">Kilometraje</td>
+      {% if vehiculo.TipoVehiculo %}
+      <tr><td style="color:var(--muted);padding:5px 0;width:150px">Tipo</td>
+          <td>{{ vehiculo.TipoVehiculo }}</td></tr>
+      {% endif %}
+      {% if vehiculo.Anio %}
+      <tr><td style="color:var(--muted);padding:5px 0">Año</td>
+          <td>{{ vehiculo.Anio }}</td></tr>
+      {% endif %}
+      {% if vehiculo.Color %}
+      <tr><td style="color:var(--muted);padding:5px 0">Color</td>
+          <td>{{ vehiculo.Color }}</td></tr>
+      {% endif %}
+      {% if vehiculo.VIN %}
+      <tr><td style="color:var(--muted);padding:5px 0">VIN</td>
+          <td style="font-family:monospace;font-size:12px">{{ vehiculo.VIN }}</td></tr>
+      {% endif %}
+      <tr><td style="color:var(--muted);padding:5px 0">Kilometraje</td>
           <td><strong>{{ "{:,}".format(vehiculo.Kilometraje or 0) }} km</strong></td></tr>
-      <tr><td style="color:var(--muted);padding:6px 0">Adquisición</td>
+      <tr><td style="color:var(--muted);padding:5px 0">Adquisición</td>
           <td>{{ vehiculo.TipoAdquisicion or '—' }}</td></tr>
-      <tr><td style="color:var(--muted);padding:6px 0">Valor</td>
+      <tr><td style="color:var(--muted);padding:5px 0">Valor</td>
           <td>${{ "%.2f"|format(vehiculo.Valor or 0) }}</td></tr>
-      <tr><td style="color:var(--muted);padding:6px 0">Fecha adquisición</td>
+      <tr><td style="color:var(--muted);padding:5px 0">Fecha adquisición</td>
           <td>{{ vehiculo.FechaAdquisicion or '—' }}</td></tr>
+      {% if vehiculo.PolizaSeguro or vehiculo.Aseguradora %}
+      <tr><td style="color:var(--muted);padding:5px 0">Seguro</td>
+          <td>{{ vehiculo.Aseguradora or '—' }}
+            {% if vehiculo.PolizaSeguro %}
+            <span style="color:var(--muted);font-size:11px"> · Póliza: {{ vehiculo.PolizaSeguro }}</span>
+            {% endif %}
+          </td></tr>
+      {% endif %}
+      {% if vehiculo.VigenciaSeguro %}
+      <tr><td style="color:var(--muted);padding:5px 0">Vigencia seguro</td>
+          <td>{{ vehiculo.VigenciaSeguro }}</td></tr>
+      {% endif %}
+      {% if vehiculo.UltimaVerificacion %}
+      <tr><td style="color:var(--muted);padding:5px 0">Última verificación</td>
+          <td>{{ vehiculo.UltimaVerificacion }}</td></tr>
+      {% endif %}
+      {% if vehiculo.Accesorios %}
+      <tr><td style="color:var(--muted);padding:5px 0">Accesorios</td>
+          <td>{{ vehiculo.Accesorios }}</td></tr>
+      {% endif %}
+      {% if vehiculo.Arrendamiento %}
+      <tr><td style="color:var(--muted);padding:5px 0">Arrendamiento</td>
+          <td>
+            <span style="color:var(--accent);font-weight:600">Sí</span>
+            {% if vehiculo.ProveedorArrendamiento %} · {{ vehiculo.ProveedorArrendamiento }}{% endif %}
+            {% if vehiculo.FechaRenovacion %} · Renovación: {{ vehiculo.FechaRenovacion }}{% endif %}
+          </td></tr>
+      {% endif %}
+      {% if vehiculo.Comentarios %}
+      <tr><td style="color:var(--muted);padding:5px 0">Comentarios</td>
+          <td>{{ vehiculo.Comentarios }}</td></tr>
+      {% endif %}
     </table>
   </div>
 
@@ -59,7 +107,15 @@
 <!-- Tabs -->
 <div style="display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--border)">
   <button class="tab-btn active" onclick="showTab('mantenimiento', this)">🔧 Mantenimiento</button>
-  <button class="tab-btn" onclick="showTab('permisos', this)">📄 Permisos</button>
+  <button class="tab-btn" onclick="showTab('permisos', this)">
+    📄 Permisos y documentos
+    {% if permisos %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ permisos|length }}
+    </span>
+    {% endif %}
+  </button>
 </div>
 
 <!-- Tab: Mantenimiento -->
@@ -75,26 +131,35 @@
   <div style="overflow-x:auto">
     <table>
       <thead>
-        <tr><th>Tipo</th><th>Diagnóstico</th><th>Inicio</th><th>Entrega</th><th>Km</th><th>Costo</th><th>Próximo</th><th>Estatus</th><th></th></tr>
+        <tr><th>Tipo</th><th>Diagnóstico</th><th>Inicio</th><th>Entrega</th>
+            <th>Km</th><th>Costo</th><th>Próximo</th><th>Estatus</th><th></th></tr>
       </thead>
       <tbody>
         {% for m in mantenimientos %}
         <tr>
           <td>
-            <span class="badge" style="background:{% if 'reventivo' in m.tipo_servicio %}rgba(34,211,165,.12);color:var(--green){% else %}rgba(248,113,113,.12);color:var(--red){% endif %}">
+            <span class="badge"
+                  style="background:{% if 'reventivo' in m.tipo_servicio %}rgba(34,211,165,.12);color:var(--green)
+                                     {% else %}rgba(248,113,113,.12);color:var(--red){% endif %}">
               {{ m.tipo_servicio }}
             </span>
           </td>
           <td style="color:var(--muted);max-width:160px">
-            <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ m.diagnostico or '—' }}</span>
+            <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              {{ m.diagnostico or '—' }}
+            </span>
           </td>
           <td style="color:var(--muted);font-size:12px">{{ m.fecha_inicio }}</td>
           <td style="color:var(--muted);font-size:12px">{{ m.fecha_entrega or '—' }}</td>
           <td style="color:var(--muted)">{{ "{:,}".format(m.kilometraje or 0) }}</td>
           <td style="color:var(--muted)">${{ "%.2f"|format(m.costo or 0) }}</td>
           <td style="font-size:11px">
-            {% if m.proximo_kilometraje %}<div style="color:var(--yellow)">🔧 {{ "{:,}".format(m.proximo_kilometraje) }} km</div>{% endif %}
-            {% if m.proxima_fecha %}<div style="color:var(--accent)">📅 {{ m.proxima_fecha }}</div>{% endif %}
+            {% if m.proximo_kilometraje %}
+            <div style="color:var(--yellow)">🔧 {{ "{:,}".format(m.proximo_kilometraje) }} km</div>
+            {% endif %}
+            {% if m.proxima_fecha %}
+            <div style="color:var(--accent)">📅 {{ m.proxima_fecha }}</div>
+            {% endif %}
           </td>
           <td>
             {% if m.estatus == 'en_proceso' %}
@@ -118,7 +183,7 @@
   {% endif %}
 </div>
 
-<!-- Tab: Permisos -->
+<!-- Tab: Permisos y documentos -->
 <div id="tab-permisos" class="tab-content panel" style="display:none;border-top:none;border-radius:0 0 16px 16px">
   <div class="panel-title" style="margin-top:4px">
     Permisos y documentos
@@ -129,26 +194,56 @@
   </div>
   {% if permisos %}
   <table>
-    <thead><tr><th>Tipo</th><th>Número</th><th>Inicio</th><th>Vencimiento</th><th>Estado</th><th></th></tr></thead>
+    <thead>
+      <tr>
+        <th>Tipo</th><th>Número</th><th>Inicio</th>
+        <th>Vencimiento</th><th>Estado</th><th>Archivo</th><th></th>
+      </tr>
+    </thead>
     <tbody>
       {% for p in permisos %}
-      {% set dias = (p.FechaVencimiento - today).days if today is defined else 999 %}
       <tr>
-        <td><strong>{{ p.tipo_servicio.Nombre }}</strong></td>
+        <td><strong>{{ p.tipo_servicio.Nombre }}</strong>
+          {% if p.Descripcion and p.Descripcion != p.tipo_servicio.Nombre %}
+          <br><span style="font-size:11px;color:var(--muted)">{{ p.Descripcion }}</span>
+          {% endif %}
+        </td>
         <td style="color:var(--muted)">{{ p.Numero or '—' }}</td>
         <td style="color:var(--muted);font-size:12px">{{ p.FechaInicio or '—' }}</td>
         <td style="font-size:12px">
-          <span style="color:{% if p.FechaVencimiento < today_date %}var(--red){% elif (p.FechaVencimiento - today_date).days <= 30 %}var(--yellow){% else %}var(--green){% endif %}">
+          {% if p.FechaVencimiento.year == 9999 %}
+          <span style="color:var(--muted);font-size:11px">Sin vencimiento</span>
+          {% else %}
+          <span style="color:{% if p.FechaVencimiento < today_date %}var(--red)
+                               {% elif (p.FechaVencimiento - today_date).days <= 30 %}var(--yellow)
+                               {% else %}var(--green){% endif %}">
             {{ p.FechaVencimiento }}
           </span>
+          {% endif %}
         </td>
         <td>
-          {% if p.FechaVencimiento < today_date %}
+          {% if p.FechaVencimiento.year == 9999 %}
+          <span class="badge badge-activo">Documento</span>
+          {% elif p.FechaVencimiento < today_date %}
           <span class="badge badge-baja">Vencido</span>
           {% elif (p.FechaVencimiento - today_date).days <= 30 %}
           <span class="badge" style="background:rgba(251,191,36,.12);color:var(--yellow)">Por vencer</span>
           {% else %}
           <span class="badge badge-activo">Vigente</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if p.ArchivoUrl %}
+          <a href="{{ p.ArchivoUrl }}" target="_blank"
+             style="font-size:18px;text-decoration:none" title="Ver documento">
+            📄
+          </a>
+          <a href="{{ p.ArchivoUrl }}" download
+             style="font-size:12px;color:var(--accent);text-decoration:none;margin-left:4px">
+            ⬇
+          </a>
+          {% else %}
+          <span style="color:var(--muted);font-size:12px">—</span>
           {% endif %}
         </td>
         <td>
@@ -165,7 +260,6 @@
   <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin permisos registrados.</p>
   {% endif %}
 </div>
-
 
 <!-- Modal: Nuevo mantenimiento -->
 <div class="overlay" id="modal-mant" onclick="if(event.target===this)this.classList.remove('open')">
@@ -209,9 +303,8 @@
         </div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
-          Próximo mantenimiento
-        </div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Próximo mantenimiento</div>
         <div class="grid-2">
           <div class="field"><label>Próximo km</label>
             <input name="proximo_kilometraje" type="number" min="0" placeholder="Ej: 50000">
@@ -224,11 +317,14 @@
       <div class="field"><label>Personal responsable</label>
         <select name="personal_id">
           <option value="">— Sin asignar —</option>
-          {% for p in personal %}<option value="{{ p.IdPersonal }}">{{ p.Nombre }} {{ p.Apellido }}</option>{% endfor %}
+          {% for p in personal %}
+          <option value="{{ p.IdPersonal }}">{{ p.Nombre }} {{ p.Apellido }}</option>
+          {% endfor %}
         </select>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-mant').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-mant').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
@@ -250,7 +346,8 @@
         <textarea name="descripcion_fin" placeholder="Describe el trabajo realizado..."></textarea>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-completar').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-completar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
@@ -265,14 +362,17 @@
       <div class="field"><label>Conductor *</label>
         <select name="personal_id" required>
           <option value="">— Seleccionar —</option>
-          {% for p in personal %}<option value="{{ p.IdPersonal }}">{{ p.Nombre }} {{ p.Apellido }}</option>{% endfor %}
+          {% for p in personal %}
+          <option value="{{ p.IdPersonal }}">{{ p.Nombre }} {{ p.Apellido }}</option>
+          {% endfor %}
         </select>
       </div>
       <div class="field"><label>Fecha inicio</label>
         <input name="fecha_inicio" type="date">
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-conductor').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-conductor').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Asignar</button>
       </div>
     </form>
@@ -282,8 +382,10 @@
 <!-- Modal: Nuevo permiso -->
 <div class="overlay" id="modal-permiso" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
-    <h2>📄 Agregar permiso</h2>
-    <form method="POST" action="{{ url_for('administrativo.permiso_nuevo', id=vehiculo.IdVehiculo) }}">
+    <h2>📄 Agregar permiso / documento</h2>
+    <form method="POST"
+          action="{{ url_for('administrativo.permiso_nuevo', id=vehiculo.IdVehiculo) }}"
+          enctype="multipart/form-data">
       <div class="field"><label>Tipo *</label>
         <select name="tipo_servicio_id" required>
           {% for t in tipos %}
@@ -307,13 +409,21 @@
           <input name="fecha_vencimiento" type="date" required>
         </div>
       </div>
+      <div class="field">
+        <label>Archivo adjunto (PDF, imagen)</label>
+        <input type="file" name="archivo"
+               accept=".pdf,.jpg,.jpeg,.png"
+               style="color:var(--text);font-size:13px">
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-permiso').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-permiso').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_head %}
@@ -330,7 +440,7 @@
     transition: all .18s;
     margin-bottom: -1px;
   }
-  .tab-btn:hover { color: var(--text); }
+  .tab-btn:hover  { color: var(--text); }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 </style>
 {% endblock %}

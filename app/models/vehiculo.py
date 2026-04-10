@@ -69,55 +69,85 @@ class Personal(db.Model):
             "licencia_numero":  self.LicenciaNumero,
             "licencia_vigencia": str(self.LicenciaVigencia) if self.LicenciaVigencia else None,
             "seguro_medico":    self.SeguroMedico,
-            "seguro_vigencia":  str(self.SeguroVigencia)   if self.SeguroVigencia   else None,
+            "seguro_vigencia":  str(self.SeguroVigencia) if self.SeguroVigencia else None,
             "activo":           self.Activo,
         }
 
 
 class Vehiculo(db.Model):
     __tablename__ = "Vehiculo"
+
     IdVehiculo      = db.Column(db.Integer, primary_key=True)
     Nombre          = db.Column(db.String(120), nullable=False)
+    TipoVehiculo    = db.Column(db.String(20),  nullable=True)   # Auto | Camioneta | Moto
     Marca           = db.Column(db.String(100))
     Modelo          = db.Column(db.String(100))
+    Anio            = db.Column(db.SmallInteger, nullable=True)
     Matricula       = db.Column(db.String(20), nullable=False, unique=True)
+    VIN             = db.Column(db.String(50),  nullable=True)
+    Color           = db.Column(db.String(50),  nullable=True)
     Kilometraje     = db.Column(db.Integer, default=0)
-    TipoAdquisicion = db.Column(db.String(20))   # propio | seminuevo | rentado
+    TipoAdquisicion = db.Column(db.String(20))
     Estado          = db.Column(db.String(20), nullable=False, default="activo")
     Valor           = db.Column(db.Float, nullable=False, default=0)
     FechaAdquisicion = db.Column(db.Date)
     IdUbicacion     = db.Column(db.Integer, db.ForeignKey("Ubicacion.IdUbicacion"))
+    # ── Seguro ────────────────────────────────────────────────
+    PolizaSeguro    = db.Column(db.String(100), nullable=True)
+    Aseguradora     = db.Column(db.String(100), nullable=True)
+    VigenciaSeguro  = db.Column(db.Date,        nullable=True)
+    # ── Verificación ──────────────────────────────────────────
+    UltimaVerificacion = db.Column(db.Date,     nullable=True)
+    # ── Extras ────────────────────────────────────────────────
+    Accesorios      = db.Column(db.String(255), nullable=True)
+    Comentarios     = db.Column(db.Text,        nullable=True)
+    Arrendamiento   = db.Column(db.Boolean,     nullable=False, default=False)
+    FechaRenovacion = db.Column(db.Date,        nullable=True)
+    ProveedorArrendamiento = db.Column(db.String(150), nullable=True)
+    # ─────────────────────────────────────────────────────────
     CreadoEn        = db.Column(db.DateTime, default=datetime.utcnow)
     ActualizadoEn   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    ubicacion     = db.relationship("Ubicacion",         backref="vehiculos")
-    conductores   = db.relationship("ConductorVehiculo", backref="vehiculo",     lazy="dynamic")
-    permisos      = db.relationship("PermisosVehiculo",  backref="vehiculo",     lazy="dynamic")
+    ubicacion      = db.relationship("Ubicacion",            backref="vehiculos")
+    conductores    = db.relationship("ConductorVehiculo",    backref="vehiculo",  lazy="dynamic")
+    permisos       = db.relationship("PermisosVehiculo",     backref="vehiculo",  lazy="dynamic")
     mantenimientos = db.relationship("MantenimientoVehiculo", backref="vehiculo", lazy="dynamic")
 
     def to_dict(self):
         return {
             "id":               self.IdVehiculo,
             "nombre":           self.Nombre,
+            "tipo_vehiculo":    self.TipoVehiculo,
             "marca":            self.Marca,
             "modelo":           self.Modelo,
+            "anio":             self.Anio,
             "matricula":        self.Matricula,
+            "vin":              self.VIN,
+            "color":            self.Color,
             "kilometraje":      self.Kilometraje,
             "tipo_adquisicion": self.TipoAdquisicion,
             "estado":           self.Estado,
             "valor":            self.Valor,
             "fecha_adquisicion": str(self.FechaAdquisicion) if self.FechaAdquisicion else None,
             "ubicacion_id":     self.IdUbicacion,
+            "poliza_seguro":    self.PolizaSeguro,
+            "aseguradora":      self.Aseguradora,
+            "vigencia_seguro":  str(self.VigenciaSeguro) if self.VigenciaSeguro else None,
+            "accesorios":       self.Accesorios,
+            "comentarios":      self.Comentarios,
+            "arrendamiento":    self.Arrendamiento,
+            "fecha_renovacion": str(self.FechaRenovacion) if self.FechaRenovacion else None,
+            "proveedor_arrendamiento": self.ProveedorArrendamiento,
         }
 
 
 class ConductorVehiculo(db.Model):
     __tablename__ = "ConductorVehiculo"
     IdConductorVehiculo = db.Column(db.Integer, primary_key=True)
-    IdPersonal          = db.Column(db.Integer, db.ForeignKey("Personal.IdPersonal"),  nullable=False)
-    IdVehiculo          = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"),  nullable=False)
+    IdPersonal          = db.Column(db.Integer, db.ForeignKey("Personal.IdPersonal"), nullable=False)
+    IdVehiculo          = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"), nullable=False)
     FechaInicio         = db.Column(db.Date, nullable=False)
-    FechaFin            = db.Column(db.Date)  # NULL = asignación activa
+    FechaFin            = db.Column(db.Date)
 
     personal = db.relationship("Personal", backref="asignaciones")
 
@@ -125,7 +155,7 @@ class ConductorVehiculo(db.Model):
 class PermisosVehiculo(db.Model):
     __tablename__ = "PermisosVehiculo"
     IdPermiso        = db.Column(db.Integer, primary_key=True)
-    IdVehiculo       = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"),    nullable=False)
+    IdVehiculo       = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"),        nullable=False)
     IdTipoServicio   = db.Column(db.Integer, db.ForeignKey("TipoServicio.IdTipoServicio"), nullable=False)
     Descripcion      = db.Column(db.String(255))
     Numero           = db.Column(db.String(100))
@@ -144,7 +174,7 @@ class PermisosVehiculo(db.Model):
             "tipo_nombre":      self.tipo_servicio.Nombre if self.tipo_servicio else None,
             "descripcion":      self.Descripcion,
             "numero":           self.Numero,
-            "fecha_inicio":     str(self.FechaInicio)      if self.FechaInicio      else None,
+            "fecha_inicio":     str(self.FechaInicio) if self.FechaInicio else None,
             "fecha_vencimiento": str(self.FechaVencimiento) if self.FechaVencimiento else None,
         }
 
@@ -152,9 +182,9 @@ class PermisosVehiculo(db.Model):
 class MantenimientoVehiculo(db.Model):
     __tablename__ = "MantenimientoVehiculo"
     IdMantenimiento = db.Column(db.Integer, primary_key=True)
-    IdVehiculo      = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"),          nullable=False)
-    IdPersonal      = db.Column(db.Integer, db.ForeignKey("Personal.IdPersonal"),           nullable=True)
-    IdTipoServicio  = db.Column(db.Integer, db.ForeignKey("TipoServicio.IdTipoServicio"),   nullable=False)
+    IdVehiculo      = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"),           nullable=False)
+    IdPersonal      = db.Column(db.Integer, db.ForeignKey("Personal.IdPersonal"),            nullable=True)
+    IdTipoServicio  = db.Column(db.Integer, db.ForeignKey("TipoServicio.IdTipoServicio"),    nullable=False)
     Descripcion     = db.Column(db.Text)
     FechaInicio     = db.Column(db.Date, nullable=False)
     FechaEntrega    = db.Column(db.Date)
@@ -168,9 +198,9 @@ class MantenimientoVehiculo(db.Model):
     personal      = db.relationship("Personal",     backref="mantenimientos")
     tipo_servicio = db.relationship("TipoServicio", backref="mantenimientos")
     creado_por    = db.relationship("Usuario",
-                                foreign_keys="MantenimientoVehiculo.CreadoPor",
-                                backref="mantenimientos_creados",
-                                primaryjoin="MantenimientoVehiculo.CreadoPor == Usuario.IdUsuario")
+                                    foreign_keys="MantenimientoVehiculo.CreadoPor",
+                                    backref="mantenimientos_creados",
+                                    primaryjoin="MantenimientoVehiculo.CreadoPor == Usuario.IdUsuario")
 
     def to_dict(self):
         return {
@@ -178,8 +208,8 @@ class MantenimientoVehiculo(db.Model):
             "vehiculo_id":   self.IdVehiculo,
             "tipo_servicio": self.tipo_servicio.Nombre if self.tipo_servicio else None,
             "descripcion":   self.Descripcion,
-            "fecha_inicio":  str(self.FechaInicio)   if self.FechaInicio  else None,
-            "fecha_entrega": str(self.FechaEntrega)  if self.FechaEntrega else None,
+            "fecha_inicio":  str(self.FechaInicio)  if self.FechaInicio  else None,
+            "fecha_entrega": str(self.FechaEntrega) if self.FechaEntrega else None,
             "kilometraje":   self.Kilometraje,
             "costo":         self.Costo,
             "proveedor":     self.Proveedor,

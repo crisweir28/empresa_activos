@@ -11,36 +11,53 @@ class Electronico(db.Model):
     Marca            = db.Column(db.String(100))
     Modelo           = db.Column(db.String(100))
     NumeroSerie      = db.Column(db.String(100), unique=True)
-    TipoEquipo       = db.Column(db.String(30), nullable=False, default="otro")
-    Estado           = db.Column(db.String(20), nullable=False, default="almacen")
-    Condicion        = db.Column(db.String(20), nullable=False, default="bueno")
+    TipoEquipo       = db.Column(db.String(30),  nullable=False, default="otro")
+    Gama             = db.Column(db.String(20),  nullable=True)   # Baja | Media | Alta | Gamer
+    Estado           = db.Column(db.String(20),  nullable=False, default="almacen")
+    Condicion        = db.Column(db.String(20),  nullable=False, default="bueno")
     IdUsuario        = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),     nullable=True)
     IdUbicacion      = db.Column(db.Integer, db.ForeignKey("Ubicacion.IdUbicacion"), nullable=True)
     FechaAdquisicion = db.Column(db.Date)
     Costo            = db.Column(db.Float, default=0)
     Descripcion      = db.Column(db.Text)
-    CreadoEn         = db.Column(db.DateTime, default=datetime.utcnow)
-    ActualizadoEn    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # ── Campos técnicos ───────────────────────────────────────
+    IMEI                  = db.Column(db.String(50),  nullable=True)
+    Procesador            = db.Column(db.String(100), nullable=True)
+    MemoriaRAM            = db.Column(db.String(50),  nullable=True)
+    Almacenamiento        = db.Column(db.String(50),  nullable=True)
+    SistemaOperativo      = db.Column(db.String(100), nullable=True)
+    Garantia              = db.Column(db.Date,        nullable=True)
+    Accesorios            = db.Column(db.String(255), nullable=True)
+    Comentarios           = db.Column(db.Text,        nullable=True)
+    Arrendamiento         = db.Column(db.Boolean,     nullable=False, default=False)
+    FechaRenovacion       = db.Column(db.Date,        nullable=True)
+    ProveedorArrendamiento = db.Column(db.String(150), nullable=True)
+    # ─────────────────────────────────────────────────────────
+    CreadoEn      = db.Column(db.DateTime, default=datetime.utcnow)
+    ActualizadoEn = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    usuario      = db.relationship("Usuario",    foreign_keys=[IdUsuario],   backref="equipos_asignados")
-    ubicacion    = db.relationship("Ubicacion",  foreign_keys=[IdUbicacion], backref="equipos")
+    usuario        = db.relationship("Usuario",   foreign_keys=[IdUsuario],   backref="equipos_asignados")
+    ubicacion      = db.relationship("Ubicacion", foreign_keys=[IdUbicacion], backref="equipos")
     mantenimientos = db.relationship("MantenimientoElectronico", backref="equipo", lazy="dynamic")
 
     TIPOS = {
-        "laptop":  "💻 Laptop",
-        "desktop": "🖥️ Desktop",
-        "monitor": "🖵 Monitor",
-        "red":     "🌐 Red",
-        "otro":    "📦 Otro",
+        "laptop":   "💻 Laptop",
+        "desktop":  "🖥️ Desktop",
+        "monitor":  "🖵 Monitor",
+        "celular":  "📱 Celular",
+        "red":      "🌐 Red",
+        "otro":     "📦 Otro",
     }
 
     ESTADOS = {
-        "almacen":      "En almacén",
-        "asignado":     "Asignado",
-        "mantenimiento":"Mantenimiento",
-        "baja":         "Baja",
-        "mal_estado":   "Mal estado",
+        "almacen":       "En almacén",
+        "asignado":      "Asignado",
+        "mantenimiento": "Mantenimiento",
+        "baja":          "Baja",
+        "mal_estado":    "Mal estado",
     }
+
+    GAMAS = ["Baja", "Media", "Alta", "Gamer"]
 
     @property
     def tipo_label(self):
@@ -50,20 +67,40 @@ class Electronico(db.Model):
     def estado_label(self):
         return self.ESTADOS.get(self.Estado, self.Estado)
 
+    @property
+    def es_celular(self):
+        return self.TipoEquipo == "celular"
+
+    @property
+    def es_monitor(self):
+        return self.TipoEquipo == "monitor"
+
     def to_dict(self):
         return {
-            "id":           self.IdElectronico,
-            "nombre":       self.Nombre,
-            "marca":        self.Marca,
-            "modelo":       self.Modelo,
-            "numero_serie": self.NumeroSerie,
-            "tipo_equipo":  self.TipoEquipo,
-            "estado":       self.Estado,
-            "condicion":    self.Condicion,
-            "costo":        self.Costo,
-            "fecha_adquisicion": str(self.FechaAdquisicion) if self.FechaAdquisicion else None,
-            "descripcion":  self.Descripcion,
-            "usuario_id":   self.IdUsuario,
+            "id":                    self.IdElectronico,
+            "nombre":                self.Nombre,
+            "marca":                 self.Marca,
+            "modelo":                self.Modelo,
+            "numero_serie":          self.NumeroSerie,
+            "tipo_equipo":           self.TipoEquipo,
+            "gama":                  self.Gama,
+            "estado":                self.Estado,
+            "condicion":             self.Condicion,
+            "costo":                 self.Costo,
+            "fecha_adquisicion":     str(self.FechaAdquisicion) if self.FechaAdquisicion else None,
+            "descripcion":           self.Descripcion,
+            "imei":                  self.IMEI,
+            "procesador":            self.Procesador,
+            "memoria_ram":           self.MemoriaRAM,
+            "almacenamiento":        self.Almacenamiento,
+            "sistema_operativo":     self.SistemaOperativo,
+            "garantia":              str(self.Garantia) if self.Garantia else None,
+            "accesorios":            self.Accesorios,
+            "comentarios":           self.Comentarios,
+            "arrendamiento":         self.Arrendamiento,
+            "fecha_renovacion":      str(self.FechaRenovacion) if self.FechaRenovacion else None,
+            "proveedor_arrendamiento": self.ProveedorArrendamiento,
+            "usuario_id":            self.IdUsuario,
         }
 
     def __repr__(self):
@@ -75,7 +112,7 @@ class MantenimientoElectronico(db.Model):
 
     IdMantenimiento = db.Column(db.Integer, primary_key=True)
     IdElectronico   = db.Column(db.Integer, db.ForeignKey("Electronico.IdElectronico"), nullable=False)
-    Tipo            = db.Column(db.String(20), nullable=False)   # previo | correctivo
+    Tipo            = db.Column(db.String(20), nullable=False)
     Diagnostico     = db.Column(db.Text)
     Descripcion     = db.Column(db.Text)
     FechaInicio     = db.Column(db.Date, nullable=False)
@@ -90,14 +127,14 @@ class MantenimientoElectronico(db.Model):
 
     def to_dict(self):
         return {
-            "id":           self.IdMantenimiento,
-            "equipo_id":    self.IdElectronico,
-            "tipo":         self.Tipo,
-            "diagnostico":  self.Diagnostico,
-            "descripcion":  self.Descripcion,
-            "fecha_inicio": str(self.FechaInicio) if self.FechaInicio else None,
+            "id":            self.IdMantenimiento,
+            "equipo_id":     self.IdElectronico,
+            "tipo":          self.Tipo,
+            "diagnostico":   self.Diagnostico,
+            "descripcion":   self.Descripcion,
+            "fecha_inicio":  str(self.FechaInicio) if self.FechaInicio else None,
             "fecha_termino": str(self.FechaTermino) if self.FechaTermino else None,
-            "costo":        self.Costo,
-            "tecnico":      self.Tecnico,
-            "estatus":      self.Estatus,
+            "costo":         self.Costo,
+            "tecnico":       self.Tecnico,
+            "estatus":       self.Estatus,
         }

@@ -11,6 +11,8 @@ from ..models.vehiculo import (
 )
 from ..views.vehiculo_vistas import VVehiculo, VPermisosVencer, VMantenimientoVehiculo, VAlertasMantenimiento
 from ..utils.permisos import requiere_rol, requiere_permiso
+from ..utils.archivos import guardar_archivo
+from ..models.baja_activo import BajaActivo
 
 administrativo_bp = Blueprint("administrativo", __name__)
 
@@ -63,6 +65,8 @@ def vehiculos():
     query  = VVehiculo.query
     if estado:
         query = query.filter_by(estado=estado)
+    else:
+        query = query.filter(VVehiculo.estado != 'baja')
     return render_template("administrativo/vehiculos.html",
         vehiculos   = query.all(),
         ubicaciones = Ubicacion.query.all(),
@@ -74,21 +78,66 @@ def vehiculos():
 def vehiculo_nuevo():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-    v = Vehiculo(
-        Nombre           = request.form.get("nombre", "").strip(),
-        Marca            = request.form.get("marca", "").strip() or None,
-        Modelo           = request.form.get("modelo", "").strip() or None,
-        Matricula        = request.form.get("matricula", "").strip().upper(),
-        Kilometraje      = int(request.form.get("kilometraje") or 0),
-        TipoAdquisicion  = request.form.get("tipo_adquisicion") or None,
-        Estado           = request.form.get("estado", "activo"),
-        Valor            = float(request.form.get("valor") or 0),
-        FechaAdquisicion = request.form.get("fecha_adquisicion") or None,
-        IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None,
-    )
-    db.session.add(v)
-    db.session.commit()
-    flash("Vehículo registrado correctamente.", "success")
+
+    try:
+        v = Vehiculo(
+            Nombre           = request.form.get("nombre", "").strip(),
+            TipoVehiculo     = request.form.get("tipo_vehiculo") or None,
+            Marca            = request.form.get("marca", "").strip() or None,
+            Modelo           = request.form.get("modelo", "").strip() or None,
+            Anio             = int(request.form.get("anio")) if request.form.get("anio") else None,
+            Matricula        = request.form.get("matricula", "").strip().upper(),
+            VIN              = request.form.get("vin", "").strip() or None,
+            Color            = request.form.get("color", "").strip() or None,
+            Kilometraje      = int(request.form.get("kilometraje") or 0),
+            TipoAdquisicion  = request.form.get("tipo_adquisicion") or None,
+            Estado           = request.form.get("estado", "activo"),
+            Valor            = float(request.form.get("valor") or 0),
+            FechaAdquisicion = request.form.get("fecha_adquisicion") or None,
+            IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None,
+            PolizaSeguro     = request.form.get("poliza_seguro", "").strip() or None,
+            Aseguradora      = request.form.get("aseguradora", "").strip() or None,
+            VigenciaSeguro   = request.form.get("vigencia_seguro") or None,
+            UltimaVerificacion = request.form.get("ultima_verificacion") or None,
+            Accesorios       = request.form.get("accesorios", "").strip() or None,
+            Comentarios      = request.form.get("comentarios", "").strip() or None,
+            Arrendamiento    = bool(request.form.get("arrendamiento")),
+            FechaRenovacion  = request.form.get("fecha_renovacion") or None,
+            ProveedorArrendamiento = request.form.get("proveedor_arrendamiento", "").strip() or None,
+        )
+        db.session.add(v)
+        db.session.flush()
+
+        tarjeta = request.files.get("tarjeta_circulacion")
+        if tarjeta and tarjeta.filename:
+            info = guardar_archivo(archivo=tarjeta, prefijo=f"vehiculo_{v.IdVehiculo}_tarjeta", carpeta="documents")
+            db.session.add(PermisosVehiculo(
+                IdVehiculo=v.IdVehiculo, IdTipoServicio=4,
+                Descripcion="Tarjeta de circulación", ArchivoUrl=info["url"],
+                FechaVencimiento=date(9999, 12, 31),
+            ))
+
+        verificacion = request.files.get("certificado_verificacion")
+        if verificacion and verificacion.filename:
+            info = guardar_archivo(archivo=verificacion, prefijo=f"vehiculo_{v.IdVehiculo}_verificacion", carpeta="documents")
+            db.session.add(PermisosVehiculo(
+                IdVehiculo=v.IdVehiculo, IdTipoServicio=5,
+                Descripcion="Certificado de verificación", ArchivoUrl=info["url"],
+                FechaVencimiento=date(9999, 12, 31),
+            ))
+
+        for campo in ["evidencia_frente", "evidencia_lateral", "evidencia_interior"]:
+            archivo = request.files.get(campo)
+            if archivo and archivo.filename:
+                guardar_archivo(archivo=archivo, prefijo=f"vehiculo_{v.IdVehiculo}_{campo}", carpeta="static/evidencias")
+
+        db.session.commit()
+        flash(f"Vehículo '{v.Nombre}' registrado correctamente.", "success")
+
+    except Exception as ex:
+        db.session.rollback()
+        flash(f"Error: {str(ex)}", "error")
+
     return redirect(url_for("administrativo.vehiculos"))
 
 
@@ -110,18 +159,6 @@ def vehiculo_editar(id):
     v.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
     db.session.commit()
     flash("Vehículo actualizado.", "success")
-    return redirect(url_for("administrativo.vehiculos"))
-
-
-@administrativo_bp.route("/vehiculos/<int:id>/eliminar", methods=["POST"])
-@login_required
-def vehiculo_eliminar(id):
-    if not _check_acceso():
-        return redirect(url_for("activos.dashboard"))
-    v = Vehiculo.query.get_or_404(id)
-    db.session.delete(v)
-    db.session.commit()
-    flash("Vehículo eliminado.", "success")
     return redirect(url_for("administrativo.vehiculos"))
 
 
@@ -152,17 +189,32 @@ def vehiculo_detalle(id):
 def permiso_nuevo(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-    p = PermisosVehiculo(
-        IdVehiculo       = id,
-        IdTipoServicio   = int(request.form.get("tipo_servicio_id")),
-        Descripcion      = request.form.get("descripcion", "").strip() or None,
-        Numero           = request.form.get("numero", "").strip() or None,
-        FechaInicio      = request.form.get("fecha_inicio") or None,
-        FechaVencimiento = request.form.get("fecha_vencimiento"),
-    )
-    db.session.add(p)
-    db.session.commit()
-    flash("Permiso registrado.", "success")
+
+    try:
+        p = PermisosVehiculo(
+            IdVehiculo       = id,
+            IdTipoServicio   = int(request.form.get("tipo_servicio_id")),
+            Descripcion      = request.form.get("descripcion", "").strip() or None,
+            Numero           = request.form.get("numero", "").strip() or None,
+            FechaInicio      = request.form.get("fecha_inicio") or None,
+            FechaVencimiento = request.form.get("fecha_vencimiento"),
+        )
+        archivo = request.files.get("archivo")
+        if archivo and archivo.filename:
+            info = guardar_archivo(
+                archivo = archivo,
+                prefijo = f"vehiculo_{id}_permiso",
+                carpeta = "documents" if not archivo.filename.rsplit(".", 1)[-1].lower()
+                          in {"png","jpg","jpeg"} else "static/evidencias"
+            )
+            p.ArchivoUrl = info["url"]
+        db.session.add(p)
+        db.session.commit()
+        flash("Permiso registrado.", "success")
+    except Exception as ex:
+        db.session.rollback()
+        flash(f"Error: {str(ex)}", "error")
+
     return redirect(url_for("administrativo.vehiculo_detalle", id=id))
 
 
@@ -230,7 +282,10 @@ def mantenimiento_nuevo(id):
         )
         db.session.execute(sqla_text("COMMIT"))
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        flash("Mantenimiento registrado correctamente." if row and row.r == "OK" else f"Error ({row.r if row else ''}).", "success" if row and row.r == "OK" else "error")
+        flash(
+            "Mantenimiento registrado correctamente." if row and row.r == "OK" else f"Error ({row.r if row else ''}).",
+            "success" if row and row.r == "OK" else "error"
+        )
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
@@ -254,7 +309,10 @@ def mantenimiento_completar(id):
         )
         db.session.execute(sqla_text("COMMIT"))
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        flash("Mantenimiento completado." if row and row.r == "OK" else "No se pudo completar.", "success" if row and row.r == "OK" else "error")
+        flash(
+            "Mantenimiento completado." if row and row.r == "OK" else "No se pudo completar.",
+            "success" if row and row.r == "OK" else "error"
+        )
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
@@ -338,6 +396,26 @@ def asignar_conductor(id):
     return redirect(url_for("administrativo.vehiculo_detalle", id=id))
 
 
+# ── Baja vehículo ─────────────────────────────────────────────
+@administrativo_bp.route("/vehiculos/<int:id>/baja", methods=["POST"])
+@login_required
+def vehiculo_baja(id):
+    if not _check_acceso():
+        return redirect(url_for("activos.dashboard"))
+    v = Vehiculo.query.get_or_404(id)
+    v.Estado = "baja"
+    db.session.add(BajaActivo(
+        TipoActivo    = "vehiculo",
+        IdActivo      = v.IdVehiculo,
+        NombreActivo  = v.Nombre,
+        DadoDeBajaPor = current_user.id,
+    ))
+    db.session.commit()
+    flash(f"'{v.Nombre}' dado de baja.", "success")
+    return redirect(url_for("administrativo.vehiculos"))
+
+
+# ── API ───────────────────────────────────────────────────────
 @administrativo_bp.route("/api/vehiculo/<int:id>")
 @login_required
 def api_vehiculo(id):

@@ -16,18 +16,21 @@
 </div>
 
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-  <a href="{{ url_for('ti.equipos') }}" class="btn-sm {% if not tipo_filtro and not estado_filtro %}active{% endif %}"
+  <a href="{{ url_for('ti.equipos') }}"
+     class="btn-sm {% if not tipo_filtro and not estado_filtro %}active{% endif %}"
      style="{% if not tipo_filtro and not estado_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">Todos</a>
-  {% for t in ['laptop','desktop','monitor','red'] %}
-  <a href="{{ url_for('ti.equipos', tipo=t) }}" class="btn-sm {% if tipo_filtro==t %}active{% endif %}"
+  {% for t in ['laptop','desktop','monitor','celular','red'] %}
+  <a href="{{ url_for('ti.equipos', tipo=t) }}"
+     class="btn-sm {% if tipo_filtro==t %}active{% endif %}"
      style="{% if tipo_filtro==t %}border-color:var(--accent);color:var(--accent){% endif %}">
-    {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐'} %}
+    {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐'} %}
     {{ iconos.get(t,'📦') }} {{ t }}
   </a>
   {% endfor %}
   <span style="color:var(--border)">|</span>
   {% for e, label in [('almacen','Almacén'),('asignado','Asignado'),('mantenimiento','Mantenimiento'),('baja','Baja')] %}
-  <a href="{{ url_for('ti.equipos', estado=e) }}" class="btn-sm {% if estado_filtro==e %}active{% endif %}"
+  <a href="{{ url_for('ti.equipos', estado=e) }}"
+     class="btn-sm {% if estado_filtro==e %}active{% endif %}"
      style="{% if estado_filtro==e %}border-color:var(--accent);color:var(--accent){% endif %}">{{ label }}</a>
   {% endfor %}
 </div>
@@ -38,7 +41,8 @@
     <table>
       <thead>
         <tr>
-          <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th><th>Condición</th><th>Asignado a</th><th>Acciones</th>
+          <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th>
+          <th>Condición</th><th>Asignado a</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -49,7 +53,7 @@
             <br><span style="font-size:11px;color:var(--muted)">{{ e.Marca or '' }} {{ e.Modelo or '' }}</span>
           </td>
           <td style="color:var(--muted)">
-            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐','otro':'📦'} %}
             {{ iconos.get(e.TipoEquipo,'📦') }} {{ e.TipoEquipo }}
           </td>
           <td style="font-family:monospace;color:var(--muted);font-size:12px">{{ e.NumeroSerie or '—' }}</td>
@@ -68,7 +72,18 @@
           <td>
             <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
             {% if tiene_permiso('Equipos TI', 'editar') %}
-            <button class="btn-sm" onclick="editarEquipo({{ e.IdElectronico }},'{{ e.Nombre }}','{{ e.TipoEquipo }}','{{ e.Marca or '' }}','{{ e.Modelo or '' }}','{{ e.NumeroSerie or '' }}','{{ e.Condicion }}',{{ e.Costo or 0 }},'{{ e.FechaAdquisicion or '' }}')">✏️</button>
+            <button class="btn-sm"
+                    onclick="editarEquipo({{ e.IdElectronico }},'{{ e.Nombre }}','{{ e.TipoEquipo }}','{{ e.Marca or '' }}','{{ e.Modelo or '' }}','{{ e.NumeroSerie or '' }}','{{ e.Condicion }}',{{ e.Costo or 0 }},'{{ e.FechaAdquisicion or '' }}')">
+              ✏️
+            </button>
+            {% endif %}
+            {% if e.Estado != 'baja' %}
+            <form method="POST" action="/ti/equipos/{{ e.IdElectronico }}/baja"
+                  style="display:inline" id="baja-eq-{{ e.IdElectronico }}"></form>
+            <button class="btn-sm btn-del"
+                    onclick="confirmarBaja('{{ e.Nombre }}','baja-eq-{{ e.IdElectronico }}')">
+              🗑️ Baja
+            </button>
             {% endif %}
           </td>
         </tr>
@@ -81,20 +96,42 @@
   {% endif %}
 </div>
 
-<!-- Modal Nuevo -->
+<!-- ══ Modal: Nuevo equipo TI ════════════════════════════════ -->
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>💻 Nuevo equipo TI</h2>
-    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}">
+    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}" enctype="multipart/form-data">
       <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input name="nombre" required placeholder="Ej: Laptop Dell 01"></div>
+        <div class="field"><label>Nombre *</label>
+          <input name="nombre" required placeholder="Ej: Laptop Dell 01">
+        </div>
         <div class="field"><label>Tipo *</label>
-          <select name="tipo_equipo" required>
+          <select name="tipo_equipo" required id="n-tipo" onchange="actualizarCampos()">
             <option value="laptop">💻 Laptop</option>
             <option value="desktop">🖥️ Desktop</option>
             <option value="monitor">🖵 Monitor</option>
+            <option value="celular">📱 Celular</option>
             <option value="red">🌐 Red</option>
             <option value="otro">📦 Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Gama</label>
+          <select name="gama">
+            <option value="">— Sin gama —</option>
+            <option value="Baja">Baja</option>
+            <option value="Media">Media</option>
+            <option value="Alta">Alta</option>
+            <option value="Gamer">Gamer</option>
+          </select>
+        </div>
+        <div class="field"><label>Estado inicial</label>
+          <select name="estado">
+            <option value="almacen">Nuevo / En almacén</option>
+            <option value="asignado">Operativo / Asignado</option>
+            <option value="mantenimiento">En reparación</option>
+            <option value="baja">Baja</option>
           </select>
         </div>
       </div>
@@ -104,27 +141,99 @@
       </div>
       <div class="grid-2">
         <div class="field"><label>Número de serie</label><input name="numero_serie"></div>
-        <div class="field"><label>Costo ($)</label><input name="costo" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="field" id="campo-imei" style="display:none"><label>IMEI</label>
+          <input name="imei" placeholder="Solo celulares">
+        </div>
+      </div>
+      <div id="campos-specs">
+        <div class="grid-2">
+          <div class="field"><label>Procesador</label>
+            <input name="procesador" placeholder="Ej: Intel i7-12th">
+          </div>
+          <div class="field"><label>Memoria RAM</label>
+            <input name="memoria_ram" placeholder="Ej: 16 GB DDR4">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Almacenamiento</label>
+            <input name="almacenamiento" placeholder="Ej: 512 GB SSD">
+          </div>
+          <div class="field"><label>Sistema operativo</label>
+            <input name="sistema_operativo" placeholder="Ej: Windows 11 Pro">
+          </div>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
+        <div class="field"><label>Costo ($)</label>
+          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="field"><label>Garantía (fecha fin)</label>
+          <input name="garantia" type="date">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha adquisición</label>
+          <input name="fecha_adquisicion" type="date">
+        </div>
         <div class="field"><label>Ubicación</label>
           <select name="ubicacion_id">
             <option value="">— Sin ubicación —</option>
-            {% for u in ubicaciones %}<option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>{% endfor %}
+            {% for u in ubicaciones %}
+            <option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>
+            {% endfor %}
           </select>
         </div>
       </div>
-      <div class="field"><label>Descripción</label><textarea name="descripcion"></textarea></div>
+      <div class="field"><label>Accesorios</label>
+        <input name="accesorios" placeholder="Ej: Cargador, mouse, docking">
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" name="arrendamiento" value="1" onchange="toggleArrendamiento(this)">
+            ¿Es arrendado?
+          </label>
+        </div>
+      </div>
+      <div id="campos-arrendamiento" style="display:none">
+        <div class="grid-2">
+          <div class="field"><label>Fecha de renovación</label>
+            <input name="fecha_renovacion" type="date">
+          </div>
+          <div class="field"><label>Proveedor</label>
+            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor">
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Comentarios</label>
+        <textarea name="comentarios" placeholder="Notas adicionales..."></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Factura (PDF opcional)</label>
+          <input type="file" name="factura" accept=".pdf,.doc,.docx" style="color:var(--text);font-size:13px">
+        </div>
+        <div class="field">
+          <label>Evidencia fotográfica (opcional)</label>
+          <input type="file" name="evidencia" accept=".png,.jpg,.jpeg"
+                 onchange="previewEv(this)" style="color:var(--text);font-size:13px">
+        </div>
+      </div>
+      <div id="ev-preview" style="display:none;margin-top:8px;text-align:center">
+        <img id="ev-img" src="" alt="preview"
+             style="max-width:100%;max-height:120px;border-radius:8px;
+                    border:1px solid var(--border);object-fit:contain">
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Modal Editar -->
+<!-- ══ Modal: Editar equipo ══════════════════════════════════ -->
 <div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>✏️ Editar equipo</h2>
@@ -136,6 +245,7 @@
             <option value="laptop">💻 Laptop</option>
             <option value="desktop">🖥️ Desktop</option>
             <option value="monitor">🖵 Monitor</option>
+            <option value="celular">📱 Celular</option>
             <option value="red">🌐 Red</option>
             <option value="otro">📦 Otro</option>
           </select>
@@ -157,31 +267,80 @@
         </div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Costo ($)</label><input id="e-costo" name="costo" type="number" step="0.01"></div>
-        <div class="field"><label>Fecha adquisición</label><input id="e-fecha" name="fecha_adquisicion" type="date"></div>
+        <div class="field"><label>Costo ($)</label>
+          <input id="e-costo" name="costo" type="number" step="0.01">
+        </div>
+        <div class="field"><label>Fecha adquisición</label>
+          <input id="e-fecha" name="fecha_adquisicion" type="date">
+        </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>
   </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 function editarEquipo(id, nombre, tipo, marca, modelo, serie, condicion, costo, fecha) {
-  document.getElementById('form-editar').action    = `/ti/equipos/${id}/editar`;
-  document.getElementById('e-nombre').value        = nombre;
-  document.getElementById('e-tipo').value          = tipo;
-  document.getElementById('e-marca').value         = marca;
-  document.getElementById('e-modelo').value        = modelo;
-  document.getElementById('e-serie').value         = serie;
-  document.getElementById('e-condicion').value     = condicion;
-  document.getElementById('e-costo').value         = costo;
-  document.getElementById('e-fecha').value         = fecha;
+  document.getElementById('form-editar').action = `/ti/equipos/${id}/editar`;
+  document.getElementById('e-nombre').value     = nombre;
+  document.getElementById('e-tipo').value       = tipo;
+  document.getElementById('e-marca').value      = marca;
+  document.getElementById('e-modelo').value     = modelo;
+  document.getElementById('e-serie').value      = serie;
+  document.getElementById('e-condicion').value  = condicion;
+  document.getElementById('e-costo').value      = costo;
+  document.getElementById('e-fecha').value      = fecha;
   document.getElementById('modal-editar').classList.add('open');
+}
+
+function actualizarCampos() {
+  const tipo        = document.getElementById('n-tipo').value;
+  const campoIMEI   = document.getElementById('campo-imei');
+  const camposSpecs = document.getElementById('campos-specs');
+  campoIMEI.style.display   = tipo === 'celular' ? 'block' : 'none';
+  camposSpecs.style.display = tipo === 'monitor' ? 'none' : 'block';
+}
+
+function toggleArrendamiento(cb) {
+  document.getElementById('campos-arrendamiento').style.display = cb.checked ? 'block' : 'none';
+}
+
+function previewEv(input) {
+  const wrap = document.getElementById('ev-preview');
+  const img  = document.getElementById('ev-img');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; wrap.style.display = 'block'; };
+    reader.readAsDataURL(input.files[0]);
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function confirmarBaja(nombre, formId) {
+  Swal.fire({
+    title: '¿Dar de baja?',
+    html: `<strong>${nombre}</strong> se marcará como baja.<br>Podrás verlo en el filtro "Baja".`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: '🗑️ Dar de baja',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    focusCancel: true,
+  }).then(result => {
+    if (result.isConfirmed) {
+      document.getElementById(formId).submit();
+    }
+  });
 }
 </script>
 {% endblock %}
