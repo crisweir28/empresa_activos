@@ -70,6 +70,33 @@
       </div>
     </div>
 
+
+  {# ── Administración — solo super admin #}
+    {% if current_user.rol == 'admin' %}
+    <div class="sb-group">
+      <button class="sb-group-btn {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
+              onclick="toggleGroup(this)">
+        Administración <span class="sb-group-arrow">▾</span>
+      </button>
+      <div class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
+           style="max-height:200px">
+        <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
+           href="{{ url_for('permisos.index') }}">
+          <span class="ic">🔐</span> Roles & Permisos
+        </a>
+        <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
+           href="{{ url_for('usuarios.lista') }}">
+          <span class="ic">👥</span> Usuarios
+        </a>
+        <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
+           href="{{ url_for('departamentos.lista') }}">
+          <span class="ic">🏬</span> Departamentos
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+
     {# ── Vehículos ── #}
     {% if current_user.rol in ('admin', 'administrativo') and tiene_permiso('Vehículos') %}
     <div class="sb-group">
@@ -161,31 +188,6 @@
         <a class="nav-link {% if request.blueprint == 'proyectos' %}active{% endif %}"
            href="{{ url_for('proyectos.lista') }}">
           <span class="ic">📋</span> Proyectos
-        </a>
-      </div>
-    </div>
-    {% endif %}
-
-    {# ── Administración — solo super admin #}
-    {% if current_user.rol == 'admin' %}
-    <div class="sb-group">
-      <button class="sb-group-btn {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
-              onclick="toggleGroup(this)">
-        Administración <span class="sb-group-arrow">▾</span>
-      </button>
-      <div class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
-           style="max-height:200px">
-        <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
-           href="{{ url_for('permisos.index') }}">
-          <span class="ic">🔐</span> Roles & Permisos
-        </a>
-        <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
-           href="{{ url_for('usuarios.lista') }}">
-          <span class="ic">👥</span> Usuarios
-        </a>
-        <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
-           href="{{ url_for('departamentos.lista') }}">
-          <span class="ic">🏬</span> Departamentos
         </a>
       </div>
     </div>
@@ -342,6 +344,26 @@ socket.on('proyectos_actualizados', function(data) {
 socket.on('usuario_bloqueado', function(data) {
   if (window.location.pathname.includes('/usuarios')) {
     location.reload();
+  }
+});
+
+socket.on('ti_equipos_update', function() {
+  // Notificación en cualquier página
+  toast('info', '💻 Lista de equipos TI actualizada');
+
+  // Si está en /ti/equipos, actualizar la tabla también
+  if (window.location.pathname.includes('/ti/equipos')) {
+    fetch(window.location.href)
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc    = parser.parseFromString(html, 'text/html');
+        const nuevaTbody = doc.querySelector('.panel table tbody');
+        const actualTbody = document.querySelector('.panel table tbody');
+        if (nuevaTbody && actualTbody) {
+          actualTbody.innerHTML = nuevaTbody.innerHTML;
+        }
+      });
   }
 });
 </script>

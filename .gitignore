@@ -8,3 +8,9 @@ instance/
 .env
 migrations/versions/
 *.zip
+ 
+# Ignorar PDFs de documentos
+app/documents/*.pdf
+
+# Ignorar imágenes de evidencias
+app/static/evidencias/*.png

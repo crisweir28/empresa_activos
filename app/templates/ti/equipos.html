@@ -2,6 +2,25 @@
 {% extends "base.html" %}
 {% block title %}Equipos TI{% endblock %}
 
+{% block extra_head %}
+<style>
+  .field input.input-ok,
+  .field textarea.input-ok  { border-color: var(--green) !important; }
+  .field input.input-err,
+  .field textarea.input-err { border-color: var(--red) !important; }
+  .field-msg {
+    font-size: 11px;
+    margin-top: 4px;
+    min-height: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .field-msg.ok  { color: var(--green); }
+  .field-msg.err { color: var(--red); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="topbar">
   <div>
@@ -100,12 +119,18 @@
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>💻 Nuevo equipo TI</h2>
-    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}"
+          enctype="multipart/form-data" id="form-nuevo-equipo">
+
       <div class="grid-2">
-        <div class="field"><label>Nombre *</label>
-          <input name="nombre" required placeholder="Ej: Laptop Dell 01">
+        <div class="field">
+          <label>Nombre *</label>
+          <input name="nombre" required placeholder="Ej: Laptop Dell 01"
+                 oninput="vCampo(this,'ti-nombre')" onblur="vCampo(this,'ti-nombre')">
+          <div class="field-msg" id="msg-ti-nombre"></div>
         </div>
-        <div class="field"><label>Tipo *</label>
+        <div class="field">
+          <label>Tipo *</label>
           <select name="tipo_equipo" required id="n-tipo" onchange="actualizarCampos()">
             <option value="laptop">💻 Laptop</option>
             <option value="desktop">🖥️ Desktop</option>
@@ -116,8 +141,10 @@
           </select>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Gama</label>
+        <div class="field">
+          <label>Gama</label>
           <select name="gama">
             <option value="">— Sin gama —</option>
             <option value="Baja">Baja</option>
@@ -126,7 +153,8 @@
             <option value="Gamer">Gamer</option>
           </select>
         </div>
-        <div class="field"><label>Estado inicial</label>
+        <div class="field">
+          <label>Estado inicial</label>
           <select name="estado">
             <option value="almacen">Nuevo / En almacén</option>
             <option value="asignado">Operativo / Asignado</option>
@@ -135,47 +163,92 @@
           </select>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Marca</label><input name="marca" placeholder="Dell"></div>
-        <div class="field"><label>Modelo</label><input name="modelo" placeholder="Latitude 5520"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Número de serie</label><input name="numero_serie"></div>
-        <div class="field" id="campo-imei" style="display:none"><label>IMEI</label>
-          <input name="imei" placeholder="Solo celulares">
+        <div class="field">
+          <label>Marca *</label>
+          <input name="marca" placeholder="Dell"
+                 oninput="vCampo(this,'ti-marca')" onblur="vCampo(this,'ti-marca')">
+          <div class="field-msg" id="msg-ti-marca"></div>
+        </div>
+        <div class="field">
+          <label>Modelo</label>
+          <input name="modelo" placeholder="Latitude 5520"
+                 oninput="vOpcional(this,'ti-modelo')" onblur="vOpcional(this,'ti-modelo')">
+          <div class="field-msg" id="msg-ti-modelo"></div>
         </div>
       </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Número de serie</label>
+          <input name="numero_serie"
+                 oninput="vOpcional(this,'ti-serie')" onblur="vOpcional(this,'ti-serie')">
+          <div class="field-msg" id="msg-ti-serie"></div>
+        </div>
+        <div class="field" id="campo-imei" style="display:none">
+          <label>IMEI</label>
+          <input name="imei" placeholder="Solo celulares"
+                 oninput="vImei(this)" onblur="vImei(this)">
+          <div class="field-msg" id="msg-ti-imei"></div>
+        </div>
+      </div>
+
       <div id="campos-specs">
         <div class="grid-2">
-          <div class="field"><label>Procesador</label>
-            <input name="procesador" placeholder="Ej: Intel i7-12th">
+          <div class="field">
+            <label>Procesador</label>
+            <input name="procesador" placeholder="Ej: Intel i7-12th"
+                   oninput="vOpcional(this,'ti-proc')" onblur="vOpcional(this,'ti-proc')">
+            <div class="field-msg" id="msg-ti-proc"></div>
           </div>
-          <div class="field"><label>Memoria RAM</label>
-            <input name="memoria_ram" placeholder="Ej: 16 GB DDR4">
+          <div class="field">
+            <label>Memoria RAM</label>
+            <input name="memoria_ram" placeholder="Ej: 16 GB DDR4"
+                   oninput="vOpcional(this,'ti-ram')" onblur="vOpcional(this,'ti-ram')">
+            <div class="field-msg" id="msg-ti-ram"></div>
           </div>
         </div>
         <div class="grid-2">
-          <div class="field"><label>Almacenamiento</label>
-            <input name="almacenamiento" placeholder="Ej: 512 GB SSD">
+          <div class="field">
+            <label>Almacenamiento</label>
+            <input name="almacenamiento" placeholder="Ej: 512 GB SSD"
+                   oninput="vOpcional(this,'ti-alm')" onblur="vOpcional(this,'ti-alm')">
+            <div class="field-msg" id="msg-ti-alm"></div>
           </div>
-          <div class="field"><label>Sistema operativo</label>
-            <input name="sistema_operativo" placeholder="Ej: Windows 11 Pro">
+          <div class="field">
+            <label>Sistema operativo</label>
+            <input name="sistema_operativo" placeholder="Ej: Windows 11 Pro"
+                   oninput="vOpcional(this,'ti-so')" onblur="vOpcional(this,'ti-so')">
+            <div class="field-msg" id="msg-ti-so"></div>
           </div>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Costo ($)</label>
-          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00">
+        <div class="field">
+          <label>Costo ($)</label>
+          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00"
+                 oninput="vCosto(this,'ti-costo')" onblur="vCosto(this,'ti-costo')">
+          <div class="field-msg" id="msg-ti-costo"></div>
         </div>
-        <div class="field"><label>Garantía (fecha fin)</label>
-          <input name="garantia" type="date">
+        <div class="field">
+          <label>Garantía (fecha fin)</label>
+          <input name="garantia" type="date"
+                 onchange="vFechaFutura(this,'ti-garantia')" onblur="vFechaFutura(this,'ti-garantia')">
+          <div class="field-msg" id="msg-ti-garantia"></div>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Fecha adquisición</label>
-          <input name="fecha_adquisicion" type="date">
+        <div class="field">
+          <label>Fecha adquisición</label>
+          <input name="fecha_adquisicion" type="date"
+                 onchange="vFecha(this,'ti-fecha')" onblur="vFecha(this,'ti-fecha')">
+          <div class="field-msg" id="msg-ti-fecha"></div>
         </div>
-        <div class="field"><label>Ubicación</label>
+        <div class="field">
+          <label>Ubicación</label>
           <select name="ubicacion_id">
             <option value="">— Sin ubicación —</option>
             {% for u in ubicaciones %}
@@ -184,12 +257,17 @@
           </select>
         </div>
       </div>
-      <div class="field"><label>Accesorios</label>
-        <input name="accesorios" placeholder="Ej: Cargador, mouse, docking">
+
+      <div class="field">
+        <label>Accesorios</label>
+        <input name="accesorios" placeholder="Ej: Cargador, mouse, docking"
+               oninput="vOpcional(this,'ti-acc')" onblur="vOpcional(this,'ti-acc')">
+        <div class="field-msg" id="msg-ti-acc"></div>
       </div>
+
       <div class="grid-2">
         <div class="field">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <label style="display:inline-flex;align-items:stretch;gap:15px;cursor:pointer">
             <input type="checkbox" name="arrendamiento" value="1" onchange="toggleArrendamiento(this)">
             ¿Es arrendado?
           </label>
@@ -197,20 +275,31 @@
       </div>
       <div id="campos-arrendamiento" style="display:none">
         <div class="grid-2">
-          <div class="field"><label>Fecha de renovación</label>
-            <input name="fecha_renovacion" type="date">
+          <div class="field">
+            <label>Fecha de renovación</label>
+            <input name="fecha_renovacion" type="date"
+                   onchange="vFechaFutura(this,'ti-renov')" onblur="vFechaFutura(this,'ti-renov')">
+            <div class="field-msg" id="msg-ti-renov"></div>
           </div>
-          <div class="field"><label>Proveedor</label>
-            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor">
+          <div class="field">
+            <label>Proveedor</label>
+            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor"
+                   oninput="vOpcional(this,'ti-prov')" onblur="vOpcional(this,'ti-prov')">
+            <div class="field-msg" id="msg-ti-prov"></div>
           </div>
         </div>
       </div>
-      <div class="field"><label>Comentarios</label>
-        <textarea name="comentarios" placeholder="Notas adicionales..."></textarea>
+
+      <div class="field">
+        <label>Comentarios</label>
+        <textarea name="comentarios" placeholder="Notas adicionales..."
+                  oninput="vOpcional(this,'ti-com')" onblur="vOpcional(this,'ti-com')"></textarea>
+        <div class="field-msg" id="msg-ti-com"></div>
       </div>
+
       <div class="grid-2">
         <div class="field">
-          <label>Factura (PDF opcional)</label>
+          <label>Hoja de asignacion</label>
           <input type="file" name="factura" accept=".pdf,.doc,.docx" style="color:var(--text);font-size:13px">
         </div>
         <div class="field">
@@ -224,10 +313,11 @@
              style="max-width:100%;max-height:120px;border-radius:8px;
                     border:1px solid var(--border);object-fit:contain">
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
                 onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-primary" onclick="submitEquipo()">Guardar</button>
       </div>
     </form>
   </div>
@@ -287,6 +377,82 @@
 
 {% block scripts %}
 <script>
+// ── Helpers ───────────────────────────────────────────────────
+function setMsg(input, msgId, ok, msg) {
+  const el = document.getElementById('msg-' + msgId);
+  input.classList.toggle('input-ok',  ok);
+  input.classList.toggle('input-err', !ok);
+  if (el) { el.className = 'field-msg ' + (ok ? 'ok' : 'err'); el.textContent = (ok ? '✓ ' : '✗ ') + msg; }
+  return ok;
+}
+function limpiar(input, msgId) {
+  const el = document.getElementById('msg-' + msgId);
+  input.classList.remove('input-ok','input-err');
+  if (el) { el.className = 'field-msg'; el.textContent = ''; }
+}
+
+// ── Validadores ───────────────────────────────────────────────
+function vCampo(input, key) {
+  const v = input.value.trim();
+  if (!v)           return setMsg(input, key, false, 'Campo obligatorio');
+  if (v.length < 2) return setMsg(input, key, false, 'Mínimo 2 caracteres');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vOpcional(input, key) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, key); return true; }
+  if (v.length < 2) return setMsg(input, key, false, 'Mínimo 2 caracteres');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vCosto(input, key) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, key); return true; }
+  if (parseFloat(v) < 0) return setMsg(input, key, false, 'No puede ser negativo');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vImei(input) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, 'ti-imei'); return true; }
+  if (!/^\d{15}$/.test(v)) return setMsg(input, 'ti-imei', false, 'IMEI debe tener 15 dígitos');
+  return setMsg(input, 'ti-imei', true, 'Se ve bien');
+}
+function vFecha(input, key) {
+  const v = input.value;
+  if (!v) { limpiar(input, key); return true; }
+  const fecha = new Date(v), hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  if (fecha > hoy) return setMsg(input, key, false, 'No puede ser fecha futura');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vFechaFutura(input, key) {
+  const v = input.value;
+  if (!v) { limpiar(input, key); return true; }
+  const fecha = new Date(v), hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  if (fecha < hoy) return setMsg(input, key, false, 'La fecha ya venció');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+
+// ── Submit ────────────────────────────────────────────────────
+function submitEquipo() {
+  const form   = document.getElementById('form-nuevo-equipo');
+  const nombre = form.querySelector('[name="nombre"]');
+  const marca  = form.querySelector('[name="marca"]');
+
+  const ok = [
+    vCampo(nombre, 'ti-nombre'),
+    vCampo(marca,  'ti-marca'),
+  ].every(Boolean);
+
+  if (!ok) {
+    const primer = form.querySelector('.input-err');
+    if (primer) primer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  form.submit();
+}
+
+// ── Otras funciones ───────────────────────────────────────────
 function editarEquipo(id, nombre, tipo, marca, modelo, serie, condicion, costo, fecha) {
   document.getElementById('form-editar').action = `/ti/equipos/${id}/editar`;
   document.getElementById('e-nombre').value     = nombre;
@@ -337,9 +503,38 @@ function confirmarBaja(nombre, formId) {
     reverseButtons: true,
     focusCancel: true,
   }).then(result => {
-    if (result.isConfirmed) {
-      document.getElementById(formId).submit();
-    }
+    if (result.isConfirmed) document.getElementById(formId).submit();
+  });
+}
+
+// ── Socket.IO — actualización en tiempo real ──────────────────
+if (typeof io !== 'undefined') {
+  const socket = io();
+
+socket.on('ti_equipos_update', function() {
+    fetch(window.location.href)
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc    = parser.parseFromString(html, 'text/html');
+        const nuevaTbody = doc.querySelector('.panel table tbody');
+        const actualTbody = document.querySelector('.panel table tbody');
+        if (nuevaTbody && actualTbody) {
+          actualTbody.innerHTML = nuevaTbody.innerHTML;
+
+          // ── Notificación de actualización ──
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: 'Lista actualizada',
+            text: 'Un equipo fue modificado.',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+          });
+        }
+      });
   });
 }
 </script>

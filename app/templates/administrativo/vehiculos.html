@@ -2,6 +2,25 @@
 {% extends "base.html" %}
 {% block title %}Vehículos{% endblock %}
 
+{% block extra_head %}
+<style>
+  .field input.input-ok,
+  .field textarea.input-ok  { border-color: var(--green) !important; }
+  .field input.input-err,
+  .field textarea.input-err { border-color: var(--red) !important; }
+  .field-msg {
+    font-size: 11px;
+    margin-top: 4px;
+    min-height: 16px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .field-msg.ok  { color: var(--green); }
+  .field-msg.err { color: var(--red); }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="topbar">
   <div>
@@ -88,12 +107,18 @@
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>🚗 Nuevo vehículo</h2>
-    <form method="POST" action="{{ url_for('administrativo.vehiculo_nuevo') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('administrativo.vehiculo_nuevo') }}"
+          enctype="multipart/form-data" id="form-vehiculo-nuevo">
+
       <div class="grid-2">
-        <div class="field"><label>Nombre *</label>
-          <input name="nombre" required placeholder="Ej: Camioneta 01">
+        <div class="field">
+          <label>Nombre *</label>
+          <input name="nombre" required placeholder="Ej: Camioneta 01"
+                 oninput="vCampo(this,'v-nombre')" onblur="vCampo(this,'v-nombre')">
+          <div class="field-msg" id="msg-v-nombre"></div>
         </div>
-        <div class="field"><label>Tipo de vehículo</label>
+        <div class="field">
+          <label>Tipo de vehículo</label>
           <select name="tipo_vehiculo">
             <option value="">— Seleccionar —</option>
             <option value="Auto">Auto</option>
@@ -103,29 +128,61 @@
           </select>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Marca</label><input name="marca" placeholder="Nissan"></div>
-        <div class="field"><label>Modelo</label><input name="modelo" placeholder="NP300 2022"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Año</label>
-          <input name="anio" type="number" min="1990" max="2030" placeholder="2024">
+        <div class="field">
+          <label>Marca *</label>
+          <input name="marca" required placeholder="Nissan"
+                 oninput="vCampo(this,'v-marca')" onblur="vCampo(this,'v-marca')">
+          <div class="field-msg" id="msg-v-marca"></div>
         </div>
-        <div class="field"><label>Color</label><input name="color" placeholder="Ej: Blanco"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Placa *</label>
-          <input name="matricula" required placeholder="ABC-1234">
-        </div>
-        <div class="field"><label>Número de serie (VIN)</label>
-          <input name="vin" placeholder="17 caracteres">
+        <div class="field">
+          <label>Modelo</label>
+          <input name="modelo" placeholder="NP300 2022"
+                 oninput="vOpcional(this,'v-modelo')" onblur="vOpcional(this,'v-modelo')">
+          <div class="field-msg" id="msg-v-modelo"></div>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Kilometraje inicial</label>
-          <input name="kilometraje" type="number" min="0" placeholder="0">
+        <div class="field">
+          <label>Año</label>
+          <input name="anio" type="number" min="1990" max="2030" placeholder="2024"
+                 oninput="vAnio(this)" onblur="vAnio(this)">
+          <div class="field-msg" id="msg-v-anio"></div>
         </div>
-        <div class="field"><label>Estado inicial</label>
+        <div class="field">
+          <label>Color</label>
+          <input name="color" placeholder="Ej: Blanco"
+                 oninput="vOpcional(this,'v-color')" onblur="vOpcional(this,'v-color')">
+          <div class="field-msg" id="msg-v-color"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Placa *</label>
+          <input name="matricula" required placeholder="ABC-1234"
+                 oninput="vPlaca(this)" onblur="vPlaca(this)">
+          <div class="field-msg" id="msg-v-placa"></div>
+        </div>
+        <div class="field">
+          <label>Número de serie (VIN)</label>
+          <input name="vin" placeholder="17 caracteres"
+                 oninput="vVin(this)" onblur="vVin(this)">
+          <div class="field-msg" id="msg-v-vin"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Kilometraje inicial</label>
+          <input name="kilometraje" type="number" min="0" placeholder="0"
+                 oninput="vKm(this)" onblur="vKm(this)">
+          <div class="field-msg" id="msg-v-km"></div>
+        </div>
+        <div class="field">
+          <label>Estado inicial</label>
           <select name="estado">
             <option value="activo">Nuevo / Activo</option>
             <option value="mantenimiento">Mantenimiento</option>
@@ -133,8 +190,10 @@
           </select>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Tipo adquisición</label>
+        <div class="field">
+          <label>Tipo adquisición</label>
           <select name="tipo_adquisicion">
             <option value="">— Seleccionar —</option>
             <option value="propio">Propio</option>
@@ -142,15 +201,23 @@
             <option value="rentado">Rentado</option>
           </select>
         </div>
-        <div class="field"><label>Valor ($)</label>
-          <input name="valor" type="number" step="0.01" min="0" placeholder="0.00">
+        <div class="field">
+          <label>Valor ($)</label>
+          <input name="valor" type="number" step="0.01" min="0" placeholder="0.00"
+                 oninput="vValor(this)" onblur="vValor(this)">
+          <div class="field-msg" id="msg-v-valor"></div>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Fecha adquisición</label>
-          <input name="fecha_adquisicion" type="date">
+        <div class="field">
+          <label>Fecha adquisición</label>
+          <input name="fecha_adquisicion" type="date"
+                 onchange="vFecha(this,'v-fecha')" onblur="vFecha(this,'v-fecha')">
+          <div class="field-msg" id="msg-v-fecha"></div>
         </div>
-        <div class="field"><label>Ubicación</label>
+        <div class="field">
+          <label>Ubicación</label>
           <select name="ubicacion_id">
             <option value="">— Sin ubicación —</option>
             {% for u in ubicaciones %}
@@ -159,32 +226,54 @@
           </select>
         </div>
       </div>
+
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
                     letter-spacing:.06em;margin-bottom:10px">Seguro</div>
         <div class="grid-2">
-          <div class="field"><label>Póliza de seguro</label>
-            <input name="poliza_seguro" placeholder="Número de póliza">
+          <div class="field">
+            <label>Póliza de seguro</label>
+            <input name="poliza_seguro" placeholder="Número de póliza"
+                   oninput="vPoliza(this)" onblur="vPoliza(this)">
+            <div class="field-msg" id="msg-v-poliza"></div>
           </div>
-          <div class="field"><label>Aseguradora</label>
-            <input name="aseguradora" placeholder="Ej: GNP, AXA...">
+          <div class="field">
+            <label>Aseguradora</label>
+            <input name="aseguradora" placeholder="Ej: GNP, AXA..."
+                   oninput="vOpcional(this,'v-aseg')" onblur="vOpcional(this,'v-aseg')">
+            <div class="field-msg" id="msg-v-aseg"></div>
           </div>
         </div>
         <div class="grid-2">
-          <div class="field"><label>Vigencia del seguro</label>
-            <input name="vigencia_seguro" type="date">
+          <div class="field">
+            <label>Vigencia del seguro</label>
+            <input name="vigencia_seguro" type="date"
+                   onchange="vFechaFutura(this,'v-vigencia')" onblur="vFechaFutura(this,'v-vigencia')">
+            <div class="field-msg" id="msg-v-vigencia"></div>
           </div>
-          <div class="field"><label>Última verificación</label>
-            <input name="ultima_verificacion" type="date">
+          <div class="field">
+            <label>Última verificación</label>
+            <input name="ultima_verificacion" type="date"
+                   onchange="vFecha(this,'v-verif')" onblur="vFecha(this,'v-verif')">
+            <div class="field-msg" id="msg-v-verif"></div>
           </div>
         </div>
       </div>
-      <div class="field"><label>Accesorios</label>
-        <input name="accesorios" placeholder="Ej: Refacción, gato, extintor...">
+
+      <div class="field">
+        <label>Accesorios</label>
+        <input name="accesorios" placeholder="Ej: Refacción, gato, extintor..."
+               oninput="vOpcional(this,'v-acc')" onblur="vOpcional(this,'v-acc')">
+        <div class="field-msg" id="msg-v-acc"></div>
       </div>
-      <div class="field"><label>Comentarios</label>
-        <textarea name="comentarios" placeholder="Notas adicionales..."></textarea>
+
+      <div class="field">
+        <label>Comentarios</label>
+        <textarea name="comentarios" placeholder="Notas adicionales..."
+                  oninput="vOpcional(this,'v-com')" onblur="vOpcional(this,'v-com')"></textarea>
+        <div class="field-msg" id="msg-v-com"></div>
       </div>
+
       <div class="grid-2">
         <div class="field">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -195,14 +284,21 @@
       </div>
       <div id="campos-arrendamiento" style="display:none">
         <div class="grid-2">
-          <div class="field"><label>Fecha de renovación</label>
-            <input name="fecha_renovacion" type="date">
+          <div class="field">
+            <label>Fecha de renovación</label>
+            <input name="fecha_renovacion" type="date"
+                   onchange="vFechaFutura(this,'v-renov')" onblur="vFechaFutura(this,'v-renov')">
+            <div class="field-msg" id="msg-v-renov"></div>
           </div>
-          <div class="field"><label>Proveedor</label>
-            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor">
+          <div class="field">
+            <label>Proveedor</label>
+            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor"
+                   oninput="vOpcional(this,'v-prov')" onblur="vOpcional(this,'v-prov')">
+            <div class="field-msg" id="msg-v-prov"></div>
           </div>
         </div>
       </div>
+
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
                     letter-spacing:.06em;margin-bottom:10px">Documentos</div>
@@ -219,6 +315,7 @@
           </div>
         </div>
       </div>
+
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
                     letter-spacing:.06em;margin-bottom:10px">Evidencias fotográficas</div>
@@ -249,10 +346,12 @@
           </div>
         </div>
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
                 onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-primary"
+                onclick="submitVehiculo()">Guardar</button>
       </div>
     </form>
   </div>
@@ -320,6 +419,115 @@
 
 {% block scripts %}
 <script>
+const REGEX_PLACA = /^[A-Z0-9]{2,4}[-\s]?[A-Z0-9]{2,4}[-\s]?[A-Z0-9]{0,4}$/i;
+
+// ── Helpers ───────────────────────────────────────────────────
+function setMsg(input, msgId, ok, msg) {
+  const el = document.getElementById('msg-' + msgId);
+  input.classList.toggle('input-ok',  ok);
+  input.classList.toggle('input-err', !ok);
+  if (el) { el.className = 'field-msg ' + (ok ? 'ok' : 'err'); el.textContent = (ok ? '✓ ' : '✗ ') + msg; }
+  return ok;
+}
+function limpiar(input, msgId) {
+  const el = document.getElementById('msg-' + msgId);
+  input.classList.remove('input-ok','input-err');
+  if (el) { el.className = 'field-msg'; el.textContent = ''; }
+}
+
+// ── Validadores ───────────────────────────────────────────────
+function vCampo(input, key) {
+  const v = input.value.trim();
+  if (!v)          return setMsg(input, key, false, 'Campo obligatorio');
+  if (v.length < 2) return setMsg(input, key, false, 'Mínimo 2 caracteres');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vOpcional(input, key) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, key); return true; }
+  if (v.length < 2) return setMsg(input, key, false, 'Mínimo 2 caracteres');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vPlaca(input) {
+  const v = input.value.trim();
+  if (!v) return setMsg(input, 'v-placa', false, 'Campo obligatorio');
+  if (!REGEX_PLACA.test(v)) return setMsg(input, 'v-placa', false, 'Formato inválido. Ej: ABC-123');
+  return setMsg(input, 'v-placa', true, 'Se ve bien');
+}
+function vVin(input) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, 'v-vin'); return true; }
+  if (v.length !== 17) return setMsg(input, 'v-vin', false, 'Debe tener exactamente 17 caracteres');
+  return setMsg(input, 'v-vin', true, 'Se ve bien');
+}
+function vPoliza(input) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, 'v-poliza'); return true; }
+  if (v.length < 10 || v.length > 15) return setMsg(input, 'v-poliza', false, 'Entre 10 y 15 caracteres');
+  return setMsg(input, 'v-poliza', true, 'Se ve bien');
+}
+function vAnio(input) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, 'v-anio'); return true; }
+  const n = parseInt(v);
+  if (n < 1990 || n > 2030) return setMsg(input, 'v-anio', false, 'Año entre 1990 y 2030');
+  return setMsg(input, 'v-anio', true, 'Se ve bien');
+}
+function vKm(input) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, 'v-km'); return true; }
+  if (parseInt(v) < 0) return setMsg(input, 'v-km', false, 'No puede ser negativo');
+  return setMsg(input, 'v-km', true, 'Se ve bien');
+}
+function vValor(input) {
+  const v = input.value.trim();
+  if (!v) { limpiar(input, 'v-valor'); return true; }
+  if (parseFloat(v) < 0) return setMsg(input, 'v-valor', false, 'No puede ser negativo');
+  return setMsg(input, 'v-valor', true, 'Se ve bien');
+}
+function vFecha(input, key) {
+  const v = input.value;
+  if (!v) { limpiar(input, key); return true; }
+  const fecha = new Date(v), hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  if (fecha > hoy) return setMsg(input, key, false, 'No puede ser fecha futura');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+function vFechaFutura(input, key) {
+  const v = input.value;
+  if (!v) { limpiar(input, key); return true; }
+  const fecha = new Date(v), hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  if (fecha < hoy) return setMsg(input, key, false, 'La fecha ya venció');
+  return setMsg(input, key, true, 'Se ve bien');
+}
+
+// ── Submit ────────────────────────────────────────────────────
+function submitVehiculo() {
+  const form    = document.getElementById('form-vehiculo-nuevo');
+  const nombre  = form.querySelector('[name="nombre"]');
+  const marca   = form.querySelector('[name="marca"]');
+  const placa   = form.querySelector('[name="matricula"]');
+  const vin     = form.querySelector('[name="vin"]');
+  const poliza  = form.querySelector('[name="poliza_seguro"]');
+
+  const ok = [
+    vCampo(nombre, 'v-nombre'),
+    vCampo(marca,  'v-marca'),
+    vPlaca(placa),
+    vVin(vin),
+    vPoliza(poliza),
+  ].every(Boolean);
+
+  if (!ok) {
+    const primer = form.querySelector('.input-err');
+    if (primer) primer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  form.submit();
+}
+
+// ── Otras funciones ───────────────────────────────────────────
 function editarVehiculo(id, nombre, matricula, marca, modelo, km, tipo, estado, valor, fecha) {
   document.getElementById('form-editar').action    = `/administrativo/vehiculos/${id}/editar`;
   document.getElementById('e-nombre').value        = nombre;
@@ -363,9 +571,7 @@ function confirmarBaja(nombre, formId) {
     reverseButtons: true,
     focusCancel: true,
   }).then(result => {
-    if (result.isConfirmed) {
-      document.getElementById(formId).submit();
-    }
+    if (result.isConfirmed) document.getElementById(formId).submit();
   });
 }
 </script>

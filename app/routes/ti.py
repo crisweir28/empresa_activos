@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from datetime import date
 from sqlalchemy import text as sqla_text
-from ..extensions import db
+from ..extensions import db, socketio
 from ..models.electronico import Electronico, MantenimientoElectronico
 from ..models.usuario import Usuario
 from ..models.vehiculo import Ubicacion
@@ -23,6 +23,10 @@ def _check_acceso():
         flash("No tienes acceso al módulo TI.", "error")
         return False
     return True
+
+
+def _emit_actualizar():
+    socketio.emit('ti_equipos_update', {}, namespace='/')
 
 
 # ── Dashboard TI ──────────────────────────────────────────────
@@ -159,6 +163,7 @@ def equipo_nuevo():
             ))
 
         db.session.commit()
+        _emit_actualizar()
         flash(f"Equipo '{e.Nombre}' registrado correctamente.", "success")
 
     except Exception as ex:
@@ -187,6 +192,7 @@ def equipo_editar(id):
     e.Condicion        = request.form.get("condicion", "bueno")
     e.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
     db.session.commit()
+    _emit_actualizar()
     flash("Equipo actualizado.", "success")
     return redirect(url_for("ti.equipos"))
 
@@ -229,6 +235,7 @@ def equipo_asignar(id):
                 """), {'pid': proyecto_id, 'aid': id, 'usr': current_user.IdUsuario})
 
         db.session.commit()
+        _emit_actualizar()
         flash('Equipo asignado correctamente.', 'success')
 
     except Exception as ex:
@@ -249,6 +256,7 @@ def equipo_liberar(id):
     e.IdUsuario = None
     e.Estado    = "almacen"
     db.session.commit()
+    _emit_actualizar()
     flash("Equipo regresado al almacén.", "success")
     return redirect(url_for("ti.equipo_detalle", id=id))
 
@@ -310,6 +318,7 @@ def mantenimiento_nuevo(id):
         )
         db.session.execute(sqla_text("COMMIT"))
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
+        _emit_actualizar()
         flash(
             "Mantenimiento registrado." if row and row.r == "OK" else f"Error: {row.r}.",
             "success" if row and row.r == "OK" else "error"
@@ -343,6 +352,7 @@ def mantenimiento_completar(id):
             e.Estado = "almacen" if not e.IdUsuario else "asignado"
 
     db.session.commit()
+    _emit_actualizar()
     flash("Mantenimiento completado.", "success")
     return redirect(url_for("ti.equipo_detalle", id=m.IdElectronico))
 
@@ -422,6 +432,7 @@ def equipo_baja(id):
         DadoDeBajaPor = current_user.id,
     ))
     db.session.commit()
+    _emit_actualizar()
     flash(f"'{e.Nombre}' dado de baja.", "success")
     return redirect(url_for("ti.equipos"))
 
