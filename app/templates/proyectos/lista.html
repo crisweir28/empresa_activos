@@ -5,6 +5,8 @@
 {% block extra_head %}
 <style>
   .stats-grid-5 { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
+  @media (max-width:1024px) { .stats-grid-5 { grid-template-columns:repeat(3,1fr); } }  
+  @media (max-width:768px)  { .stats-grid-5 { grid-template-columns:repeat(2,1fr); } }
   .proyecto-card {
     background:white; border:1px solid var(--border); border-radius:14px;
     padding:20px; transition:all .2s; cursor:pointer; text-decoration:none; color:inherit;

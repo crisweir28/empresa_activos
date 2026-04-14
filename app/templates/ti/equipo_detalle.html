@@ -21,7 +21,7 @@
   <a href="{{ url_for('ti.equipos') }}" class="btn-sm">← Volver</a>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+<div class="layout-2col-equal">
 
   <!-- Info -->
   <div class="panel">
@@ -98,10 +98,10 @@
       {% endif %}
     </div>
     {% if equipo.usuario %}
-    <div style="font-size:14px;font-weight:600;margin-bottom:8px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;overflow-x:auto">
       {{ equipo.usuario.Nombre }} {{ equipo.usuario.ApellidoPaterno }}
     </div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.8">
+    <div style="font-size:12px;color:var(--muted);line-height:1.8;;overflow-x:auto">
       {{ equipo.usuario.Correo }}<br>
       Rol: {{ equipo.usuario.rol_obj.NombreRol if equipo.usuario.rol_obj else '—' }}
     </div>
@@ -113,7 +113,7 @@
 </div>
 
 <!-- Tabs -->
-<div style="display:flex;border-bottom:1px solid var(--border)">
+<div style="display:flex;border-bottom:1px solid var(--border);overflow-x:auto">
   <button class="tab-btn active" onclick="showTab('mantenimiento',this)">🔧 Mantenimiento</button>
   <button class="tab-btn" onclick="showTab('evidencias',this)">
     📎 Evidencias
@@ -194,7 +194,7 @@
   </div>
 
   {% if evidencias %}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:4px 0">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;padding:4px 0;overflow-x:auto">
     {% for ev in evidencias %}
 
     {% if ev.TipoArchivo == 'imagen' %}
@@ -211,7 +211,7 @@
         </span>
       </div>
       <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);
-                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-x:auto"
            title="{{ ev.NombreArchivo }}">{{ ev.NombreArchivo }}</div>
     </div>
 
@@ -219,7 +219,7 @@
     <div class="ev-card" onclick="window.open('{{ ev.ArchivoUrl }}','_blank')"
          title="{{ ev.NombreArchivo }}">
       <div style="height:120px;display:flex;align-items:center;justify-content:center;
-                  background:var(--surface2);font-size:48px">
+                  background:var(--surface2);font-size:48px;overflow-x:auto">
         {{ ev.icono }}
       </div>
       <div class="ev-info">
@@ -229,12 +229,12 @@
         </span>
       </div>
       <div style="padding:0 8px 4px;font-size:10px;color:var(--muted);
-                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-x:auto"
            title="{{ ev.NombreArchivo }}">{{ ev.NombreArchivo }}</div>
       {% if ev.Descripcion %}
-      <div style="padding:0 8px 4px;font-size:10px;color:var(--muted)">{{ ev.Descripcion[:40] }}</div>
+      <div style="padding:0 8px 4px;font-size:10px;color:var(--muted);overflow-x:auto">{{ ev.Descripcion[:40] }}</div>
       {% endif %}
-      <div style="padding:0 8px 8px">
+      <div style="padding:0 8px 8px;overflow-x:auto">
         <a href="{{ ev.ArchivoUrl }}" download="{{ ev.NombreArchivo }}"
            onclick="event.stopPropagation()"
            style="font-size:11px;color:var(--accent);text-decoration:none">⬇ Descargar</a>
@@ -261,7 +261,7 @@
        style="max-width:90vw;max-height:80vh;border-radius:10px;
               object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.5)">
   <div onclick="event.stopPropagation()" style="margin-top:16px;text-align:center;color:#fff">
-    <div style="display:flex;gap:12px;align-items:center;justify-content:center">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;overflow-x:auto">
       <span id="lb-tipo" style="background:rgba(255,255,255,.15);padding:3px 10px;
                                   border-radius:20px;font-size:12px"></span>
       <span id="lb-fecha" style="font-size:13px;color:rgba(255,255,255,.7)"></span>

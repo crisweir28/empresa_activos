@@ -4,12 +4,8 @@
 
 {% block extra_head %}
 <style>
-  .permisos-layout {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 16px;
-    align-items: start;
-  }
+  .permisos-layout { display:grid; grid-template-columns:240px 1fr; gap:16px; align-items:start; }
+@media (max-width:768px) { .permisos-layout { grid-template-columns:1fr; } }
 
   /* Panel izquierdo */
   .roles-panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; position: sticky; top: 0; }
@@ -149,7 +145,7 @@
     </div>
 
     <!-- Tabs internos -->
-    <div class="inner-tabs">
+    <div class="inner-tabs" style="overflow-x:auto">
       <button class="inner-tab active" onclick="showInner('permisos', this)">🔐 Permisos</button>
       <button class="inner-tab" onclick="showInner('usuarios', this)">
         👤 Usuarios ({{ usuarios_rol|length }})

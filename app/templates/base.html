@@ -37,6 +37,10 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+<!-- Hamburger -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menú">☰</button>
+<!-- Backdrop -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
 <aside class="sidebar" style="display:flex;flex-direction:column;overflow:hidden">
   <div class="sb-logo" style="flex-shrink:0">
     <div class="sb-logo-icon">🏢</div>
@@ -314,6 +318,13 @@ function confirmarLogout(e) {
       window.location.href = '{{ url_for("auth.logout") }}';
     }
   });
+}
+
+function toggleSidebar() {
+  const sidebar  = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  sidebar.classList.toggle('open');
+  backdrop.classList.toggle('open');
 }
 
 // ── Socket.IO ─────────────────────────────────────────────────

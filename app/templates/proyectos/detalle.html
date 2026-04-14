@@ -5,6 +5,7 @@
 {% block extra_head %}
 <style>
   .detalle-grid { display:grid; grid-template-columns:1fr 340px; gap:18px; align-items:start; }
+  @media (max-width:1024px) { .detalle-grid { grid-template-columns:1fr; } }
   .tabs { display:flex; border-bottom:1px solid var(--border); }
   .tab-btn { padding:10px 20px; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--muted); font-family:'Inter',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; margin-bottom:-1px; }
   .tab-btn:hover { color:var(--text); }
@@ -41,7 +42,7 @@
       </div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span class="badge" style="background:{{ proyecto.bg_estatus }};color:{{ proyecto.color_estatus }};font-size:13px;padding:5px 14px">
       {{ proyecto.Estatus }}
     </span>
@@ -64,7 +65,7 @@
 
 <div class="detalle-grid">
   <div class="panel" style="padding:0">
-    <div class="tabs">
+    <div class="tabs" style="overflow-x:auto">
       <button class="tab-btn active" onclick="showTab('info',this)">📋 Información</button>
       <button class="tab-btn" onclick="showTab('personal',this)">👥 Personal ({{ personal|length }})</button>
       <button class="tab-btn" onclick="showTab('activos',this)">📦 Activos ({{ activos_asignados|length }})</button>

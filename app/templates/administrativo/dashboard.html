@@ -10,7 +10,6 @@
   </div>
 </div>
 
-<!-- Stats -->
 <div class="stats-grid" style="margin-bottom:22px">
   <div class="stat-card" style="animation-delay:.0s">
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -42,7 +41,7 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 360px;gap:16px">
+<div class="layout-2col">
 
   <!-- Vehículos recientes -->
   <div class="panel">
@@ -91,7 +90,6 @@
   <!-- Panel derecho -->
   <div style="display:flex;flex-direction:column;gap:16px">
 
-    <!-- Permisos por vencer -->
     <div class="panel">
       <div class="panel-title">⚠️ Permisos por vencer</div>
       {% if permisos_vencer %}
@@ -113,7 +111,6 @@
       {% endif %}
     </div>
 
-    <!-- Mantenimientos activos -->
     <div class="panel">
       <div class="panel-title">🔧 Mantenimientos activos</div>
       {% if mantenimientos %}

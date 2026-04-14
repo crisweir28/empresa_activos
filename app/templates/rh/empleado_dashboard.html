@@ -1,3 +1,4 @@
+<!-- app/templates/rh/empleado_dashboard.html -->
 {% extends "base.html" %}
 {% block title %}Empleado — {{ empleado.NombreCompleto }}{% endblock %}
 
@@ -45,7 +46,7 @@
   {% endfor %}
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start">
+<div class="layout-2col detalle-empleado-grid">
 
   {# ── Activos ── #}
   <div>

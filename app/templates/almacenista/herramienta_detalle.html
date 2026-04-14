@@ -17,7 +17,7 @@
   <a href="{{ url_for('almacenista.inventario') }}" class="btn-sm">← Volver</a>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+<div class="layout-2col-equal">
 
   <!-- Info -->
   <div class="panel">
@@ -42,10 +42,10 @@
       {% endif %}
     </div>
     {% if asignacion %}
-    <div style="font-size:14px;font-weight:600;margin-bottom:8px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;overflow-x:auto">
       {{ asignacion.usuario.Nombre }} {{ asignacion.usuario.ApellidoPaterno }}
     </div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.8">
+    <div style="font-size:12px;color:var(--muted);line-height:1.8;overflow-x:auto">
       Desde: {{ asignacion.FechaAsignacion }}<br>
       {% if asignacion.Observaciones %}Notas: {{ asignacion.Observaciones }}{% endif %}
     </div>
@@ -61,7 +61,7 @@
 </div>
 
 <!-- Tabs -->
-<div style="display:flex;border-bottom:1px solid var(--border)">
+<div style="display:flex;border-bottom:1px solid var(--border);overflow-x:auto">
   <button class="tab-btn active" onclick="showTab('historial',this)">📋 Historial</button>
   <button class="tab-btn" onclick="showTab('evidencias',this)">🖼️ Evidencias</button>
   <button class="tab-btn" onclick="showTab('reportes',this)">⚠️ Reportes de daño</button>
@@ -106,7 +106,7 @@
   </div>
 
   {% if evidencias %}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:4px 0">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:4px 0;overflow-x:auto">
     {% for ev in evidencias %}
     <div class="ev-card"
          onclick="abrirLightbox('{{ ev.ArchivoUrl }}','{{ ev.Tipo }}','{{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}','{{ ev.NombreArchivo }}')">
@@ -121,8 +121,7 @@
           {{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}
         </span>
       </div>
-      <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);
-                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+      <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-x:auto"
            title="{{ ev.NombreArchivo }}">
         {{ ev.NombreArchivo }}
       </div>
@@ -209,7 +208,7 @@
 
   <div onclick="event.stopPropagation()"
        style="margin-top:16px;text-align:center;color:#fff">
-    <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;overflow-x:auto">
       <span id="lb-tipo"
             style="background:rgba(255,255,255,.15);padding:3px 10px;
                    border-radius:20px;font-size:12px"></span>
@@ -358,7 +357,7 @@
 
       <div class="field">
         <label>Adjuntar documento / evidencia (opcional)</label>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;overflow-x:auto">
           PDF, Word, Excel, PowerPoint · o imagen PNG/JPG
         </div>
         <input type="file" name="archivo"
