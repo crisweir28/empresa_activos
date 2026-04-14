@@ -382,3 +382,21 @@ textarea { resize: vertical; min-height: 72px; }
   .page-title { font-size: 18px; }
   .main { padding: 12px; padding-top: 60px; }
 }
+/* Fix overflow mobile */
+.main {
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .main {
+    overflow-x: hidden;
+  }
+  
+  /* Tablas con scroll horizontal dentro de panel */
+  .panel,
+  .card,
+  [style*="overflow-x:auto"],
+  [style*="overflow-x: auto"] {
+    max-width: 100%;
+  }
+}

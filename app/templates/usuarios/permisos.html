@@ -5,7 +5,7 @@
 {% block extra_head %}
 <style>
   .permisos-layout { display:grid; grid-template-columns:240px 1fr; gap:16px; align-items:start; }
-@media (max-width:768px) { .permisos-layout { grid-template-columns:1fr; } }
+  @media (max-width:768px) { .permisos-layout { grid-template-columns:1fr; } }
 
   /* Panel izquierdo */
   .roles-panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; position: sticky; top: 0; }
@@ -88,6 +88,45 @@
 
   .badge-count { background: rgba(124,92,252,.15); color: var(--accent); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
   .empty-usuarios { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .permisos-panel {
+      overflow: visible;
+    }
+
+    .permisos-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .permisos-header > div:last-child {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+    }
+
+    .permisos-header > div:last-child .btn,
+    .permisos-header > div:last-child .btn-cancel {
+      flex: 1;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .permisos-table {
+      min-width: 480px;
+    }
+
+    .permisos-table th,
+    .permisos-table td {
+      padding: 10px 10px;
+    }
+
+    .permisos-table th:not(:first-child) {
+      width: 60px;
+    }
+  }
 </style>
 {% endblock %}
 
@@ -156,41 +195,43 @@
     <div id="inner-permisos" class="inner-panel active">
       <form method="POST" action="{{ url_for('permisos.guardar') }}" id="form-permisos">
         <input type="hidden" name="rol_id" value="{{ rol_sel.IdRol }}">
-        <table class="permisos-table">
-          <thead>
-            <tr><th>Módulo</th><th>Ver</th><th>Crear</th><th>Editar</th><th>Eliminar</th></tr>
-          </thead>
-          <tbody>
-            {% for m in modulos %}
-            {% set p = permisos_map.get(m.IdModulo) %}
-            <tr>
-              <td>
-                <div class="modulo-info">
-                  <div class="modulo-icon">{{ m.Icono or '📦' }}</div>
-                  <div>
-                    <div class="modulo-name">{{ m.Nombre }}</div>
-                    <div class="modulo-desc">{{ m.Descripcion or '' }}</div>
+        <div style="overflow-x:auto">
+          <table class="permisos-table">
+            <thead>
+              <tr><th>Módulo</th><th>Ver</th><th>Crear</th><th>Editar</th><th>Eliminar</th></tr>
+            </thead>
+            <tbody>
+              {% for m in modulos %}
+              {% set p = permisos_map.get(m.IdModulo) %}
+              <tr>
+                <td>
+                  <div class="modulo-info">
+                    <div class="modulo-icon">{{ m.Icono or '📦' }}</div>
+                    <div>
+                      <div class="modulo-name">{{ m.Nombre }}</div>
+                      <div class="modulo-desc">{{ m.Descripcion or '' }}</div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              {% for accion in ['ver','crear','editar','eliminar'] %}
-              <td>
-                <div class="toggle-wrap">
-                  <label class="toggle">
-                    <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}"
-                           {% if p and p['Puede' ~ accion|capitalize] %}checked{% endif %}
-                           onchange="marcarCambio()">
-                    <span class="slider"></span>
-                  </label>
-                </div>
-              </td>
+                </td>
+                {% for accion in ['ver','crear','editar','eliminar'] %}
+                <td>
+                  <div class="toggle-wrap">
+                    <label class="toggle">
+                      <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}"
+                             {% if p and p['Puede' ~ accion|capitalize] %}checked{% endif %}
+                             onchange="marcarCambio()">
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </td>
+                {% endfor %}
+              </tr>
               {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </form>
-      <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+      <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <span style="font-size:11px;color:var(--muted)" id="sync-status">● Sincronizado</span>
         <span style="font-size:11px;color:var(--muted)">Los cambios aplican al próximo inicio de sesión</span>
       </div>
