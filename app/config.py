@@ -32,6 +32,8 @@ class Config:
     # ── SMTP (smtplib) — leído directamente desde .env ────────────────────────
     MAIL_SERVER         = os.getenv("MAIL_SERVER",  "sandbox.smtp.mailtrap.io")
     MAIL_PORT           = int(os.getenv("MAIL_PORT", 2525))
+    MAIL_USE_TLS        = True    # ← agregar
+    MAIL_USE_SSL        = False  
     MAIL_USERNAME       = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD       = os.getenv("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "no-reply@activosapp.mx")

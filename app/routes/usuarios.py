@@ -7,6 +7,7 @@ from ..extensions import db
 from ..models.usuario import Usuario, Rol, AREAS_CON_MODULO
 from ..models.departamento import Departamento
 from datetime import datetime
+from ..tasks.correo import enviar_bienvenida
 
 usuarios_bp = Blueprint("usuarios", __name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -128,7 +129,18 @@ def nuevo():
     )
     db.session.add(u)
     db.session.commit()
-    flash(f"Usuario '{username}' creado correctamente.", "success")
+
+    try:
+        enviar_bienvenida(
+            correo   = correo,
+            nombre   = f"{u.Nombre} {u.ApellidoPaterno}",
+            username = username,
+            password = password,  # variable local, antes del hash
+        )
+        flash(f"Usuario '{username}' creado y correo enviado.", "success")
+    except Exception:
+        flash(f"Usuario '{username}' creado, pero no se pudo enviar el correo.", "warning")
+
     socketio.emit('usuarios_actualizados', {'accion': 'nuevo'})
     return redirect(url_for("usuarios.lista"))
 

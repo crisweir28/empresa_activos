@@ -43,11 +43,34 @@ def analizar_password(password: str) -> dict:
     if n >= 12: puntos += 20
     if n >= 16: puntos += 10
     if tiene_especial: puntos += 30
-    if puntos <= 25:   nivel = "Débil"
+    if puntos <= 25:   nivel = "Debil"
     elif puntos <= 50: nivel = "Regular"
     elif puntos <= 75: nivel = "Buena"
     else:              nivel = "Fuerte"
     return {"fortaleza": puntos, "nivel": nivel, "longitud": n}
+
+
+# ─── Helper SMTP ──────────────────────────────────────────────
+def _smtp_send(destinatario: str, asunto: str, cuerpo_html: str):
+    """Envía un correo HTML usando smtplib con UTF-8 correcto."""
+    smtp_server = current_app.config.get("MAIL_SERVER",         "smtp.gmail.com")
+    smtp_port   = int(current_app.config.get("MAIL_PORT",       587))
+    smtp_user   = current_app.config.get("MAIL_USERNAME")
+    smtp_pass   = current_app.config.get("MAIL_PASSWORD")
+    remitente   = current_app.config.get("MAIL_DEFAULT_SENDER", smtp_user)
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = asunto
+    msg["From"]    = remitente
+    msg["To"]      = destinatario
+    msg.attach(MIMEText(cuerpo_html, "html", "utf-8"))
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP(smtp_server, smtp_port) as server:
+        server.ehlo()
+        server.starttls(context=context)
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(remitente, destinatario, msg.as_bytes())
 
 
 # ─── Helpers de bloqueo ───────────────────────────────────────
@@ -62,7 +85,6 @@ def _registrar_fallo(user: Usuario):
         user.BloqueadoHasta   = datetime(9999, 12, 31)
         user.IntentosFallidos = 0
     db.session.commit()
-    # ── Notificar en tiempo real si quedó bloqueado ──
     if user.BloqueadoHasta:
         socketio.emit('usuario_bloqueado', {'usuario_id': user.IdUsuario})
 
@@ -85,99 +107,209 @@ def _obtener_admins_ti():
     return admins
 
 
+# ─── Correos ──────────────────────────────────────────────────
 def _enviar_correo_desbloqueo(usuario_bloqueado: Usuario):
     """Manda correo a todos los admins pidiendo desbloqueo."""
     admins = _obtener_admins_ti()
     if not admins:
         return False
 
-    smtp_server = current_app.config.get("MAIL_SERVER",        "smtp.gmail.com")
-    smtp_port   = int(current_app.config.get("MAIL_PORT",      587))
-    smtp_user   = current_app.config.get("MAIL_USERNAME")
-    smtp_pass   = current_app.config.get("MAIL_PASSWORD")
-    remitente   = current_app.config.get("MAIL_DEFAULT_SENDER", smtp_user)
-
     nombre_bloqueado = f"{usuario_bloqueado.Nombre} {usuario_bloqueado.ApellidoPaterno}"
     user_bloqueado   = usuario_bloqueado.NombreUsuario
 
     for admin in admins:
-        asunto = f"🔒 Solicitud de desbloqueo — {nombre_bloqueado}"
+        asunto = f"Solicitud de desbloqueo - {nombre_bloqueado}"
 
         cuerpo_html = f"""<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"></head>
-<body style="font-family:'DM Sans',Arial,sans-serif;background:#f4f4f8;margin:0;padding:40px 20px">
-  <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0ef;
-              border-radius:16px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.06)">
+<body style="font-family:Arial,sans-serif;background-color:#f4f4f8;margin:0;padding:40px 20px">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#f4f4f8;padding:40px 0">
+    <tr><td align="center">
+      <table width="520" cellpadding="0" cellspacing="0" border="0"
+             style="background-color:#ffffff;border:1px solid #e0e0ef;">
 
-    <div style="margin-bottom:24px">
-      <span style="font-weight:800;font-size:18px;color:#9B2335">🏢 ActivosApp</span>
-    </div>
+        <!-- Header -->
+        <tr>
+          <td align="center" bgcolor="#9B2335"
+              style="background-color:#9B2335;padding:28px 40px;">
+            <p style="margin:0;font-family:Arial,sans-serif;font-size:20px;
+                      font-weight:800;color:#ffffff;">ActivosApp</p>
+            <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:12px;
+                      color:#f8b4bc;">Sistema de gestion de activos</p>
+          </td>
+        </tr>
 
-    <h1 style="color:#1a1a2e;font-size:20px;font-weight:800;margin-bottom:8px">
-      Solicitud de desbloqueo de cuenta
-    </h1>
-    <p style="color:#6b6b8a;font-size:14px;line-height:1.7;margin-bottom:24px">
-      Hola <strong style="color:#1a1a2e">{admin.NombreCompleto}</strong>,<br>
-      el siguiente usuario ha sido bloqueado por múltiples intentos fallidos
-      de inicio de sesión y solicita que se desbloquee su cuenta.
-    </p>
+        <!-- Body -->
+        <tr>
+          <td style="padding:32px 40px;">
+            <h2 style="margin:0 0 8px;font-family:Arial,sans-serif;
+                       font-size:18px;color:#1a1a2e;">
+              Solicitud de desbloqueo de cuenta
+            </h2>
+            <p style="margin:0 0 20px;font-family:Arial,sans-serif;
+                       font-size:14px;color:#6b6b8a;line-height:1.6;">
+              Hola <strong style="color:#1a1a2e">{admin.NombreCompleto}</strong>,<br>
+              el siguiente usuario ha sido bloqueado por multiples intentos fallidos
+              de inicio de sesion y solicita que se desbloquee su cuenta.
+            </p>
 
-    <div style="background:#f8f8fc;border:1px solid #e0e0ef;border-radius:10px;
-                padding:18px 20px;margin-bottom:28px">
-      <table style="font-size:13px;width:100%">
-        <tr>
-          <td style="color:#6b6b8a;padding:4px 0;width:130px">Usuario</td>
-          <td style="font-weight:700;color:#1a1a2e;font-family:monospace">{user_bloqueado}</td>
+            <!-- Datos usuario -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background-color:#f8f8fc;border:1px solid #e0e0ef;margin-bottom:24px;">
+              <tr>
+                <td style="padding:10px 16px;font-family:Arial,sans-serif;font-size:12px;
+                           color:#6b6b8a;font-weight:700;width:130px;
+                           border-bottom:1px solid #e0e0ef;">Usuario</td>
+                <td style="padding:10px 16px;font-family:Arial,sans-serif;font-size:13px;
+                           color:#1a1a2e;font-weight:700;
+                           border-bottom:1px solid #e0e0ef;">{user_bloqueado}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 16px;font-family:Arial,sans-serif;font-size:12px;
+                           color:#6b6b8a;font-weight:700;
+                           border-bottom:1px solid #e0e0ef;">Nombre</td>
+                <td style="padding:10px 16px;font-family:Arial,sans-serif;font-size:13px;
+                           color:#1a1a2e;border-bottom:1px solid #e0e0ef;">{nombre_bloqueado}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 16px;font-family:Arial,sans-serif;font-size:12px;
+                           color:#6b6b8a;font-weight:700;">Correo</td>
+                <td style="padding:10px 16px;font-family:Arial,sans-serif;font-size:13px;
+                           color:#1a1a2e;">{usuario_bloqueado.Correo}</td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 16px;font-family:Arial,sans-serif;font-size:13px;
+                      color:#6b6b8a;line-height:1.6;">
+              Para desbloquearlo, ingresa al sistema con tu cuenta de administrador,
+              ve a <strong>Administracion &rarr; Usuarios</strong> y usa el boton
+              <strong>"Desbloquear"</strong> en la fila de este usuario.
+            </p>
+
+            <!-- Aviso -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background-color:#fff3cd;border:1px solid #ffc107;">
+              <tr>
+                <td style="padding:12px 16px;font-family:Arial,sans-serif;
+                           font-size:12px;color:#856404;line-height:1.5;">
+                  Si no reconoces a este usuario o sospechas de actividad maliciosa,
+                  no desbloquees la cuenta y reportalo al administrador del sistema.
+                </td>
+              </tr>
+            </table>
+          </td>
         </tr>
+
+        <!-- Footer -->
         <tr>
-          <td style="color:#6b6b8a;padding:4px 0">Nombre</td>
-          <td style="font-weight:600;color:#1a1a2e">{nombre_bloqueado}</td>
+          <td align="center" style="padding:16px 40px;background-color:#f8f8fc;
+              border-top:1px solid #e0e0ef;">
+            <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#b0b0c8;">
+              Este correo fue generado automaticamente por ActivosApp.
+            </p>
+          </td>
         </tr>
-        <tr>
-          <td style="color:#6b6b8a;padding:4px 0">Correo</td>
-          <td style="color:#1a1a2e">{usuario_bloqueado.Correo}</td>
-        </tr>
+
       </table>
-    </div>
-
-    <p style="color:#6b6b8a;font-size:13px;line-height:1.7;margin-bottom:20px">
-      Para desbloquearlo, ingresa al sistema con tu cuenta de administrador,
-      ve a <strong>Administración → Usuarios</strong> y usa el botón
-      <strong>"Desbloquear"</strong> en la fila de este usuario.
-    </p>
-
-    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;
-                padding:12px 16px;font-size:12px;color:#856404">
-      ⚠️ Si no reconoces a este usuario o sospechas de actividad maliciosa,
-      no desbloquees la cuenta y repórtalo al administrador del sistema.
-    </div>
-
-    <p style="color:#b0b0c8;font-size:11px;margin-top:24px;border-top:1px solid #f0f0f8;
-              padding-top:16px">
-      Este correo fue generado automáticamente por ActivosApp.
-    </p>
-  </div>
+    </td></tr>
+  </table>
 </body>
 </html>"""
 
         try:
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = asunto
-            msg["From"]    = remitente
-            msg["To"]      = admin.Correo
-            msg.attach(MIMEText(cuerpo_html, "html", "utf-8"))
-
-            context = ssl.create_default_context()
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.ehlo()
-                server.starttls(context=context)
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(remitente, admin.Correo, msg.as_string())
+            _smtp_send(admin.Correo, asunto, cuerpo_html)
         except Exception as e:
             current_app.logger.error(f"Error enviando correo a {admin.Correo}: {e}")
 
     return True
+
+
+def _enviar_correo_reset(email: str, nombre: str, link: str):
+    asunto = "Recuperacion de contrasena - ActivosApp"
+
+    cuerpo_html = f"""<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color:#f1f5f9;padding:40px 0;">
+  <tr><td align="center">
+    <table width="480" cellpadding="0" cellspacing="0" border="0"
+           style="background-color:#ffffff;border:1px solid #e2e8f0;">
+
+      <!-- Header -->
+      <tr>
+        <td align="center" bgcolor="#4f46e5"
+            style="background-color:#4f46e5;padding:32px 40px;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:22px;
+                    font-weight:800;color:#ffffff;">ActivosApp</p>
+          <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:12px;
+                    color:#c4b5fd;">Sistema de gestion de activos</p>
+        </td>
+      </tr>
+
+      <!-- Body -->
+      <tr>
+        <td style="padding:36px 40px;">
+          <h2 style="margin:0 0 8px;font-family:Arial,sans-serif;
+                     font-size:20px;color:#1e1b4b;">
+            Recupera tu contrasena
+          </h2>
+          <p style="margin:0 0 24px;font-family:Arial,sans-serif;
+                    font-size:14px;color:#64748b;line-height:1.6;">
+            Hola <strong style="color:#1e1b4b;">{nombre}</strong>,
+            recibimos una solicitud para restablecer la contrasena de tu cuenta.
+          </p>
+
+          <!-- Boton -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                 style="margin-bottom:24px;">
+            <tr>
+              <td align="center">
+                <a href="{link}"
+                   style="display:inline-block;background-color:#4f46e5;
+                          color:#ffffff;text-decoration:none;
+                          font-family:Arial,sans-serif;font-size:15px;
+                          font-weight:700;padding:14px 40px;">
+                  Restablecer contrasena
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Aviso expiracion -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                 style="background-color:#f8fafc;border:1px solid #e2e8f0;">
+            <tr>
+              <td style="padding:12px 16px;font-family:Arial,sans-serif;
+                         font-size:12px;color:#64748b;line-height:1.6;">
+                Este enlace expira en <strong>5 minutos</strong>.<br>
+                Si no solicitaste este cambio, ignora este correo.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td align="center" style="padding:16px 40px;background-color:#f8fafc;
+            border-top:1px solid #e2e8f0;">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#94a3b8;">
+            Mensaje automatico, no respondas a este correo.
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>"""
+
+    _smtp_send(email, asunto, cuerpo_html)
 
 
 # ─── Rutas principales ────────────────────────────────────────
@@ -203,7 +335,7 @@ def login():
         ).first()
 
         if not user:
-            flash("Usuario o contraseña incorrectos.", "error")
+            flash("Usuario o contrasena incorrectos.", "error")
             return render_template("login.html")
 
         # ── Verificar si está bloqueado ──────────────────────
@@ -229,8 +361,7 @@ def login():
             return render_template("login.html",
                            bloqueado=True,
                            username=username)
-        flash(
-            f"Usuario o contraseña incorrectos. ")
+        flash("Usuario o contrasena incorrectos.")
 
     return render_template("login.html")
 
@@ -248,35 +379,36 @@ def solicitar_desbloqueo():
 
     bloqueado = _esta_bloqueado(user)
     if not bloqueado:
-        flash("Esta cuenta no está bloqueada.", "info")
+        flash("Esta cuenta no esta bloqueada.", "info")
         return redirect(url_for("auth.login"))
 
     try:
         ok = _enviar_correo_desbloqueo(user)
         if ok:
             flash(
-                "Solicitud enviada. Un administrador de TI recibirá tu solicitud "
-                "y desbloqueará tu cuenta en breve.",
+                "Solicitud enviada. Un administrador recibira tu solicitud "
+                "y desbloqueara tu cuenta en breve.",
                 "success"
             )
         else:
             flash(
                 "No se encontraron administradores disponibles. "
-                "Contacta directamente al área de TI.",
+                "Contacta directamente al area de TI.",
                 "warning"
             )
     except Exception as e:
         current_app.logger.error(f"Error al enviar solicitud de desbloqueo: {e}")
-        flash("Error al enviar la solicitud. Contacta directamente al área de TI.", "error")
+        flash("Error al enviar la solicitud. Contacta directamente al area de TI.", "error")
 
     return redirect(url_for("auth.login"))
+
 
 # ─── Desbloquear usuario (solo admin) ────────────────────────
 @auth_bp.route("/admin/desbloquear/<int:uid>", methods=["POST"])
 @login_required
 def desbloquear_usuario(uid):
     if current_user.rol != 'admin':
-        flash("Sin permiso para esta acción.", "error")
+        flash("Sin permiso para esta accion.", "error")
         return redirect(url_for("activos.dashboard"))
 
     user = Usuario.query.get_or_404(uid)
@@ -285,6 +417,7 @@ def desbloquear_usuario(uid):
     db.session.commit()
     flash(f"Usuario {user.NombreUsuario} desbloqueado correctamente.", "success")
     return redirect(url_for("usuarios.lista"))
+
 
 @auth_bp.route("/sugerir-cambio", methods=["GET", "POST"])
 @login_required
@@ -317,15 +450,17 @@ def cambiar_password():
         confirmar = request.form.get("confirmar_password", "").strip()
 
         if len(nueva) < 6:
-            error = "La contraseña debe tener al menos 6 caracteres."
+            error = "La contrasena debe tener al menos 6 caracteres."
         elif nueva != confirmar:
-            error = "Las contraseñas no coinciden."
+            error = "Las contrasenas no coinciden."
+        elif current_user.check_password(nueva):
+            error = "La nueva contrasena no puede ser igual a la temporal."
         else:
             try:
                 current_user.set_password(nueva)
                 current_user.PrimerLogin = False
                 db.session.commit()
-                flash("¡Contraseña actualizada correctamente!", "success")
+                flash("Contrasena actualizada correctamente!", "success")
                 return redirect(url_for("activos.dashboard"))
             except Exception as e:
                 db.session.rollback()
@@ -348,7 +483,7 @@ def recuperar():
         email = request.form.get("email", "").strip().lower()
 
         if not email:
-            error = "Ingresa tu correo electrónico."
+            error = "Ingresa tu correo electronico."
         else:
             token = secrets.token_urlsafe(48)
             try:
@@ -415,9 +550,9 @@ def reset_password(token):
         confirmar = request.form.get("confirmar_password", "").strip()
 
         if len(nueva) < 6:
-            error = "La contraseña debe tener al menos 6 caracteres."
+            error = "La contrasena debe tener al menos 6 caracteres."
         elif nueva != confirmar:
-            error = "Las contraseñas no coinciden."
+            error = "Las contrasenas no coinciden."
         else:
             try:
                 row = db.session.execute(
@@ -443,7 +578,7 @@ def reset_password(token):
                             {"token": token}
                         )
                         db.session.commit()
-                        flash("✅ Contraseña restablecida. Ya puedes iniciar sesión.", "success")
+                        flash("Contrasena restablecida. Ya puedes iniciar sesion.", "success")
                         return redirect(url_for("auth.login"))
                     else:
                         error = "Usuario no encontrado."
@@ -452,56 +587,6 @@ def reset_password(token):
                 error = f"Error: {str(e)}"
 
     return render_template("reset_password.html", token=token, error=error, expirado=expirado)
-
-
-def _enviar_correo_reset(email: str, nombre: str, link: str):
-    smtp_server = current_app.config.get("MAIL_SERVER",        "smtp.gmail.com")
-    smtp_port   = int(current_app.config.get("MAIL_PORT",      587))
-    smtp_user   = current_app.config.get("MAIL_USERNAME")
-    smtp_pass   = current_app.config.get("MAIL_PASSWORD")
-    remitente   = current_app.config.get("MAIL_DEFAULT_SENDER", smtp_user)
-
-    asunto = "Recuperación de contraseña — ActivosApp"
-    cuerpo_html = f"""<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="UTF-8"></head>
-<body style="font-family:'DM Sans',Arial,sans-serif;background:#0a0a0f;margin:0;padding:40px 20px">
-  <div style="max-width:480px;margin:0 auto;background:#12121a;border:1px solid #2a2a3a;border-radius:16px;padding:40px">
-    <div style="margin-bottom:28px">
-      <span style="font-family:Arial,sans-serif;font-weight:800;font-size:18px;color:#7c5cfc">🏢 ActivosApp</span>
-    </div>
-    <h1 style="color:#e8e8f0;font-size:22px;font-weight:800;margin-bottom:10px">Recupera tu contraseña</h1>
-    <p style="color:#7070a0;font-size:14px;line-height:1.7;margin-bottom:28px">
-      Hola <strong style="color:#e8e8f0">{nombre}</strong>, recibimos una solicitud para
-      restablecer la contraseña de tu cuenta.
-    </p>
-    <a href="{link}"
-       style="display:block;text-align:center;padding:14px 28px;
-              background:linear-gradient(135deg,#7c5cfc,#e040fb);color:#fff;
-              border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;
-              margin-bottom:24px">
-      🔐 Restablecer contraseña
-    </a>
-    <p style="color:#60607a;font-size:12px;line-height:1.7;border-top:1px solid #1e1e2e;padding-top:18px">
-      Este enlace expira en <strong>5 minutos</strong>.<br>
-      Si no solicitaste este cambio, ignora este correo.
-    </p>
-  </div>
-</body>
-</html>"""
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = asunto
-    msg["From"]    = remitente
-    msg["To"]      = email
-    msg.attach(MIMEText(cuerpo_html, "html", "utf-8"))
-
-    context = ssl.create_default_context()
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.ehlo()
-        server.starttls(context=context)
-        server.login(smtp_user, smtp_pass)
-        server.sendmail(remitente, email, msg.as_string())
 
 
 # ─── APIs ─────────────────────────────────────────────────────

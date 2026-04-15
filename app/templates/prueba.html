@@ -1,23 +1,5 @@
-# tasks/correo.py
-from flask_mail import Message
-from ..extensions import mail
-from flask import current_app
 
-
-def enviar_notificacion(destinatario: str, asunto: str, cuerpo: str):
-    try:
-        msg = Message(subject=asunto, recipients=[destinatario], body=cuerpo)
-        mail.send(msg)
-    except Exception as e:
-        current_app.logger.error(f"Error al enviar correo a {destinatario}: {e}")
-
-
-def enviar_bienvenida(correo: str, nombre: str, username: str, password: str):
-    from flask import current_app
-    host = current_app.config.get("APP_HOST", "localhost")
-    login_url = f"http://{host}:5000/login"
-
-    html = f"""
+    
 <!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"></head>
@@ -131,14 +113,4 @@ def enviar_bienvenida(correo: str, nombre: str, username: str, password: str):
 </table>
 </body>
 </html>
-    """
-    try:
-        msg = Message(
-            subject    = "✅ Tu cuenta en ActivosApp ha sido creada",
-            recipients = [correo],
-            html       = html,
-        )
-        mail.send(msg)
-    except Exception as e:
-        current_app.logger.error(f"[MAIL] Error al enviar bienvenida a {correo}: {e}")
-        raise
+  

@@ -1,6 +1,6 @@
 from flask import Flask, send_from_directory
 from .config import config
-from .extensions import db, login_manager, migrate, socketio
+from .extensions import db, login_manager, migrate, socketio, mail
 
 
 def create_app(env="default"):
@@ -12,6 +12,7 @@ def create_app(env="default"):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app, cors_allowed_origins='*')
+    mail.init_app(app)   # ← agrega esta línea
 
     # ── Blueprints ────────────────────────────────────────────────────────────
     from .routes.auth           import auth_bp
