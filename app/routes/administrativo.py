@@ -28,7 +28,7 @@ def _check_acceso():
 
 @administrativo_bp.route("/")
 @login_required
-@requiere_permiso('Vehículos')
+@requiere_permiso('Dashboard') 
 def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -75,6 +75,7 @@ def vehiculos():
 
 @administrativo_bp.route("/vehiculos/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'crear')   # ← agregar
 def vehiculo_nuevo():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -143,6 +144,7 @@ def vehiculo_nuevo():
 
 @administrativo_bp.route("/vehiculos/<int:id>/editar", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'editar') 
 def vehiculo_editar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -186,6 +188,7 @@ def vehiculo_detalle(id):
 
 @administrativo_bp.route("/vehiculos/<int:id>/permisos/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'crear')
 def permiso_nuevo(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -220,6 +223,7 @@ def permiso_nuevo(id):
 
 @administrativo_bp.route("/permisos/<int:id>/eliminar", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'eliminar') 
 def permiso_eliminar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -233,6 +237,7 @@ def permiso_eliminar(id):
 
 @administrativo_bp.route("/mantenimiento")
 @login_required
+@requiere_permiso('Mantenimiento', 'ver')
 def mantenimiento_lista():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -256,6 +261,7 @@ def mantenimiento_lista():
 
 @administrativo_bp.route("/vehiculos/<int:id>/mantenimiento/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Mantenimiento', 'crear') 
 def mantenimiento_nuevo(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -294,6 +300,7 @@ def mantenimiento_nuevo(id):
 
 @administrativo_bp.route("/mantenimiento/<int:id>/completar", methods=["POST"])
 @login_required
+@requiere_permiso('Mantenimiento', 'editar')
 def mantenimiento_completar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -322,6 +329,7 @@ def mantenimiento_completar(id):
 
 @administrativo_bp.route("/personal")
 @login_required
+@requiere_permiso('Vehículos', 'crear')
 def personal():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -333,6 +341,7 @@ def personal():
 
 @administrativo_bp.route("/personal/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'crear')
 def personal_nuevo():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -357,6 +366,7 @@ def personal_nuevo():
 
 @administrativo_bp.route("/personal/<int:id>/editar", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'editar')
 def personal_editar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -379,6 +389,7 @@ def personal_editar(id):
 
 @administrativo_bp.route("/vehiculos/<int:id>/asignar-conductor", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'editar')
 def asignar_conductor(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -399,6 +410,7 @@ def asignar_conductor(id):
 # ── Baja vehículo ─────────────────────────────────────────────
 @administrativo_bp.route("/vehiculos/<int:id>/baja", methods=["POST"])
 @login_required
+@requiere_permiso('Vehículos', 'eliminar')
 def vehiculo_baja(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

@@ -1,0 +1,25 @@
+{# app/templates/administrativo/modales/vehiculo_detalle/modal mant completar.html 
+  Modal: Completar mantenimiento
+  Usado en:
+    - administrativo/mantenimiento.html
+    - administrativo/vehiculo_detalle.html
+
+  No requiere variables del contexto padre.
+  El form action se asigna por JS al hacer clic en "Completar" (ver completarMant en administrativo.js).
+#}
+<div class="overlay" id="modal-completar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✅ Completar mantenimiento</h2>
+    <form method="POST" id="form-completar">
+      <div class="field"><label>Fecha de entrega *</label><input name="fecha_entrega" type="date" required></div>
+      <div class="field"><label>Costo final ($)</label><input name="costo_final" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="field"><label>Descripción del trabajo realizado</label>
+        <textarea name="descripcion_fin" placeholder="Describe el trabajo realizado..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-completar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

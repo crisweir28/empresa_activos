@@ -1,0 +1,251 @@
+{#  app/templates/administrativo/partials/_modal_vehiculo_nuevo.html #}
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
+    <h2>🚗 Nuevo vehículo</h2>
+    <form method="POST" action="{{ url_for('administrativo.vehiculo_nuevo') }}"
+          enctype="multipart/form-data" id="form-vehiculo-nuevo">
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Nombre *</label>
+          <input name="nombre" required placeholder="Ej: Camioneta 01"
+                 oninput="vCampo(this,'v-nombre')" onblur="vCampo(this,'v-nombre')">
+          <div class="field-msg" id="msg-v-nombre"></div>
+        </div>
+        <div class="field">
+          <label>Tipo de vehículo</label>
+          <select name="tipo_vehiculo">
+            <option value="">— Seleccionar —</option>
+            <option value="Auto">Auto</option>
+            <option value="Camioneta">Camioneta</option>
+            <option value="Moto">Moto</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Marca *</label>
+          <input name="marca" required placeholder="Nissan"
+                 oninput="vCampo(this,'v-marca')" onblur="vCampo(this,'v-marca')">
+          <div class="field-msg" id="msg-v-marca"></div>
+        </div>
+        <div class="field">
+          <label>Modelo</label>
+          <input name="modelo" placeholder="NP300 2022"
+                 oninput="vOpcional(this,'v-modelo')" onblur="vOpcional(this,'v-modelo')">
+          <div class="field-msg" id="msg-v-modelo"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Año</label>
+          <input name="anio" type="number" min="1990" max="2030" placeholder="2024"
+                 oninput="vAnio(this)" onblur="vAnio(this)">
+          <div class="field-msg" id="msg-v-anio"></div>
+        </div>
+        <div class="field">
+          <label>Color</label>
+          <input name="color" placeholder="Ej: Blanco"
+                 oninput="vOpcional(this,'v-color')" onblur="vOpcional(this,'v-color')">
+          <div class="field-msg" id="msg-v-color"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Placa *</label>
+          <input name="matricula" required placeholder="ABC-1234"
+                 oninput="vPlaca(this)" onblur="vPlaca(this)">
+          <div class="field-msg" id="msg-v-placa"></div>
+        </div>
+        <div class="field">
+          <label>Número de serie (VIN)</label>
+          <input name="vin" placeholder="17 caracteres"
+                 oninput="vVin(this)" onblur="vVin(this)">
+          <div class="field-msg" id="msg-v-vin"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Kilometraje inicial</label>
+          <input name="kilometraje" type="number" min="0" placeholder="0"
+                 oninput="vNumero(this,'v-km')" onblur="vNumero(this,'v-km')">
+          <div class="field-msg" id="msg-v-km"></div>
+        </div>
+        <div class="field">
+          <label>Estado inicial</label>
+          <select name="estado">
+            <option value="activo">Nuevo / Activo</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Tipo adquisición</label>
+          <select name="tipo_adquisicion">
+            <option value="">— Seleccionar —</option>
+            <option value="propio">Propio</option>
+            <option value="seminuevo">Seminuevo</option>
+            <option value="rentado">Rentado</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Valor ($)</label>
+          <input name="valor" type="number" step="0.01" min="0" placeholder="0.00"
+                 oninput="vNumero(this,'v-valor')" onblur="vNumero(this,'v-valor')">
+          <div class="field-msg" id="msg-v-valor"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Fecha adquisición</label>
+          <input name="fecha_adquisicion" type="date"
+                 onchange="vFecha(this,'v-fecha')" onblur="vFecha(this,'v-fecha')">
+          <div class="field-msg" id="msg-v-fecha"></div>
+        </div>
+        <div class="field">
+          <label>Ubicación</label>
+          <select name="ubicacion_id">
+            <option value="">— Sin ubicación —</option>
+            {% for u in ubicaciones %}
+            <option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Seguro</div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Póliza de seguro</label>
+            <input name="poliza_seguro" placeholder="Número de póliza"
+                   oninput="vPoliza(this)" onblur="vPoliza(this)">
+            <div class="field-msg" id="msg-v-poliza"></div>
+          </div>
+          <div class="field">
+            <label>Aseguradora</label>
+            <input name="aseguradora" placeholder="Ej: GNP, AXA..."
+                   oninput="vOpcional(this,'v-aseg')" onblur="vOpcional(this,'v-aseg')">
+            <div class="field-msg" id="msg-v-aseg"></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Vigencia del seguro</label>
+            <input name="vigencia_seguro" type="date"
+                   onchange="vFechaFutura(this,'v-vigencia')" onblur="vFechaFutura(this,'v-vigencia')">
+            <div class="field-msg" id="msg-v-vigencia"></div>
+          </div>
+          <div class="field">
+            <label>Última verificación</label>
+            <input name="ultima_verificacion" type="date"
+                   onchange="vFecha(this,'v-verif')" onblur="vFecha(this,'v-verif')">
+            <div class="field-msg" id="msg-v-verif"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Accesorios</label>
+        <input name="accesorios" placeholder="Ej: Refacción, gato, extintor..."
+               oninput="vOpcional(this,'v-acc')" onblur="vOpcional(this,'v-acc')">
+        <div class="field-msg" id="msg-v-acc"></div>
+      </div>
+
+      <div class="field">
+        <label>Comentarios</label>
+        <textarea name="comentarios" placeholder="Notas adicionales..."
+                  oninput="vOpcional(this,'v-com')" onblur="vOpcional(this,'v-com')"></textarea>
+        <div class="field-msg" id="msg-v-com"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" name="arrendamiento" value="1" onchange="toggleArrendamiento(this)">
+            ¿Es arrendado?
+          </label>
+        </div>
+      </div>
+      <div id="campos-arrendamiento" style="display:none">
+        <div class="grid-2">
+          <div class="field">
+            <label>Fecha de renovación</label>
+            <input name="fecha_renovacion" type="date"
+                   onchange="vFechaFutura(this,'v-renov')" onblur="vFechaFutura(this,'v-renov')">
+            <div class="field-msg" id="msg-v-renov"></div>
+          </div>
+          <div class="field">
+            <label>Proveedor</label>
+            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor"
+                   oninput="vOpcional(this,'v-prov')" onblur="vOpcional(this,'v-prov')">
+            <div class="field-msg" id="msg-v-prov"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Documentos</div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Tarjeta de circulación (PDF)</label>
+            <input type="file" name="tarjeta_circulacion" accept=".pdf,.jpg,.jpeg,.png"
+                   style="color:var(--text);font-size:13px">
+          </div>
+          <div class="field">
+            <label>Certificado de verificación</label>
+            <input type="file" name="certificado_verificacion" accept=".pdf,.jpg,.jpeg,.png"
+                   style="color:var(--text);font-size:13px">
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Evidencias fotográficas</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="field">
+            <label>Frente</label>
+            <input type="file" name="evidencia_frente" accept=".png,.jpg,.jpeg"
+                   onchange="previewFoto(this,'prev-frente')" style="color:var(--text);font-size:12px">
+            <div id="prev-frente" style="display:none;margin-top:6px;text-align:center">
+              <img style="max-width:100%;max-height:80px;border-radius:6px;object-fit:cover">
+            </div>
+          </div>
+          <div class="field">
+            <label>Lateral</label>
+            <input type="file" name="evidencia_lateral" accept=".png,.jpg,.jpeg"
+                   onchange="previewFoto(this,'prev-lateral')" style="color:var(--text);font-size:12px">
+            <div id="prev-lateral" style="display:none;margin-top:6px;text-align:center">
+              <img style="max-width:100%;max-height:80px;border-radius:6px;object-fit:cover">
+            </div>
+          </div>
+          <div class="field">
+            <label>Interior</label>
+            <input type="file" name="evidencia_interior" accept=".png,.jpg,.jpeg"
+                   onchange="previewFoto(this,'prev-interior')" style="color:var(--text);font-size:12px">
+            <div id="prev-interior" style="display:none;margin-top:6px;text-align:center">
+              <img style="max-width:100%;max-height:80px;border-radius:6px;object-fit:cover">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-nuevo')">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="submitVehiculo()">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

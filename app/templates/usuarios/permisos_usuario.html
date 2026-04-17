@@ -145,11 +145,23 @@
 {% block scripts %}
 <script>
 let hayChanges = false;
+
 function marcarCambio() {
   hayChanges = true;
   document.getElementById('sync-status').innerHTML =
     '● <span style="color:var(--yellow)">Cambios pendientes</span>';
 }
+
+// Resetear al hacer submit para que no dispare beforeunload
+document.getElementById('form-permisos').addEventListener('submit', () => {
+  hayChanges = false;
+});
+
+// También cubrir el botón de restablecer al rol
+document.querySelectorAll('form').forEach(f => {
+  f.addEventListener('submit', () => { hayChanges = false; });
+});
+
 window.addEventListener('beforeunload', e => {
   if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
 });

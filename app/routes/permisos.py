@@ -19,12 +19,6 @@ def _check_super_admin():
 
 
 def _check_puede_editar_usuario(usuario_id):
-    """
-    Verifica si el usuario actual puede editar permisos de otro usuario.
-    - Super admin: puede editar cualquiera.
-    - Admin de área: solo puede editar usuarios de su mismo departamento
-      que no sean super admins.
-    """
     if current_user.IdRol == 1:
         return True
 
@@ -32,17 +26,20 @@ def _check_puede_editar_usuario(usuario_id):
         flash("No tienes permiso para gestionar permisos.", "error")
         return False
 
+    from ..utils.permisos import tiene_permiso
+    if not tiene_permiso('Roles', 'editar'):
+        flash("No tienes permiso para modificar permisos de usuarios.", "error")
+        return False
+
     usuario = Usuario.query.get(usuario_id)
     if not usuario:
         flash("Usuario no encontrado.", "error")
         return False
 
-    # No puede tocar super admins
     if usuario.IdRol == 1:
         flash("No puedes modificar permisos de un Super Administrador.", "error")
         return False
 
-    # Solo puede tocar usuarios de su área
     if usuario.IdDepartamento != current_user.IdDepartamento:
         flash("Solo puedes gestionar permisos de usuarios de tu área.", "error")
         return False
@@ -129,11 +126,13 @@ def usuario_permisos(usuario_id):
     usuario = Usuario.query.get_or_404(usuario_id)
     modulos = Modulo.query.order_by(Modulo.Orden).all()
 
-    # Si es admin de área, filtrar solo módulos relevantes a su área
-    if current_user.IdRol != 1 and current_user.es_administrador_area:
-        modulos_ids_area = _modulos_de_area(current_user.area_nombre)
+    # Filtrar módulos según el área del usuario que se está editando
+    area_usuario = usuario.area_nombre  # área del usuario editado, no del editor
+    if area_usuario:
+        modulos_ids_area = _modulos_de_area(area_usuario)
         if modulos_ids_area:
             modulos = [m for m in modulos if m.IdModulo in modulos_ids_area]
+    # Si el usuario editado es super admin (sin área), mostrar todos
 
     permisos_raw = PermisoUsuario.query.filter_by(IdUsuario=usuario_id).all()
     permisos_map = {
@@ -219,17 +218,13 @@ def usuario_permisos_reset(usuario_id):
 
 # ── Helper: módulos relevantes por área ───────────────────────
 def _modulos_de_area(area_nombre: str) -> list:
-    """
-    Devuelve los IdModulo relevantes para un área.
-    El admin de área solo puede asignar permisos de su módulo + Dashboard + Portal Empleado.
-    """
-    base = [1, 11]  # Dashboard + Portal Empleado siempre visibles
+    base = [1, 7, 12, 11]  # Dashboard + Usuarios + Roles + Portal Empleado
     mapa = {
-        'TI':               [6],   # Equipos TI
+        'TI':               [6],
         'Tecnología':       [6],
-        'Recursos Humanos': [10],  # RH
-        'Administrativo':   [3, 4],# Vehículos + Mantenimiento
-        'Almacén':          [5],   # Almacén
+        'Recursos Humanos': [10],
+        'Administrativo':   [3, 4],
+        'Almacén':          [5],
     }
     return base + mapa.get(area_nombre, [])
 

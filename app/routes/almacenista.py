@@ -40,10 +40,8 @@ def dashboard():
     asignados   = sum(1 for h in inventario if h.Estado == "asignado")
     daniados    = sum(1 for h in inventario if h.Estado in ("dañado", "perdido"))
 
-    recientes = VHistorialAsignaciones.query.filter_by(
-        EstadoAsignacion="activa"
-    ).limit(8).all()
-    reportes = ReporteDanio.query.order_by(ReporteDanio.CreadoEn.desc()).limit(5).all()
+    recientes = VHistorialAsignaciones.query.filter_by(EstadoAsignacion="activa").limit(8).all()
+    reportes  = ReporteDanio.query.order_by(ReporteDanio.CreadoEn.desc()).limit(5).all()
 
     return render_template("almacenista/dashboard.html",
         total       = total,
@@ -83,6 +81,7 @@ def inventario():
 # ── Alta herramienta ──────────────────────────────────────────
 @almacenista_bp.route("/herramientas/nueva", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'crear')
 def herramienta_nueva():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -108,22 +107,13 @@ def herramienta_nueva():
 
         evidencia = request.files.get("evidencia")
         if evidencia and evidencia.filename:
-            info = guardar_archivo(
-                archivo = evidencia,
-                prefijo = f"herr_{h.IdHerramienta}",
-                carpeta = "static/evidencias"
-            )
-            ev = EvidenciaHerramienta(
-                IdHerramienta = h.IdHerramienta,
-                ArchivoUrl    = info["url"],
-                NombreArchivo = info["filename"],
-                Tipo          = "entrega",
-                TipoArchivo   = "imagen",
-                MimeType      = info["mime_type"],
-                Descripcion   = "Foto inicial al dar de alta",
-                CreadoPor     = current_user.id,
-            )
-            db.session.add(ev)
+            info = guardar_archivo(archivo=evidencia, prefijo=f"herr_{h.IdHerramienta}", carpeta="static/evidencias")
+            db.session.add(EvidenciaHerramienta(
+                IdHerramienta=h.IdHerramienta, ArchivoUrl=info["url"],
+                NombreArchivo=info["filename"], Tipo="entrega",
+                TipoArchivo="imagen", MimeType=info["mime_type"],
+                Descripcion="Foto inicial al dar de alta", CreadoPor=current_user.id,
+            ))
 
         db.session.commit()
         flash(f"Herramienta '{h.Nombre}' registrada correctamente.", "success")
@@ -138,6 +128,7 @@ def herramienta_nueva():
 # ── Editar herramienta ────────────────────────────────────────
 @almacenista_bp.route("/herramientas/<int:id>/editar", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'editar')
 def herramienta_editar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -158,6 +149,7 @@ def herramienta_editar(id):
 # ── Asignar herramienta ───────────────────────────────────────
 @almacenista_bp.route("/herramientas/<int:id>/asignar", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'editar')
 def herramienta_asignar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -175,10 +167,10 @@ def herramienta_asignar(id):
         )
         db.session.execute(sqla_text("COMMIT"))
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
-        if row and row.r == "OK":
-            flash("Herramienta asignada correctamente.", "success")
-        else:
-            flash(f"No se pudo asignar: {row.r if row else 'error'}.", "error")
+        flash(
+            "Herramienta asignada correctamente." if row and row.r == "OK" else f"No se pudo asignar: {row.r if row else 'error'}.",
+            "success" if row and row.r == "OK" else "error"
+        )
     except Exception as e:
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
@@ -189,6 +181,7 @@ def herramienta_asignar(id):
 # ── Devolver herramienta ──────────────────────────────────────
 @almacenista_bp.route("/asignaciones/<int:id>/devolver", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'editar')
 def herramienta_devolver(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -220,6 +213,7 @@ def herramienta_devolver(id):
 # ── Historial asignaciones ────────────────────────────────────
 @almacenista_bp.route("/historial")
 @login_required
+@requiere_permiso('Almacén')
 def historial():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -229,11 +223,9 @@ def historial():
     if estado:
         query = query.filter_by(EstadoAsignacion=estado)
 
-    usuarios = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
-
     return render_template("almacenista/historial.html",
         asignaciones  = query.order_by(VHistorialAsignaciones.FechaAsignacion.desc()).all(),
-        usuarios      = usuarios,
+        usuarios      = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all(),
         estado_filtro = estado,
     )
 
@@ -241,6 +233,7 @@ def historial():
 # ── Subir evidencia ───────────────────────────────────────────
 @almacenista_bp.route("/herramientas/<int:id>/evidencia", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'editar')
 def subir_evidencia(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -257,17 +250,14 @@ def subir_evidencia(id):
             carpeta = "documents" if not archivo.filename.rsplit(".", 1)[-1].lower()
                       in {"png","jpg","jpeg","gif","webp"} else "static/evidencias"
         )
-        ev = EvidenciaHerramienta(
-            IdHerramienta = id,
-            ArchivoUrl    = info["url"],
-            NombreArchivo = info["filename"],
-            Tipo          = request.form.get("tipo", "daño"),
-            TipoArchivo   = info["tipo_archivo"],
-            MimeType      = info["mime_type"],
-            Descripcion   = request.form.get("descripcion", "").strip() or None,
-            CreadoPor     = current_user.id,
-        )
-        db.session.add(ev)
+        db.session.add(EvidenciaHerramienta(
+            IdHerramienta=id, ArchivoUrl=info["url"],
+            NombreArchivo=info["filename"],
+            Tipo=request.form.get("tipo", "daño"),
+            TipoArchivo=info["tipo_archivo"], MimeType=info["mime_type"],
+            Descripcion=request.form.get("descripcion", "").strip() or None,
+            CreadoPor=current_user.id,
+        ))
         db.session.commit()
         flash("Archivo subido correctamente.", "success")
 
@@ -283,6 +273,7 @@ def subir_evidencia(id):
 # ── Reporte de daño ───────────────────────────────────────────
 @almacenista_bp.route("/herramientas/<int:id>/reporte", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'crear')
 def reporte_danio(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -313,8 +304,7 @@ def reporte_danio(id):
             r.MimeType      = info["mime_type"]
 
         db.session.add(r)
-        nuevo_estado = "dañado" if r.Tipo == "daño" else "perdido"
-        herr.Estado  = nuevo_estado
+        herr.Estado = "dañado" if r.Tipo == "daño" else "perdido"
         db.session.commit()
         flash("Reporte de daño registrado.", "success")
 
@@ -330,17 +320,15 @@ def reporte_danio(id):
 # ── Detalle herramienta ───────────────────────────────────────
 @almacenista_bp.route("/herramientas/<int:id>")
 @login_required
+@requiere_permiso('Almacén')
 def herramienta_detalle(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
     herramienta = Herramienta.query.get_or_404(id)
-    asignacion  = AsignacionHerramienta.query.filter_by(
-                    IdHerramienta=id, FechaDevolucion=None).first()
-    evidencias  = EvidenciaHerramienta.query.filter_by(IdHerramienta=id).order_by(
-                    EvidenciaHerramienta.CreadoEn.desc()).all()
-    reportes    = ReporteDanio.query.filter_by(IdHerramienta=id).order_by(
-                    ReporteDanio.CreadoEn.desc()).all()
+    asignacion  = AsignacionHerramienta.query.filter_by(IdHerramienta=id, FechaDevolucion=None).first()
+    evidencias  = EvidenciaHerramienta.query.filter_by(IdHerramienta=id).order_by(EvidenciaHerramienta.CreadoEn.desc()).all()
+    reportes    = ReporteDanio.query.filter_by(IdHerramienta=id).order_by(ReporteDanio.CreadoEn.desc()).all()
     historial   = VHistorialAsignaciones.query.filter_by(IdHerramienta=id).all()
     usuarios    = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
 
@@ -358,6 +346,7 @@ def herramienta_detalle(id):
 # ── Baja herramienta ──────────────────────────────────────────
 @almacenista_bp.route("/herramientas/<int:id>/baja", methods=["POST"])
 @login_required
+@requiere_permiso('Almacén', 'eliminar')
 def herramienta_baja(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

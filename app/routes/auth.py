@@ -241,12 +241,12 @@ def _enviar_correo_reset(email: str, nombre: str, link: str):
 
       <!-- Header -->
       <tr>
-        <td align="center" bgcolor="#4f46e5"
-            style="background-color:#4f46e5;padding:32px 40px;">
+        <td align="center" bgcolor="#9B2335"
+            style="background-color:#9B2335;padding:32px 40px;">
           <p style="margin:0;font-family:Arial,sans-serif;font-size:22px;
                     font-weight:800;color:#ffffff;">ActivosApp</p>
           <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:12px;
-                    color:#c4b5fd;">Sistema de gestion de activos</p>
+                    color:#ffffff;">Sistema de gestion de activos</p>
         </td>
       </tr>
 
@@ -269,7 +269,7 @@ def _enviar_correo_reset(email: str, nombre: str, link: str):
             <tr>
               <td align="center">
                 <a href="{link}"
-                   style="display:inline-block;background-color:#4f46e5;
+                   style="display:inline-block;background-color:#9B2335;
                           color:#ffffff;text-decoration:none;
                           font-family:Arial,sans-serif;font-size:15px;
                           font-weight:700;padding:14px 40px;">
@@ -492,7 +492,9 @@ def recuperar():
                     Usuario.Estatus == True
                 ).first()
 
-                if user:
+                if not user:
+                    error = "El correo ingresado no está registrado en el sistema."
+                else:
                     db.session.execute(
                         text("UPDATE password_reset_tokens SET usado = 1 WHERE usuario_id = :uid AND usado = 0"),
                         {"uid": user.IdUsuario}
@@ -512,8 +514,8 @@ def recuperar():
                     link = f"{host}reset-password/{token}"
                     _enviar_correo_reset(email, user.Nombre, link)
 
-                enviado       = True
-                email_enviado = email
+                    enviado       = True
+                    email_enviado = email
 
             except Exception as e:
                 import traceback

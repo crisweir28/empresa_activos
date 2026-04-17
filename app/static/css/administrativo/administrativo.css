@@ -1,0 +1,38 @@
+/* app/static/css/administrativo.css
+
+/* ── Validación de formularios ────────────────────────────── */
+.field input.input-ok,
+.field textarea.input-ok  { border-color: var(--green) !important; }
+.field input.input-err,
+.field textarea.input-err { border-color: var(--red)   !important; }
+
+.field-msg {
+  font-size: 11px;
+  margin-top: 4px;
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.field-msg.ok  { color: var(--green); }
+.field-msg.err { color: var(--red); }
+
+/* ── Tabs (vehiculo_detalle) ──────────────────────────────── */
+.tab-btn {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .18s;
+  margin-bottom: -1px;
+}
+.tab-btn:hover  { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+@media (max-width: 768px) {
+  .tab-btn { padding: 8px 12px; font-size: 12px; }
+}

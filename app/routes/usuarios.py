@@ -8,6 +8,7 @@ from ..models.usuario import Usuario, Rol, AREAS_CON_MODULO
 from ..models.departamento import Departamento
 from datetime import datetime
 from ..tasks.correo import enviar_bienvenida
+from ..utils.permisos import requiere_permiso
 
 usuarios_bp = Blueprint("usuarios", __name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,7 +30,14 @@ def _rol_por_area(nombre_area: str, tipo: str) -> int:
 
 
 def _check_admin():
-    if not (current_user.IdRol == 1 or current_user.es_administrador_area):
+    if current_user.IdRol == 1:
+        return True
+    if not current_user.es_administrador_area:
+        flash("No tienes permiso para gestionar usuarios.", "error")
+        return False
+    # Admin de área verifica permiso específico
+    from ..utils.permisos import tiene_permiso
+    if not tiene_permiso('Usuarios', 'ver'):
         flash("No tienes permiso para gestionar usuarios.", "error")
         return False
     return True
@@ -82,6 +90,7 @@ def lista():
 # ── Crear ─────────────────────────────────────────────────────
 @usuarios_bp.route("/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Usuarios', 'crear')
 def nuevo():
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
@@ -148,6 +157,7 @@ def nuevo():
 # ── Editar ────────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>/editar", methods=["POST"])
 @login_required
+@requiere_permiso('Usuarios', 'editar')
 def editar(id):
     if not _check_admin():
         return redirect(url_for("activos.dashboard"))
@@ -178,25 +188,35 @@ def editar(id):
     u.Correo          = correo
     u.Estatus         = request.form.get("estatus") == "1"
 
-    # Solo super admin puede cambiar área y tipo
+     # Solo super admin puede cambiar área y tipo
     if current_user.IdRol == 1:
         depto_id = request.form.get("departamento_id")
         tipo     = request.form.get("tipo_usuario", "empleado")
-
         depto          = Departamento.query.get(int(depto_id)) if depto_id else None
         u.IdDepartamento = int(depto_id) if depto_id else None
         u.TipoUsuario    = tipo
         u.IdRol          = _rol_por_area(depto.nombre if depto else '', tipo)
 
-    db.session.commit()
+    # Cambio de contraseña opcional
+    nueva_pass = request.form.get("nueva_password", "").strip()
+    if nueva_pass:
+        if len(nueva_pass) < 6:
+            flash("La contraseña debe tener al menos 6 caracteres.", "error")
+            return redirect(url_for("usuarios.lista"))
+        u.Contrasena  = pwd_context.hash(nueva_pass)
+        u.PrimerLogin = True  # obliga a cambiarla en el próximo login
+
+    db.session.commit()  # ← un solo commit al final
     flash(f"Usuario '{username}' actualizado.", "success")
     socketio.emit('usuarios_actualizados', {'accion': 'editar', 'usuario_id': id})
+    socketio.emit('permisos_actualizados', {'usuario_id': id})
     return redirect(url_for("usuarios.lista"))
 
 
 # ── Eliminar ──────────────────────────────────────────────────
 @usuarios_bp.route("/<int:id>/eliminar", methods=["POST"])
 @login_required
+@requiere_permiso('Usuarios', 'eliminar')
 def eliminar(id):
     if not _solo_super_admin():
         return redirect(url_for("usuarios.lista"))

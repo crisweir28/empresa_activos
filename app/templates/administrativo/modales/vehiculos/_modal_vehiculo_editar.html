@@ -1,0 +1,58 @@
+{#
+  app/templates/administrativo/partials/_modal_vehiculo_editar.html
+#}
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✏️ Editar vehículo</h2>
+    <form method="POST" id="form-editar">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
+        <div class="field"><label>Placa *</label><input id="e-matricula" name="matricula" required></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Marca</label><input id="e-marca" name="marca"></div>
+        <div class="field"><label>Modelo</label><input id="e-modelo" name="modelo"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Kilometraje</label>
+          <input id="e-km" name="kilometraje" type="number" min="0">
+        </div>
+        <div class="field"><label>Tipo adquisición</label>
+          <select id="e-tipo" name="tipo_adquisicion">
+            <option value="">— Seleccionar —</option>
+            <option value="propio">Propio</option>
+            <option value="seminuevo">Seminuevo</option>
+            <option value="rentado">Rentado</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Estado</label>
+          <select id="e-estado" name="estado">
+            <option value="activo">Activo</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+        <div class="field"><label>Valor ($)</label>
+          <input id="e-valor" name="valor" type="number" step="0.01" min="0">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha adquisición</label>
+          <input id="e-fecha" name="fecha_adquisicion" type="date">
+        </div>
+        <div class="field"><label>Ubicación</label>
+          <select id="e-ubicacion" name="ubicacion_id">
+            <option value="">— Sin ubicación —</option>
+            {% for u in ubicaciones %}<option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>

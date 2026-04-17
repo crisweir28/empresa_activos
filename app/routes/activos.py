@@ -54,12 +54,6 @@ DEPTO_TEMAS = {
     },
 }
 
-# Roles que usan el dashboard global de TI
-ROLES_DASHBOARD_GLOBAL = {"ti"}
-
-# Roles que tienen su propio módulo de vehículos
-ROLES_VEHICULOS = {"ti", "administrativo"}
-
 
 def _get_departamentos():
     if es_admin():
@@ -69,6 +63,23 @@ def _get_departamentos():
     return []
 
 
+def _portal_empleado():
+    """Renderiza el portal de empleado con sus activos."""
+    uid  = current_user.id
+    area = current_user.area_nombre or "Mi área"
+    activos = db.session.execute(text("""
+        SELECT a.nombre, a.categoria, a.estado, a.valor, a.creado_en
+        FROM activos a
+        WHERE a.usuario_id = :uid
+        ORDER BY a.creado_en DESC
+        LIMIT 20
+    """), {'uid': uid}).fetchall()
+    return render_template("portal_empleado.html",
+        area_nombre = area,
+        activos     = activos,
+    )
+
+
 @activos_bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -76,7 +87,6 @@ def dashboard():
     tema = DEPTO_TEMAS.get(rol, DEPTO_TEMAS["ti"])
 
     if rol == "admin":
-        # Admin — vista global completa
         stats     = VDashboardStats.query.first()
         recientes = VActivo.query.order_by(VActivo.creado_en.desc()).limit(8).all()
         por_depto = VActivoPorDepartamento.query.order_by(
@@ -93,53 +103,36 @@ def dashboard():
         )
 
     elif rol == "ti":
-        # TI — redirige a su módulo solo si tiene permiso
         from ..utils.permisos import tiene_permiso
         if tiene_permiso('Equipos TI'):
             return redirect(url_for("ti.dashboard"))
-        # Sin permiso — mostrar dashboard vacío
-        return render_template("dashboard_depto.html",
-            depto_nombre  = tema["nombre"],
-            depto_icon    = tema["icon"],
-            depto_color   = tema["color"],
-            depto_color2  = tema["color2"],
-            depto_rgb     = tema["rgb"],
-            depto_rgb2    = tema["rgb2"],
-            depto_glow    = f"rgba({tema['rgb']},.15)",
-            total=0, activos_ok=0, mantenimiento=0,
-            bajas=0, valor_total=0, recientes=[], alertas_mant=[],
-        )
+        return _portal_empleado()
 
     elif rol == "administrativo":
-        return redirect(url_for("administrativo.dashboard"))
+        from ..utils.permisos import tiene_permiso
+        if tiene_permiso('Dashboard'):
+            return redirect(url_for("administrativo.dashboard"))
+        if tiene_permiso('Vehículos'):
+            return redirect(url_for("administrativo.vehiculos"))
+        if tiene_permiso('Mantenimiento'):
+            return redirect(url_for("administrativo.mantenimiento_lista"))
+        return _portal_empleado()
 
     elif rol == "almacenista":
-        return redirect(url_for("almacenista.dashboard"))
+        from ..utils.permisos import tiene_permiso
+        if tiene_permiso('Almacén'):
+            return redirect(url_for("almacenista.dashboard"))
+        return _portal_empleado()
 
     elif rol == "rh":
-        return redirect(url_for("rh.activos_usuario"))
-    
-    else:
-        # ── Empleados corporativos (Contabilidad, Ventas, SGI, etc.) ──
-        # o cualquier usuario sin módulo propio
         from ..utils.permisos import tiene_permiso
-        uid       = current_user.id
-        depto_id  = current_user.IdDepartamento
-        area      = current_user.area_nombre or "Mi área"
+        if tiene_permiso('Recursos Humanos'):
+            return redirect(url_for("rh.activos_usuario"))
+        return _portal_empleado()
 
-        # Sus activos asignados directamente
-        activos = db.session.execute(text("""
-            SELECT a.nombre, a.categoria, a.estado, a.valor, a.creado_en
-            FROM activos a
-            WHERE a.usuario_id = :uid
-            ORDER BY a.creado_en DESC
-            LIMIT 20
-        """), {'uid': uid}).fetchall()
+    else:
+        return _portal_empleado()
 
-        return render_template("portal_empleado.html",
-            area_nombre   = area,
-            activos       = activos,
-        )
 
 @activos_bp.route("/")
 @login_required

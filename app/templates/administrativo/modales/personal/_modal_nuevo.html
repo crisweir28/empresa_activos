@@ -1,0 +1,35 @@
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>Nuevo personal</h2>
+    <form method="POST" action="{{ url_for('administrativo.personal_nuevo') }}">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input name="nombre" required></div>
+        <div class="field"><label>Apellido *</label><input name="apellido" required></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Teléfono</label><input name="telefono" placeholder="555-0000"></div>
+        <div class="field"><label>Área</label><input name="area" placeholder="Operaciones"></div>
+      </div>
+      <div class="field"><label>Correo</label><input name="correo" type="email"></div>
+      <div class="field"><label>Jefe inmediato</label><input name="jefe_inmediato"></div>
+      <div class="grid-2">
+        <div class="field"><label>N° Licencia</label><input name="licencia_numero"></div>
+        <div class="field"><label>Vigencia licencia</label><input name="licencia_vigencia" type="date"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Seguro médico</label><input name="seguro_medico"></div>
+        <div class="field"><label>Vigencia seguro</label><input name="seguro_vigencia" type="date"></div>
+      </div>
+      <div class="field"><label>Condición</label>
+        <select name="condicion_id">
+          <option value="">— Seleccionar —</option>
+          {% for c in condiciones %}<option value="{{ c.IdCondicion }}">{{ c.NombreCondicion }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

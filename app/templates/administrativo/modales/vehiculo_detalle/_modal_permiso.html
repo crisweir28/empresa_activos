@@ -1,0 +1,36 @@
+{#
+  Modal: Agregar permiso / documento
+  Usado en: administrativo/vehiculo_detalle.html
+
+  Variables requeridas del contexto padre:
+    - vehiculo (con IdVehiculo)
+    - tipos: lista de TipoServicio (filtra por IdCategoria == 2)
+#}
+<div class="overlay" id="modal-permiso" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>📄 Agregar permiso / documento</h2>
+    <form method="POST" action="{{ url_for('administrativo.permiso_nuevo', id=vehiculo.IdVehiculo) }}" enctype="multipart/form-data">
+      <div class="field"><label>Tipo *</label>
+        <select name="tipo_servicio_id" required>
+          {% for t in tipos %}{% if t.IdCategoria == 2 %}
+          <option value="{{ t.IdTipoServicio }}">{{ t.Nombre }}</option>
+          {% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Número / Folio</label><input name="numero" placeholder="Ej: SEG-2024-001"></div>
+      <div class="field"><label>Descripción</label><input name="descripcion" placeholder="Descripción del permiso"></div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha inicio</label><input name="fecha_inicio" type="date"></div>
+        <div class="field"><label>Fecha vencimiento *</label><input name="fecha_vencimiento" type="date" required></div>
+      </div>
+      <div class="field">
+        <label>Archivo adjunto</label>
+        <input type="file" name="archivo" accept=".pdf,.jpg,.jpeg,.png" style="color:var(--text);font-size:13px">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-permiso')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

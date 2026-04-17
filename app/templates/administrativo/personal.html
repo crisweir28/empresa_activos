@@ -52,90 +52,12 @@
   {% endif %}
 </div>
 
-<!-- Modal Nuevo -->
-<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>Nuevo personal</h2>
-    <form method="POST" action="{{ url_for('administrativo.personal_nuevo') }}">
-      <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input name="nombre" required></div>
-        <div class="field"><label>Apellido *</label><input name="apellido" required></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Teléfono</label><input name="telefono" placeholder="555-0000"></div>
-        <div class="field"><label>Área</label><input name="area" placeholder="Operaciones"></div>
-      </div>
-      <div class="field"><label>Correo</label><input name="correo" type="email"></div>
-      <div class="field"><label>Jefe inmediato</label><input name="jefe_inmediato"></div>
-      <div class="grid-2">
-        <div class="field"><label>N° Licencia</label><input name="licencia_numero"></div>
-        <div class="field"><label>Vigencia licencia</label><input name="licencia_vigencia" type="date"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Seguro médico</label><input name="seguro_medico"></div>
-        <div class="field"><label>Vigencia seguro</label><input name="seguro_vigencia" type="date"></div>
-      </div>
-      <div class="field"><label>Condición</label>
-        <select name="condicion_id">
-          <option value="">— Seleccionar —</option>
-          {% for c in condiciones %}<option value="{{ c.IdCondicion }}">{{ c.NombreCondicion }}</option>{% endfor %}
-        </select>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>
+{# ─────────────────────── Modales ──────────────────────── #}
+{% include "administrativo/modales/personal/_modal_nuevo.html" %}
+{% include "administrativo/modales/personal/_modal_editar.html" %}
 
-<!-- Modal Editar -->
-<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>Editar personal</h2>
-    <form method="POST" id="form-editar-p">
-      <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input id="ep-nombre" name="nombre" required></div>
-        <div class="field"><label>Apellido *</label><input id="ep-apellido" name="apellido" required></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Teléfono</label><input id="ep-telefono" name="telefono"></div>
-        <div class="field"><label>Área</label><input id="ep-area" name="area"></div>
-      </div>
-      <div class="field"><label>Correo</label><input id="ep-correo" name="correo" type="email"></div>
-      <div class="field"><label>Jefe inmediato</label><input id="ep-jefe" name="jefe_inmediato"></div>
-      <div class="grid-2">
-        <div class="field"><label>N° Licencia</label><input id="ep-licencia" name="licencia_numero"></div>
-        <div class="field"><label>Vigencia licencia</label><input id="ep-lic-vig" name="licencia_vigencia" type="date"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Seguro médico</label><input id="ep-seguro" name="seguro_medico"></div>
-        <div class="field"><label>Vigencia seguro</label><input id="ep-seg-vig" name="seguro_vigencia" type="date"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
-      </div>
-    </form>
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-function editarPersonal(p) {
-  document.getElementById('form-editar-p').action = `/administrativo/personal/${p.id}/editar`;
-  document.getElementById('ep-nombre').value    = p.nombre    || '';
-  document.getElementById('ep-apellido').value  = p.apellido  || '';
-  document.getElementById('ep-telefono').value  = p.telefono  || '';
-  document.getElementById('ep-area').value      = p.area      || '';
-  document.getElementById('ep-correo').value    = p.correo    || '';
-  document.getElementById('ep-jefe').value      = p.jefe_inmediato || '';
-  document.getElementById('ep-licencia').value  = p.licencia_numero  || '';
-  document.getElementById('ep-lic-vig').value   = p.licencia_vigencia || '';
-  document.getElementById('ep-seguro').value    = p.seguro_medico || '';
-  document.getElementById('ep-seg-vig').value   = p.seguro_vigencia  || '';
-  document.getElementById('modal-editar').classList.add('open');
-}
-</script>
+<script src="{{ url_for('static', filename='js/administrativo/personal.js') }}"></script>
 {% endblock %}

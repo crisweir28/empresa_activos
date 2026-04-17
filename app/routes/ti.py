@@ -93,6 +93,7 @@ def equipos():
 # ── Alta equipo ───────────────────────────────────────────────
 @ti_bp.route("/equipos/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'crear')
 def equipo_nuevo():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -128,38 +129,22 @@ def equipo_nuevo():
 
         factura = request.files.get("factura")
         if factura and factura.filename:
-            info = guardar_archivo(
-                archivo = factura,
-                prefijo = f"equipo_{e.IdElectronico}_factura",
-                carpeta = "documents"
-            )
+            info = guardar_archivo(archivo=factura, prefijo=f"equipo_{e.IdElectronico}_factura", carpeta="documents")
             db.session.add(EvidenciaEquipo(
-                IdElectronico = e.IdElectronico,
-                ArchivoUrl    = info["url"],
-                NombreArchivo = info["filename"],
-                Tipo          = "factura",
-                TipoArchivo   = "documento",
-                MimeType      = info["mime_type"],
-                Descripcion   = "Factura de compra",
-                CreadoPor     = current_user.id,
+                IdElectronico=e.IdElectronico, ArchivoUrl=info["url"],
+                NombreArchivo=info["filename"], Tipo="factura",
+                TipoArchivo="documento", MimeType=info["mime_type"],
+                Descripcion="Factura de compra", CreadoPor=current_user.id,
             ))
 
         evidencia = request.files.get("evidencia")
         if evidencia and evidencia.filename:
-            info = guardar_archivo(
-                archivo = evidencia,
-                prefijo = f"equipo_{e.IdElectronico}_foto",
-                carpeta = "static/evidencias"
-            )
+            info = guardar_archivo(archivo=evidencia, prefijo=f"equipo_{e.IdElectronico}_foto", carpeta="static/evidencias")
             db.session.add(EvidenciaEquipo(
-                IdElectronico = e.IdElectronico,
-                ArchivoUrl    = info["url"],
-                NombreArchivo = info["filename"],
-                Tipo          = "entrega",
-                TipoArchivo   = "imagen",
-                MimeType      = info["mime_type"],
-                Descripcion   = "Foto inicial al dar de alta",
-                CreadoPor     = current_user.id,
+                IdElectronico=e.IdElectronico, ArchivoUrl=info["url"],
+                NombreArchivo=info["filename"], Tipo="entrega",
+                TipoArchivo="imagen", MimeType=info["mime_type"],
+                Descripcion="Foto inicial al dar de alta", CreadoPor=current_user.id,
             ))
 
         db.session.commit()
@@ -176,6 +161,7 @@ def equipo_nuevo():
 # ── Editar equipo ─────────────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/editar", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'editar')
 def equipo_editar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -200,6 +186,7 @@ def equipo_editar(id):
 # ── Asignar equipo ────────────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/asignar", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'editar')
 def equipo_asignar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -213,8 +200,7 @@ def equipo_asignar(id):
 
     try:
         db.session.execute(db.text("""
-            UPDATE electronico
-            SET IdUsuario = :uid, Estado = 'asignado'
+            UPDATE electronico SET IdUsuario = :uid, Estado = 'asignado'
             WHERE IdElectronico = :id
         """), {'uid': usuario_id, 'id': id})
 
@@ -222,16 +208,14 @@ def equipo_asignar(id):
             existente = db.session.execute(db.text("""
                 SELECT IdAsignacion FROM proyectoactivo
                 WHERE IdProyecto = :pid AND TipoActivo = 'electronico'
-                  AND IdActivo = :aid AND FechaDevolucion IS NULL
-                LIMIT 1
+                  AND IdActivo = :aid AND FechaDevolucion IS NULL LIMIT 1
             """), {'pid': proyecto_id, 'aid': id}).fetchone()
 
             if not existente:
                 db.session.execute(db.text("""
                     INSERT INTO proyectoactivo
                         (IdProyecto, TipoActivo, IdActivo, EstadoInicial, AsignadoPor, FechaAsignacion)
-                    VALUES
-                        (:pid, 'electronico', :aid, 'bueno', :usr, CURDATE())
+                    VALUES (:pid, 'electronico', :aid, 'bueno', :usr, CURDATE())
                 """), {'pid': proyecto_id, 'aid': id, 'usr': current_user.IdUsuario})
 
         db.session.commit()
@@ -248,6 +232,7 @@ def equipo_asignar(id):
 # ── Liberar equipo ────────────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/liberar", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'editar')
 def equipo_liberar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -264,6 +249,7 @@ def equipo_liberar(id):
 # ── Detalle equipo ────────────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>")
 @login_required
+@requiere_permiso('Equipos TI')
 def equipo_detalle(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -277,10 +263,8 @@ def equipo_detalle(id):
     ).order_by(EvidenciaEquipo.CreadoEn.desc()).all()
 
     proyectos_activos = db.session.execute(db.text("""
-        SELECT IdProyecto, Nombre, Estatus
-        FROM proyecto
-        WHERE Estatus NOT IN ('Completado','Cancelado')
-        ORDER BY Nombre
+        SELECT IdProyecto, Nombre, Estatus FROM proyecto
+        WHERE Estatus NOT IN ('Completado','Cancelado') ORDER BY Nombre
     """)).fetchall()
 
     return render_template("ti/equipo_detalle.html",
@@ -297,6 +281,7 @@ def equipo_detalle(id):
 # ── Mantenimiento nuevo ───────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/mantenimiento/nuevo", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'crear')
 def mantenimiento_nuevo(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -333,6 +318,7 @@ def mantenimiento_nuevo(id):
 # ── Completar mantenimiento ───────────────────────────────────
 @ti_bp.route("/mantenimiento/<int:id>/completar", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'editar')
 def mantenimiento_completar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -360,6 +346,7 @@ def mantenimiento_completar(id):
 # ── Validación de estados ─────────────────────────────────────
 @ti_bp.route("/validacion")
 @login_required
+@requiere_permiso('Equipos TI')
 def validacion_estados():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -380,6 +367,7 @@ def validacion_estados():
 # ── Reporte consolidado ───────────────────────────────────────
 @ti_bp.route("/reporte/consolidado")
 @login_required
+@requiere_permiso('Equipos TI')
 def reporte_consolidado():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -404,9 +392,9 @@ def reporte_consolidado():
     sql += " ORDER BY NombreEquipo"
 
     equipos   = db.session.execute(db.text(sql), params).fetchall()
-    proyectos = db.session.execute(db.text("""
-        SELECT IdProyecto, Nombre, Estatus FROM proyecto ORDER BY Nombre
-    """)).fetchall()
+    proyectos = db.session.execute(db.text(
+        "SELECT IdProyecto, Nombre, Estatus FROM proyecto ORDER BY Nombre"
+    )).fetchall()
 
     return render_template('ti/reporte_consolidado.html',
         equipos         = equipos,
@@ -420,6 +408,7 @@ def reporte_consolidado():
 # ── Baja equipo ───────────────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/baja", methods=["POST"])
 @login_required
+@requiere_permiso('Equipos TI', 'eliminar')
 def equipo_baja(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))

@@ -1,0 +1,29 @@
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>Editar personal</h2>
+    <form method="POST" id="form-editar-p">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input id="ep-nombre" name="nombre" required></div>
+        <div class="field"><label>Apellido *</label><input id="ep-apellido" name="apellido" required></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Teléfono</label><input id="ep-telefono" name="telefono"></div>
+        <div class="field"><label>Área</label><input id="ep-area" name="area"></div>
+      </div>
+      <div class="field"><label>Correo</label><input id="ep-correo" name="correo" type="email"></div>
+      <div class="field"><label>Jefe inmediato</label><input id="ep-jefe" name="jefe_inmediato"></div>
+      <div class="grid-2">
+        <div class="field"><label>N° Licencia</label><input id="ep-licencia" name="licencia_numero"></div>
+        <div class="field"><label>Vigencia licencia</label><input id="ep-lic-vig" name="licencia_vigencia" type="date"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Seguro médico</label><input id="ep-seguro" name="seguro_medico"></div>
+        <div class="field"><label>Vigencia seguro</label><input id="ep-seg-vig" name="seguro_vigencia" type="date"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
