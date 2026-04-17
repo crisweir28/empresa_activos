@@ -1,0 +1,29 @@
+<!-- Modal: Devolver -->
+<div class="overlay" id="modal-devolver" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>📥 Registrar devolución</h2>
+    {% if asignacion %}
+    <form method="POST" action="{{ url_for('almacenista.herramienta_devolver', id=asignacion.IdAsignacion) }}">
+      <div class="field"><label>Fecha de devolución</label>
+        <input name="fecha_devolucion" type="date" value="{{ today }}">
+      </div>
+      <div class="field"><label>Estado final de la herramienta</label>
+        <select name="estado_final">
+          <option value="disponible">Disponible (buen estado)</option>
+          <option value="dañado">Dañado</option>
+          <option value="perdido">Perdido</option>
+          <option value="mantenimiento">Requiere mantenimiento</option>
+        </select>
+      </div>
+      <div class="field"><label>Observaciones</label>
+        <textarea name="observaciones"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-devolver').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>

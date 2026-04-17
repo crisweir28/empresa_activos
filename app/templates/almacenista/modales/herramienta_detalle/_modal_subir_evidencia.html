@@ -1,0 +1,35 @@
+<!-- Modal: Subir evidencia -->
+<div class="overlay" id="modal-evidencia" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>🖼️ Subir evidencia</h2>
+    <form method="POST"
+          action="{{ url_for('almacenista.subir_evidencia', id=herramienta.IdHerramienta) }}"
+          enctype="multipart/form-data">
+      <div class="field"><label>Tipo de evidencia</label>
+        <select name="tipo">
+          <option value="daño">Daño</option>
+          <option value="faltante">Faltante</option>
+          <option value="entrega">Entrega</option>
+          <option value="devolucion">Devolución</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Imagen (PNG o JPG) *</label>
+        <input type="file" name="archivo" accept=".png,.jpg,.jpeg" required
+               id="input-archivo" onchange="previewAntes(this)"
+               style="color:var(--text);font-size:13px">
+      </div>
+      <div id="preview-wrap" style="display:none;margin-top:8px;text-align:center">
+        <img id="preview-img" src="" alt="preview"
+             style="max-width:100%;max-height:200px;border-radius:8px;
+                    border:1px solid var(--border);object-fit:contain">
+        <div id="preview-nombre" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-evidencia').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Subir</button>
+      </div>
+    </form>
+  </div>
+</div>

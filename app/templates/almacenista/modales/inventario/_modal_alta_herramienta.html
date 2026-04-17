@@ -1,0 +1,136 @@
+<div class="overlay" id="modal-nueva" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:680px">
+    <h2>🔧 Alta de herramienta</h2>
+    <form method="POST" action="{{ url_for('almacenista.herramienta_nueva') }}"
+          enctype="multipart/form-data" id="form-alta-herramienta">
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Nombre *</label>
+          <input name="nombre" required placeholder="Ej: Martillo 1kg"
+                 oninput="vCampo(this,'h-nombre')" onblur="vCampo(this,'h-nombre')">
+          <div class="field-msg" id="msg-h-nombre"></div>
+        </div>
+        <div class="field">
+          <label>Número de serie</label>
+          <input name="numero_serie" placeholder="SN-001"
+                 oninput="vOpcional(this,'h-serie')" onblur="vOpcional(this,'h-serie')">
+          <div class="field-msg" id="msg-h-serie"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Tipo de herramienta</label>
+          <input name="tipo_herramienta" placeholder="Ej: Manual, Eléctrica, Medición..."
+                 oninput="vOpcional(this,'h-tipo')" onblur="vOpcional(this,'h-tipo')">
+          <div class="field-msg" id="msg-h-tipo"></div>
+        </div>
+        <div class="field">
+          <label>Categoría</label>
+          <select name="categoria_id">
+            <option value="">— Seleccionar —</option>
+            {% for c in categorias %}
+            <option value="{{ c.IdCategoria }}">{{ c.Nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Marca *</label>
+          <input name="marca" placeholder="Stanley"
+                 oninput="vCampo(this,'h-marca')" onblur="vCampo(this,'h-marca')">
+          <div class="field-msg" id="msg-h-marca"></div>
+        </div>
+        <div class="field">
+          <label>Modelo</label>
+          <input name="modelo"
+                 oninput="vOpcional(this,'h-modelo')" onblur="vOpcional(this,'h-modelo')">
+          <div class="field-msg" id="msg-h-modelo"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Estado actual</label>
+          <select name="estado">
+            <option value="disponible">Nuevo / Disponible</option>
+            <option value="asignado">Operativo</option>
+            <option value="mantenimiento">En reparación</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Costo ($)</label>
+          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00"
+                 oninput="vCosto(this)" onblur="vCosto(this)">
+          <div class="field-msg" id="msg-h-costo"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Área responsable</label>
+          <select name="departamento_id">
+            <option value="">— Sin área —</option>
+            {% for d in departamentos %}
+            <option value="{{ d.id }}">{{ d.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Subárea</label>
+          <input name="subarea" placeholder="Ej: Planta Norte, Taller 2..."
+                 oninput="vOpcional(this,'h-subarea')" onblur="vOpcional(this,'h-subarea')">
+          <div class="field-msg" id="msg-h-subarea"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Almacén / Ubicación</label>
+          <select name="ubicacion_id">
+            <option value="">— Sin ubicación —</option>
+            {% for u in ubicaciones %}
+            <option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha de alta</label>
+          <input name="fecha_alta" type="date"
+                 onchange="vFecha(this)" onblur="vFecha(this)">
+          <div class="field-msg" id="msg-h-fecha"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Descripción</label>
+        <textarea name="descripcion" placeholder="Descripción opcional"
+                  oninput="vOpcional(this,'h-desc')" onblur="vOpcional(this,'h-desc')"></textarea>
+        <div class="field-msg" id="msg-h-desc"></div>
+      </div>
+
+      <div class="field">
+        <label>Evidencia fotográfica (opcional)</label>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">PNG, JPG — foto del estado inicial</div>
+        <input type="file" name="evidencia" accept=".png,.jpg,.jpeg,.gif,.webp"
+               onchange="previewEvidencia(this)" style="color:var(--text);font-size:13px">
+        <div id="ev-preview" style="display:none;margin-top:8px;text-align:center">
+          <img id="ev-img" src="" alt="preview"
+               style="max-width:100%;max-height:150px;border-radius:8px;
+                      border:1px solid var(--border);object-fit:contain">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-nueva').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn btn-primary"
+                onclick="submitHerramienta()">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

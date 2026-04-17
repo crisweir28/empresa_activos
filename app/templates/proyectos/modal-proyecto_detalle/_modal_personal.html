@@ -1,0 +1,32 @@
+{#
+  app/templates/modales/modal-proyecto_detalle/_modal_personal.html
+
+  Modal de asignación de personal al proyecto.
+  Variables requeridas del contexto padre:
+    - proyecto: objeto con IdProyecto
+    - usuarios_disponibles: lista de usuarios con IdUsuario, Nombre,
+                            ApellidoPaterno y NombreUsuario
+    - ids_asignados: set/lista de IdUsuario ya asignados (para excluir)
+#}
+<div class="overlay" id="modal-personal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>👤 Asignar personal</h2>
+    <form method="POST" action="{{ url_for('proyectos.asignar_personal', id=proyecto.IdProyecto) }}">
+      <div class="field"><label>Usuario *</label>
+        <select name="usuario_id" required>
+          <option value="">— Seleccionar —</option>
+          {% for u in usuarios_disponibles %}{% if u.IdUsuario not in ids_asignados %}
+          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }} (@{{ u.NombreUsuario }})</option>
+          {% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Rol en el proyecto</label>
+        <input name="rol_proyecto" placeholder="Ej: Líder técnico, Instalador...">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-personal')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Asignar</button>
+      </div>
+    </form>
+  </div>
+</div>

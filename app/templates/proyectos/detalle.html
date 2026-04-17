@@ -3,31 +3,7 @@
 {% block title %}{{ proyecto.Nombre }}{% endblock %}
 
 {% block extra_head %}
-<style>
-  .detalle-grid { display:grid; grid-template-columns:1fr 340px; gap:18px; align-items:start; }
-  @media (max-width:1024px) { .detalle-grid { grid-template-columns:1fr; } }
-  .tabs { display:flex; border-bottom:1px solid var(--border); }
-  .tab-btn { padding:10px 20px; background:transparent; border:none; border-bottom:2px solid transparent; color:var(--muted); font-family:'Inter',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; margin-bottom:-1px; }
-  .tab-btn:hover { color:var(--text); }
-  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
-  .tab-panel { display:none; padding:18px; }
-  .tab-panel.active { display:block; }
-  .info-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
-  .info-row:last-child { border-bottom:none; }
-  .info-label { color:var(--muted); font-weight:500; }
-  .info-val { color:var(--text); font-weight:600; text-align:right; }
-  .personal-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
-  .personal-item:last-child { border-bottom:none; }
-  .personal-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
-  .activo-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
-  .activo-item:last-child { border-bottom:none; }
-  .audit-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
-  .audit-item:last-child { border-bottom:none; }
-  .audit-icon { font-size:18px; flex-shrink:0; }
-  .audit-accion { font-weight:600; color:var(--text); }
-  .audit-detalle { color:var(--muted); font-size:12px; margin-top:2px; }
-  .audit-fecha { font-size:11px; color:var(--muted); margin-top:2px; }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos/detalle.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -110,7 +86,7 @@
         <p style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Sin personal asignado.</p>
       {% endif %}
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-        <button class="btn btn-primary" style="font-size:12px" onclick="document.getElementById('modal-personal').classList.add('open')">
+        <button class="btn btn-primary" style="font-size:12px" onclick="abrirModal('modal-personal')">
           + Asignar personal
         </button>
       </div>
@@ -139,7 +115,7 @@
         <p style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Sin activos asignados.</p>
       {% endif %}
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
-        <button class="btn btn-primary" style="font-size:12px" onclick="document.getElementById('modal-activo').classList.add('open')">
+        <button class="btn btn-primary" style="font-size:12px" onclick="abrirModal('modal-activo')">
           + Asignar activo
         </button>
       </div>
@@ -199,154 +175,24 @@
   </div>
 </div>
 
+{# ── Modales ─────────────────────────────────────────────── #}
 {% if es_admin %}
-<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
-    <h2>✏️ Editar proyecto</h2>
-    <form method="POST" action="{{ url_for('proyectos.editar', id=proyecto.IdProyecto) }}">
-      <div class="field"><label>Nombre *</label><input name="nombre" required value="{{ proyecto.Nombre }}"></div>
-      <div class="field"><label>Descripción</label><textarea name="descripcion" rows="3">{{ proyecto.Descripcion or '' }}</textarea></div>
-      <div class="grid-2">
-        <div class="field"><label>Fecha inicio *</label><input type="date" name="fecha_inicio" required value="{{ proyecto.FechaInicio.isoformat() }}"></div>
-        <div class="field"><label>Fecha término *</label><input type="date" name="fecha_termino" required value="{{ proyecto.FechaTermino.isoformat() }}"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Estatus</label>
-          <select name="estatus">{% for e in ESTATUS %}<option value="{{ e }}" {% if proyecto.Estatus == e %}selected{% endif %}>{{ e }}</option>{% endfor %}</select>
-        </div>
-        <div class="field"><label>Razón del cambio</label><input name="razon" placeholder="Opcional"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
-      </div>
-    </form>
-  </div>
-</div>
+  {% include "modales/modal-proyecto_detalle/_modal_editar.html" %}
 {% endif %}
+{% include "modales/modal-proyecto_detalle/_modal_personal.html" %}
+{% include "modales/modal-proyecto_detalle/_modal_activo.html" %}
 
-<div class="overlay" id="modal-personal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>👤 Asignar personal</h2>
-    <form method="POST" action="{{ url_for('proyectos.asignar_personal', id=proyecto.IdProyecto) }}">
-      <div class="field"><label>Usuario *</label>
-        <select name="usuario_id" required>
-          <option value="">— Seleccionar —</option>
-          {% for u in usuarios_disponibles %}{% if u.IdUsuario not in ids_asignados %}
-          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }} (@{{ u.NombreUsuario }})</option>
-          {% endif %}{% endfor %}
-        </select>
-      </div>
-      <div class="field"><label>Rol en el proyecto</label><input name="rol_proyecto" placeholder="Ej: Líder técnico, Instalador..."></div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-personal').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Asignar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="overlay" id="modal-activo" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
-    <h2>📦 Asignar activo</h2>
-    <form method="POST" action="{{ url_for('proyectos.asignar_activo', id=proyecto.IdProyecto) }}">
-      <div class="grid-2">
-        <div class="field"><label>Tipo de activo *</label>
-          <select name="tipo_activo" required onchange="filtrarActivos(this.value)">
-            <option value="">— Seleccionar —</option>
-            {% if electronicos %}<option value="electronico">💻 Equipo TI</option>{% endif %}
-            {% if vehiculos %}<option value="vehiculo">🚗 Vehículo</option>{% endif %}
-            {% if herramientas %}<option value="herramienta">🔧 Herramienta</option>{% endif %}
-          </select>
-        </div>
-        <div class="field"><label>Activo *</label>
-          <select name="activo_id" id="select-activo" required disabled>
-            <option value="">— Primero selecciona tipo —</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Estado inicial</label><input name="estado_inicial" placeholder="Ej: bueno, regular..."></div>
-        <div class="field"><label>Observaciones</label><input name="observaciones" placeholder="Notas adicionales..."></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-activo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Asignar activo</button>
-      </div>
-    </form>
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-function showTab(name, btn) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
-}
-
-function abrirEditar() {
-  document.getElementById('modal-editar').classList.add('open');
-}
-
-function eliminarProyecto(nombre, url) {
-  Swal.fire({
-    title: '¿Eliminar proyecto?',
-    html: `El proyecto <strong>${nombre}</strong> y todos sus datos serán eliminados permanentemente.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: '🗑️ Sí, eliminar',
-    cancelButtonText: 'Cancelar',
-    reverseButtons: true,
-    focusCancel: true,
-  }).then(result => {
-    if (result.isConfirmed) {
-      const form = document.getElementById('form-eliminar');
-      form.action = url;
-      form.submit();
-    }
-  });
-}
-
-function quitarPersonal(nombre, asignacionId) {
-  Swal.fire({
-    title: '¿Quitar del proyecto?',
-    html: `<strong>${nombre}</strong> será removido de este proyecto.`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Sí, quitar',
-    cancelButtonText: 'Cancelar',
-    reverseButtons: true,
-    focusCancel: true,
-  }).then(result => {
-    if (result.isConfirmed) {
-      document.getElementById(`form-quitar-${asignacionId}`).submit();
-    }
-  });
-}
-
-const activos = {
-  electronico: [{% for e in electronicos %}{ id: {{ e.IdElectronico }}, nombre: "{{ e.Nombre }} ({{ e.Tipo }})" }{% if not loop.last %},{% endif %}{% endfor %}],
-  vehiculo:    [{% for v in vehiculos %}{ id: {{ v.IdVehiculo }}, nombre: "{{ v.Marca }} {{ v.Modelo }} - {{ v.Placa }}" }{% if not loop.last %},{% endif %}{% endfor %}],
-  herramienta: [{% for h in herramientas %}{ id: {{ h.IdHerramienta }}, nombre: "{{ h.Nombre }}" }{% if not loop.last %},{% endif %}{% endfor %}],
-};
-
-function filtrarActivos(tipo) {
-  const sel = document.getElementById('select-activo');
-  sel.innerHTML = '<option value="">— Seleccionar activo —</option>';
-  if (!tipo || !activos[tipo]) { sel.disabled = true; return; }
-  activos[tipo].forEach(a => {
-    const opt = document.createElement('option');
-    opt.value = a.id; opt.textContent = a.nombre;
-    sel.appendChild(opt);
-  });
-  sel.disabled = false;
-}
+<script src="{{ url_for('static', filename='js/proyectos/proyectos.js') }}"></script>
+<script> 
+  // Datos de activos para filtrarActivos() — requieren Jinja, quedan inline.
+  const activos = {
+    electronico: [{% for e in electronicos %}{ id: {{ e.IdElectronico }}, nombre: "{{ e.Nombre }} ({{ e.Tipo }})" }{% if not loop.last %},{% endif %}{% endfor %}],
+    vehiculo:    [{% for v in vehiculos %}{ id: {{ v.IdVehiculo }}, nombre: "{{ v.Marca }} {{ v.Modelo }} - {{ v.Placa }}" }{% if not loop.last %},{% endif %}{% endfor %}],
+    herramienta: [{% for h in herramientas %}{ id: {{ h.IdHerramienta }}, nombre: "{{ h.Nombre }}" }{% if not loop.last %},{% endif %}{% endfor %}],
+  };
 </script>
+<script src="{{ url_for('static', filename='js/proyectos/detalle.js') }}"></script>
 {% endblock %}

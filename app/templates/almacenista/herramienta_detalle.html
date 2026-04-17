@@ -1,6 +1,9 @@
 <!-- app/templates/almacenista/herramienta_detalle.html -->
 {% extends "base.html" %}
-{% block title %}{{ herramienta.Nombre }}{% endblock %}
+{% block title %}{{ herramienta.Nombre }}{% endblock %}]
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/herramienta_detalle.css') }}">
+{% endblock %}
 
 {% block content %}
 <div class="topbar">
@@ -191,8 +194,8 @@
   {% endif %}
 </div>
 
-
 <!-- ══ LIGHTBOX — sin style inline, el CSS lo controla ══════ -->
+
 <div id="lightbox" onclick="cerrarLightbox()">
 
   <button onclick="cerrarLightbox()" style="
@@ -225,290 +228,13 @@
   </div>
 </div>
 
-
-<!-- ══ Modales ══════════════════════════════════════════════ -->
-
-<!-- Modal: Asignar -->
-<div class="overlay" id="modal-asignar" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>👤 Asignar herramienta</h2>
-    <form method="POST" action="{{ url_for('almacenista.herramienta_asignar', id=herramienta.IdHerramienta) }}">
-      <div class="field">
-        <label>Asignar a *</label>
-        <select name="usuario_id" required>
-          <option value="">— Seleccionar —</option>
-          {% for u in usuarios %}
-          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field"><label>Fecha de asignación</label>
-        <input name="fecha_asignacion" type="date" value="{{ today }}">
-      </div>
-      <div class="field"><label>Observaciones</label>
-        <textarea name="observaciones"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Asignar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Modal: Devolver -->
-<div class="overlay" id="modal-devolver" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>📥 Registrar devolución</h2>
-    {% if asignacion %}
-    <form method="POST" action="{{ url_for('almacenista.herramienta_devolver', id=asignacion.IdAsignacion) }}">
-      <div class="field"><label>Fecha de devolución</label>
-        <input name="fecha_devolucion" type="date" value="{{ today }}">
-      </div>
-      <div class="field"><label>Estado final de la herramienta</label>
-        <select name="estado_final">
-          <option value="disponible">Disponible (buen estado)</option>
-          <option value="dañado">Dañado</option>
-          <option value="perdido">Perdido</option>
-          <option value="mantenimiento">Requiere mantenimiento</option>
-        </select>
-      </div>
-      <div class="field"><label>Observaciones</label>
-        <textarea name="observaciones"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-devolver').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Registrar</button>
-      </div>
-    </form>
-    {% endif %}
-  </div>
-</div>
-
-<!-- Modal: Subir evidencia -->
-<div class="overlay" id="modal-evidencia" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>🖼️ Subir evidencia</h2>
-    <form method="POST"
-          action="{{ url_for('almacenista.subir_evidencia', id=herramienta.IdHerramienta) }}"
-          enctype="multipart/form-data">
-      <div class="field"><label>Tipo de evidencia</label>
-        <select name="tipo">
-          <option value="daño">Daño</option>
-          <option value="faltante">Faltante</option>
-          <option value="entrega">Entrega</option>
-          <option value="devolucion">Devolución</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Imagen (PNG o JPG) *</label>
-        <input type="file" name="archivo" accept=".png,.jpg,.jpeg" required
-               id="input-archivo" onchange="previewAntes(this)"
-               style="color:var(--text);font-size:13px">
-      </div>
-      <div id="preview-wrap" style="display:none;margin-top:8px;text-align:center">
-        <img id="preview-img" src="" alt="preview"
-             style="max-width:100%;max-height:200px;border-radius:8px;
-                    border:1px solid var(--border);object-fit:contain">
-        <div id="preview-nombre" style="font-size:11px;color:var(--muted);margin-top:4px"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-evidencia').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Subir</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Modal: Reporte de daño -->
-<div class="overlay" id="modal-reporte" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>⚠️ Reporte de daño / faltante</h2>
-    <form method="POST"
-          action="{{ url_for('almacenista.reporte_danio', id=herramienta.IdHerramienta) }}"
-          enctype="multipart/form-data">
-      <div class="field"><label>Tipo de reporte</label>
-        <select name="tipo">
-          <option value="daño">Daño</option>
-          <option value="faltante">Faltante</option>
-          <option value="perdido">Perdido</option>
-        </select>
-      </div>
-      <div class="field"><label>Nombre del material *</label>
-        <input name="nombre_material" value="{{ herramienta.Nombre }}" required>
-      </div>
-      <div class="field"><label>Característica del daño *</label>
-        <textarea name="caracteristica" placeholder="Describe el daño o faltante..." required></textarea>
-      </div>
-      <div class="field"><label>Razón *</label>
-        <textarea name="razon" placeholder="¿Por qué ocurrió?" required></textarea>
-      </div>
-      <div class="field"><label>Usuario responsable</label>
-        <select name="responsable_id">
-          <option value="">— Sin responsable —</option>
-          {% for u in usuarios %}
-          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Adjuntar documento / evidencia (opcional)</label>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;overflow-x:auto">
-          PDF, Word, Excel, PowerPoint · o imagen PNG/JPG
-        </div>
-        <input type="file" name="archivo"
-               accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
-               onchange="previewAdjunto(this)"
-               style="color:var(--text);font-size:13px">
-      </div>
-      <div id="adjunto-preview" style="display:none;margin-top:8px;
-           background:var(--surface2);border-radius:8px;padding:12px;
-           align-items:center;gap:10px">
-        <span id="adjunto-icono" style="font-size:28px"></span>
-        <div>
-          <div id="adjunto-nombre" style="font-size:13px;font-weight:600"></div>
-          <div id="adjunto-size"   style="font-size:11px;color:var(--muted)"></div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-reporte').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary"
-                style="background:linear-gradient(135deg,var(--red),#fb923c)">Guardar reporte</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-{% endblock %}
-
-{% block extra_head %}
-<style>
-  /* ── Tabs ── */
-  .tab-btn {
-    padding:10px 20px; background:transparent; border:none;
-    border-bottom:2px solid transparent; color:var(--muted);
-    font-family:'DM Sans',sans-serif; font-size:13px;
-    cursor:pointer; transition:all .18s; margin-bottom:-1px;
-  }
-  .tab-btn:hover  { color:var(--text); }
-  .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
-
-  /* ── Tarjetas evidencia ── */
-  .ev-card {
-    background:var(--card); border:1px solid var(--border);
-    border-radius:10px; overflow:hidden; cursor:pointer;
-    transition:transform .15s, box-shadow .15s;
-  }
-  .ev-card:hover {
-    transform:translateY(-2px);
-    box-shadow:0 8px 24px rgba(0,0,0,.12);
-    border-color:var(--accent);
-  }
-  .ev-img-wrap { position:relative; height:120px; overflow:hidden; background:var(--bg); }
-  .ev-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
-  .ev-card:hover .ev-img-wrap img { transform:scale(1.05); }
-  .ev-overlay {
-    position:absolute; inset:0;
-    background:rgba(0,0,0,.35);
-    display:flex; align-items:center; justify-content:center;
-    opacity:0; transition:opacity .2s;
-  }
-  .ev-card:hover .ev-overlay { opacity:1; }
-  .ev-info { padding:8px 8px 4px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
-
-  /* ── Lightbox — TODO el control aquí, sin style inline en el div ── */
-  #lightbox {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    background: rgba(0,0,0,.88);
-    backdrop-filter: blur(4px);
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    padding: 24px;
-  }
-  #lightbox.open { display: flex; }
-</style>
+<!-- ══════════════════════════════════════════════ Modales ══════════════════════════════════════════════ -->
+{% include "almacenista/modales/herramienta_detalle/_modal_subir_evidencia.html" %}
+{% include "almacenista/modales/herramienta_detalle/_modal_reporte_danio.html" %}
+{% include "almacenista/modales/herramienta_detalle/_modal_asignar.html" %}
+{% include "almacenista/modales/herramienta_detalle/_modal_devolver.html" %}
 {% endblock %}
 
 {% block scripts %}
-<script>
-// ── Tabs ─────────────────────────────────────────────────────
-function showTab(name, btn) {
-  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).style.display = 'block';
-  btn.classList.add('active');
-}
-
-const ICONOS_MIME = {
-  'application/pdf': '📄',
-  'application/msword': '📝',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '📝',
-  'application/vnd.ms-excel': '📊',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '📊',
-  'text/plain': '📃', 'text/csv': '📊',
-};
-const EXTS_IMAGEN = new Set(['png','jpg','jpeg','gif','webp']);
-
-function previewAdjunto(input) {
-  const panel = document.getElementById('adjunto-preview');
-  if (!input.files || !input.files[0]) { panel.style.display = 'none'; return; }
-  const file = input.files[0];
-  const ext  = file.name.split('.').pop().toLowerCase();
-  const size = file.size > 1024*1024
-    ? (file.size/(1024*1024)).toFixed(1)+' MB'
-    : (file.size/1024).toFixed(0)+' KB';
-  document.getElementById('adjunto-icono').textContent  = EXTS_IMAGEN.has(ext) ? '🖼️' : (ICONOS_MIME[file.type] || '📎');
-  document.getElementById('adjunto-nombre').textContent = file.name;
-  document.getElementById('adjunto-size').textContent   = size;
-  panel.style.display = 'flex';
-}
-// ── Preview antes de subir ────────────────────────────────────
-function previewAntes(input) {
-  const wrap = document.getElementById('preview-wrap');
-  const img  = document.getElementById('preview-img');
-  const nom  = document.getElementById('preview-nombre');
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      img.src = e.target.result;
-      nom.textContent = input.files[0].name;
-      wrap.style.display = 'block';
-    };
-    reader.readAsDataURL(input.files[0]);
-  } else {
-    wrap.style.display = 'none';
-  }
-}
-
-// ── Lightbox ──────────────────────────────────────────────────
-function abrirLightbox(url, tipo, fecha, nombre) {
-  document.getElementById('lb-img').src               = url;
-  document.getElementById('lb-tipo').textContent      = tipo;
-  document.getElementById('lb-fecha').textContent     = fecha;
-  document.getElementById('lb-nombre').textContent    = nombre;
-  document.getElementById('lb-download').href         = url;
-  document.getElementById('lb-download').download     = nombre;
-  document.getElementById('lightbox').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function cerrarLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') cerrarLightbox();
-});
-</script>
+<script src="{{ url_for('static', filename='js/almacenista/almacenista.js') }}"></script>
 {% endblock %}

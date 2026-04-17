@@ -1,0 +1,26 @@
+<div class="overlay" id="modal-asignar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="asignar-titulo">👤 Asignar herramienta</h2>
+    <form method="POST" id="form-asignar">
+      <div class="field"><label>Asignar a *</label>
+        <select name="usuario_id" required>
+          <option value="">— Seleccionar usuario —</option>
+          {% for u in usuarios %}
+          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field"><label>Fecha de asignación</label>
+        <input name="fecha_asignacion" type="date">
+      </div>
+      <div class="field"><label>Observaciones</label>
+        <textarea name="observaciones" placeholder="Notas opcionales"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel"
+                onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Asignar</button>
+      </div>
+    </form>
+  </div>
+</div>

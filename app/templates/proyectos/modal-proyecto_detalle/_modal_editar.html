@@ -1,0 +1,47 @@
+{#
+  app/templates/modales/modal-proyecto_detalle/_modal_editar.html
+
+  Modal de edición del proyecto.
+  Solo se renderiza si es_admin.
+  Variables requeridas del contexto padre:
+    - proyecto: objeto con IdProyecto, Nombre, Descripcion, FechaInicio,
+                FechaTermino, Estatus
+    - ESTATUS:  lista de estatus válidos
+#}
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+    <h2>✏️ Editar proyecto</h2>
+    <form method="POST" action="{{ url_for('proyectos.editar', id=proyecto.IdProyecto) }}">
+      <div class="field"><label>Nombre *</label>
+        <input name="nombre" required value="{{ proyecto.Nombre }}">
+      </div>
+      <div class="field"><label>Descripción</label>
+        <textarea name="descripcion" rows="3">{{ proyecto.Descripcion or '' }}</textarea>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha inicio *</label>
+          <input type="date" name="fecha_inicio" required value="{{ proyecto.FechaInicio.isoformat() }}">
+        </div>
+        <div class="field"><label>Fecha término *</label>
+          <input type="date" name="fecha_termino" required value="{{ proyecto.FechaTermino.isoformat() }}">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Estatus</label>
+          <select name="estatus">
+            {% for e in ESTATUS %}
+            <option value="{{ e }}" {% if proyecto.Estatus == e %}selected{% endif %}>{{ e }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field"><label>Razón del cambio</label>
+          <input name="razon" placeholder="Opcional">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>

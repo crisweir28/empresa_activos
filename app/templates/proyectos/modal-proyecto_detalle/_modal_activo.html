@@ -1,0 +1,41 @@
+v{#
+  app/templates/modales/modal-proyecto_detalle/_modal_activo.html
+
+  Modal de asignación de activo al proyecto.
+  Variables requeridas del contexto padre:
+    - proyecto: objeto con IdProyecto
+    - electronicos, vehiculos, herramientas: listas para saber qué tipos mostrar
+
+  NOTA: El select de activos se llena dinámicamente con filtrarActivos(tipo),
+  que usa la variable global `activos` definida en el template padre.
+#}
+<div class="overlay" id="modal-activo" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:540px">
+    <h2>📦 Asignar activo</h2>
+    <form method="POST" action="{{ url_for('proyectos.asignar_activo', id=proyecto.IdProyecto) }}">
+      <div class="grid-2">
+        <div class="field"><label>Tipo de activo *</label>
+          <select name="tipo_activo" required onchange="filtrarActivos(this.value)">
+            <option value="">— Seleccionar —</option>
+            {% if electronicos %}<option value="electronico">💻 Equipo TI</option>{% endif %}
+            {% if vehiculos %}<option value="vehiculo">🚗 Vehículo</option>{% endif %}
+            {% if herramientas %}<option value="herramienta">🔧 Herramienta</option>{% endif %}
+          </select>
+        </div>
+        <div class="field"><label>Activo *</label>
+          <select name="activo_id" id="select-activo" required disabled>
+            <option value="">— Primero selecciona tipo —</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Estado inicial</label><input name="estado_inicial" placeholder="Ej: bueno, regular..."></div>
+        <div class="field"><label>Observaciones</label><input name="observaciones" placeholder="Notas adicionales..."></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-activo')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Asignar activo</button>
+      </div>
+    </form>
+  </div>
+</div>
