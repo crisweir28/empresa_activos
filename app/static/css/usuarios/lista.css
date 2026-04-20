@@ -1,0 +1,25 @@
+
+    .field input.input-ok {
+        border-color: var(--green) !important;
+    }
+
+    .field input.input-err {
+        border-color: var(--red) !important;
+    }
+
+    .field-msg {
+        font-size: 11px;
+        margin-top: 4px;
+        min-height: 16px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .field-msg.ok {
+        color: var(--green);
+    }
+
+    .field-msg.err {
+        color: var(--red);
+    }

@@ -1,0 +1,93 @@
+<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <h2>👤 Nuevo usuario</h2>
+        <form method="POST" action="{{ url_for('usuarios.nuevo') }}" id="form-nuevo-usuario">
+            <div class="grid-2">
+                <div class="field">
+                    <label>Nombre *</label>
+                    <input name="nombre" required placeholder="Juan"
+                        oninput="soloLetras(this); validarCampo(this,'nombre')" onblur="validarCampo(this,'nombre')">
+                    <div class="field-msg" id="msg-nombre"></div>
+                </div>
+                <div class="field">
+                    <label>Apellido paterno *</label>
+                    <input name="apellido_paterno" required placeholder="García"
+                        oninput="soloLetras(this); validarCampo(this,'ap')" onblur="validarCampo(this,'ap')">
+                    <div class="field-msg" id="msg-ap"></div>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <label>Apellido materno *</label>
+                    <input name="apellido_materno" required placeholder="López"
+                        oninput="soloLetras(this); validarCampo(this,'am')" onblur="validarCampo(this,'am')">
+                    <div class="field-msg" id="msg-am"></div>
+                </div>
+                <div class="field">
+                    <label>Teléfono *</label>
+                    <input name="telefono" required placeholder="5550000000"
+                        oninput="soloNumeros(this); validarCampo(this,'tel')" onblur="validarCampo(this,'tel')">
+                    <div class="field-msg" id="msg-tel"></div>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <label>Usuario *</label>
+                    <input name="username" required placeholder="jgarcia" onblur="validarCampo(this,'user')"
+                        oninput="validarCampo(this,'user')">
+                    <div class="field-msg" id="msg-user"></div>
+                </div>
+                <div class="field">
+                    <label>Correo *</label>
+                    <input name="correo" type="email" required placeholder="juan@empresa.mx"
+                        onblur="validarCampo(this,'correo')" oninput="validarCampo(this,'correo')">
+                    <div class="field-msg" id="msg-correo"></div>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="field">
+                    <label>Contraseña *</label>
+                    <input name="password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres"
+                        onblur="validarCampo(this,'pass')" oninput="validarCampo(this,'pass')">
+                    <div class="field-msg" id="msg-pass"></div>
+                </div>
+                {% if current_user.IdRol == 1 %}
+                <div class="field"><label>Área *</label>
+                    <select name="departamento_id" required>
+                        <option value="">— Seleccionar —</option>
+                        {% for d in departamentos %}
+                        <option value="{{ d.id }}">
+                            {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% else %}
+                <div class="field"><label>Área</label>
+                    <input type="text" value="{{ current_user.area_nombre }}" disabled
+                        style="background:var(--surface);color:var(--muted)">
+                    <input type="hidden" name="departamento_id" value="{{ current_user.IdDepartamento }}">
+                </div>
+                {% endif %}
+            </div>
+            {% if current_user.IdRol == 1 %}
+            <div class="grid-2">
+                <div class="field"><label>Tipo *</label>
+                    <select name="tipo_usuario" required>
+                        <option value="empleado">👤 Empleado</option>
+                        <option value="administrador">⭐ Administrador del área</option>
+                    </select>
+                </div>
+            </div>
+            {% else %}
+            <input type="hidden" name="tipo_usuario" value="empleado">
+            {% endif %}
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel"
+                    onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="submitValidado('form-nuevo-usuario')">Crear
+                    usuario</button>
+            </div>
+        </form>
+    </div>
+</div>
