@@ -13,7 +13,7 @@ departamentos_bp = Blueprint("departamentos", __name__)
 def lista():
     # Usar vista — ya incluye total_activos y valor_total
     deptos = VDepartamento.query.order_by(VDepartamento.nombre).all()
-    return render_template("departamentos.html", departamentos=deptos)
+    return render_template("departamentos/lista.html", departamentos=deptos)
 
 
 @departamentos_bp.route("/nuevo", methods=["POST"])

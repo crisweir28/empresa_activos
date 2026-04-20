@@ -336,12 +336,12 @@ def login():
 
         if not user:
             flash("Usuario o contrasena incorrectos.", "error")
-            return render_template("login.html")
+            return render_template("auth/login.html")
 
         # ── Verificar si está bloqueado ──────────────────────
         bloqueado = _esta_bloqueado(user)
         if bloqueado:
-            return render_template("login.html",
+            return render_template("auth/login.html",
                                    bloqueado=True,
                                    username=username)
 
@@ -358,12 +358,12 @@ def login():
 
         bloqueado = _esta_bloqueado(user)
         if bloqueado:
-            return render_template("login.html",
+            return render_template("auth/login.html",
                            bloqueado=True,
                            username=username)
         flash("Usuario o contrasena incorrectos.")
 
-    return render_template("login.html")
+    return render_template("auth/login.html")
 
 
 # ─── Solicitar desbloqueo (sin login) ────────────────────────
@@ -435,7 +435,7 @@ def sugerir_cambio():
             db.session.rollback()
         return redirect(url_for("activos.dashboard"))
 
-    return render_template("sugerir_cambio.html")
+    return render_template("auth/sugerir_cambio.html")
 
 
 @auth_bp.route("/cambiar-password", methods=["GET", "POST"])
@@ -466,7 +466,7 @@ def cambiar_password():
                 db.session.rollback()
                 error = f"Error al guardar: {str(e)}"
 
-    return render_template("cambiar_password.html", error=error)
+    return render_template("auth/cambiar_password.html", error=error)
 
 
 # ─── Recuperación de contraseña ───────────────────────────────
@@ -522,7 +522,7 @@ def recuperar():
                 traceback.print_exc()
                 error = f"Error al procesar: {str(e)}"
 
-    return render_template("recuperar.html", enviado=enviado, error=error, email_enviado=email_enviado)
+    return render_template("auth/recuperar.html", enviado=enviado, error=error, email_enviado=email_enviado)
 
 
 @auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
@@ -588,7 +588,7 @@ def reset_password(token):
                 db.session.rollback()
                 error = f"Error: {str(e)}"
 
-    return render_template("reset_password.html", token=token, error=error, expirado=expirado)
+    return render_template("auth/reset_password.html", token=token, error=error, expirado=expirado)
 
 
 # ─── APIs ─────────────────────────────────────────────────────

@@ -154,7 +154,7 @@ def lista():
 
     tema = DEPTO_TEMAS.get(current_user.rol, DEPTO_TEMAS["ti"])
 
-    return render_template("activos.html",
+    return render_template("activos/lista.html",
         activos       = activos,
         departamentos = _get_departamentos(),
         page          = page,
