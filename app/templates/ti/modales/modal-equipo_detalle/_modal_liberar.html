@@ -1,0 +1,20 @@
+{#
+  app/templates/modales/modal-equipo_detalle/_modal_liberar.html
+
+  Variables requeridas:
+    - equipo: objeto con IdElectronico
+#}
+<div class="overlay" id="modal-liberar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>📦 Liberar equipo</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">
+      El equipo regresará al almacén y quedará disponible para ser asignado a otro usuario.
+    </p>
+    <form method="POST" action="{{ url_for('ti.equipo_liberar', id=equipo.IdElectronico) }}">
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-liberar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Confirmar</button>
+      </div>
+    </form>
+  </div>
+</div>

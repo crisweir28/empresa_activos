@@ -1,0 +1,47 @@
+{#
+  app/templates/modales/modal-equipo_detalle/_modal_mant_nuevo.html
+
+  Variables requeridas:
+    - equipo: objeto con IdElectronico
+    - today:  string de fecha de hoy (YYYY-MM-DD)
+#}
+<div class="overlay" id="modal-mant" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>🔧 Registrar mantenimiento</h2>
+    <form method="POST" action="{{ url_for('ti.mantenimiento_nuevo', id=equipo.IdElectronico) }}">
+      <div class="grid-2">
+        <div class="field"><label>Tipo *</label>
+          <select name="tipo" required>
+            <option value="previo">Mantenimiento previo</option>
+            <option value="correctivo">Correctivo</option>
+          </select>
+        </div>
+        <div class="field"><label>Técnico</label>
+          <input name="tecnico" placeholder="Nombre del técnico">
+        </div>
+      </div>
+      <div class="field"><label>Diagnóstico *</label>
+        <textarea name="diagnostico" required
+                  placeholder="Describe el problema o el mantenimiento a realizar..."></textarea>
+      </div>
+      <div class="field"><label>Descripción del trabajo</label>
+        <textarea name="descripcion" placeholder="Trabajo a realizar..."></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Fecha inicio *</label>
+          <input name="fecha_inicio" type="date" value="{{ today }}" required>
+        </div>
+        <div class="field"><label>Fecha término</label>
+          <input name="fecha_termino" type="date">
+        </div>
+      </div>
+      <div class="field"><label>Costo ($)</label>
+        <input name="costo" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-mant')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

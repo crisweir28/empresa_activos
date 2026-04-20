@@ -1,0 +1,54 @@
+{#
+  app/templates/ti/modales/modal-equipos/_modal_equipo_editar.html
+
+  Modal de edición de equipo.
+  El form action se asigna por JS con editarEquipo(...).
+  JS requerido: ti/equipos.js (editarEquipo, cerrarModal)
+#}
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✏️ Editar equipo</h2>
+    <form method="POST" id="form-editar">
+      <div class="grid-2">
+        <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
+        <div class="field"><label>Tipo</label>
+          <select id="e-tipo" name="tipo_equipo">
+            <option value="laptop">💻 Laptop</option>
+            <option value="desktop">🖥️ Desktop</option>
+            <option value="monitor">🖵 Monitor</option>
+            <option value="celular">📱 Celular</option>
+            <option value="red">🌐 Red</option>
+            <option value="otro">📦 Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Marca</label><input id="e-marca" name="marca"></div>
+        <div class="field"><label>Modelo</label><input id="e-modelo" name="modelo"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>N° Serie</label><input id="e-serie" name="numero_serie"></div>
+        <div class="field"><label>Condición</label>
+          <select id="e-condicion" name="condicion">
+            <option value="bueno">Bueno</option>
+            <option value="regular">Regular</option>
+            <option value="malo">Malo</option>
+            <option value="dañado">Dañado</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Costo ($)</label>
+          <input id="e-costo" name="costo" type="number" step="0.01">
+        </div>
+        <div class="field"><label>Fecha adquisición</label>
+          <input id="e-fecha" name="fecha_adquisicion" type="date">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

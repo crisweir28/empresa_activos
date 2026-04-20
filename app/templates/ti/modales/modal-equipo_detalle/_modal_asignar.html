@@ -1,0 +1,36 @@
+{#
+  app/templates/modales/modal-equipo_detalle/_modal_asignar.html
+
+  Variables requeridas:
+    - equipo: objeto con IdElectronico
+    - usuarios: lista con IdUsuario, Nombre, ApellidoPaterno
+    - proyectos_activos: lista con IdProyecto, Nombre, Estatus
+#}
+<div class="overlay" id="modal-asignar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>👤 Asignar equipo</h2>
+    <form method="POST" action="{{ url_for('ti.equipo_asignar', id=equipo.IdElectronico) }}">
+      <div class="field"><label>Asignar a *</label>
+        <select name="usuario_id" required>
+          <option value="">— Seleccionar usuario —</option>
+          {% for u in usuarios %}
+          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Ligar a proyecto <span style="color:var(--muted);font-size:11px">(opcional)</span></label>
+        <select name="proyecto_id">
+          <option value="">— Sin proyecto —</option>
+          {% for p in proyectos_activos %}
+          <option value="{{ p.IdProyecto }}">{{ p.Nombre }} ({{ p.Estatus }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-asignar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Asignar</button>
+      </div>
+    </form>
+  </div>
+</div>

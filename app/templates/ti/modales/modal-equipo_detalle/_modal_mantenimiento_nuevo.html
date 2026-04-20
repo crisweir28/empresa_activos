@@ -1,0 +1,26 @@
+{#
+  app/templates/modales/modal-equipo_detalle/_modal_mant_completar.html
+
+  El form action se asigna por JS con completarMant(id).
+  Variables requeridas:
+    - today: string de fecha de hoy (YYYY-MM-DD)
+
+  JS requerido: ti.js (completarMant, cerrarModal)
+#}
+<div class="overlay" id="modal-completar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>✅ Completar mantenimiento</h2>
+    <form method="POST" id="form-completar">
+      <div class="field"><label>Fecha de término *</label>
+        <input name="fecha_termino" type="date" value="{{ today }}" required>
+      </div>
+      <div class="field"><label>Descripción del trabajo realizado</label>
+        <textarea name="descripcion"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-completar')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
