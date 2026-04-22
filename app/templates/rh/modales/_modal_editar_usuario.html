@@ -1,8 +1,7 @@
-<!--templates/usuarios/modales/lista/_modal_editar_usuario.html-->
+<!--templates/rh/modales/_modal_editar_usuario.html-->
 
 {# Admin RH puede cambiar el área pero NO el tipo (el tipo solo lo cambia super admin) #}
 {% set es_rh_modal_e = (current_user.IdRol != 1 and current_user.rol == 'rh' and current_user.es_administrador_area) %}
-{% set puede_cambiar_area_e = (current_user.IdRol == 1 or es_rh_modal_e) %}
 {% set puede_cambiar_tipo_e = (current_user.IdRol == 1) %}
 
 <!-- Modal Editar Usuario -->
@@ -53,7 +52,6 @@
                     <div class="field-msg" id="msg-e-correo"></div>
                 </div>
             </div>
-            {% if puede_cambiar_area_e %}
             <div class="grid-2">
                 <div class="field"><label>Área</label>
                     <select id="e-depto" name="departamento_id">
@@ -77,7 +75,6 @@
                 {% endif %}
             </div>
             <input type="hidden" id="e-rol" name="rol_id">
-            {% endif %}
             <div class="field"><label>Estatus</label>
                 <select id="e-estatus" name="estatus">
                     <option value="1">Activo</option>
@@ -92,20 +89,6 @@
                     onblur="validarCampo(this,'e-pass')">
                 <div class="field-msg" id="msg-e-pass"></div>
             </div>
-            {% if current_user.IdRol == 1 %}
-            <div id="panel-bloqueado" style="display:none;background:#fff5f5;border:1px solid #fca5a5;
-                  border-radius:8px;padding:12px 16px;margin-top:8px;
-                  align-items:center;justify-content:space-between;gap:12px">
-                <div style="font-size:13px;color:#b91c1c">
-                    🔒 Esta cuenta está <strong>bloqueada</strong> por múltiples intentos fallidos.
-                </div>
-                <button type="button" class="btn-sm"
-                    style="background:#f59e0b;color:#fff;border-color:#f59e0b;white-space:nowrap;flex-shrink:0"
-                    onclick="desbloquearConfirm()">
-                    🔓 Desbloquear
-                </button>
-            </div>
-            {% endif %}
             <div class="modal-footer">
                 <button type="button" class="btn-cancel"
                     onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>

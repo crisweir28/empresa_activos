@@ -1,6 +1,6 @@
-<!-- app/templates/usuarios/lista.html -->
+<!-- app/templates/rh/personal.html -->
 {% extends "base.html" %}
-{% block title %}Gestión de Usuarios{% endblock %}
+{% block title %}Personal Corporativo{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios/lista.css') }}">
@@ -8,57 +8,51 @@
 
 {% block content %}
 
-{# Los admins de RH tienen permisos extra sobre usuarios de cualquier área #}
+{# Admin RH gestiona usuarios de todas las áreas (excepto super admins) #}
 {% set es_rh = (current_user.IdRol != 1 and current_user.rol == 'rh' and current_user.es_administrador_area) %}
-{% set vista_global = (current_user.IdRol == 1 or es_rh) %}
 
 <div class="topbar">
     <div>
-        <div class="page-title">👥 Gestión de Usuarios</div>
+        <div class="page-title">👥 Personal Corporativo</div>
         <div class="page-sub">
             {% if current_user.IdRol == 1 %}
-            Administración de cuentas y áreas del sistema
-            {% elif es_rh %}
-            Gestión de personal de todas las áreas
+            Administración de cuentas de todas las áreas
             {% else %}
-            Usuarios de {{ current_user.area_nombre }}
+            Gestión de personal de todas las áreas del sistema
             {% endif %}
         </div>
     </div>
-    {% if current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'crear')) %}
-    <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
-        + Nuevo usuario
+    <button class="btn btn-primary" onclick="abrirModalNuevo()">
+    + Nuevo usuario
     </button>
-    {% endif %}
 </div>
 
-{% if vista_global %}
+{# Filtros de área y tipo #}
 <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
-    <a href="{{ url_for('usuarios.lista') }}"
+    <a href="{{ url_for('rh.personal') }}"
         class="btn-sm {% if not area_filtro and not tipo_filtro %}active{% endif %}"
         style="{% if not area_filtro and not tipo_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">
         Todos
     </a>
     {% for d in departamentos %}
-    <a href="{{ url_for('usuarios.lista', area=d.id) }}"
+    <a href="{{ url_for('rh.personal', area=d.id) }}"
         class="btn-sm {% if area_filtro|string == d.id|string %}active{% endif %}"
         style="{% if area_filtro|string == d.id|string %}border-color:var(--accent);color:var(--accent){% endif %}">
         {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
     </a>
     {% endfor %}
     <span style="color:var(--border)">|</span>
-    <a href="{{ url_for('usuarios.lista', tipo='administrador') }}"
+    <a href="{{ url_for('rh.personal', tipo='administrador') }}"
         class="btn-sm {% if tipo_filtro == 'administrador' %}active{% endif %}"
         style="{% if tipo_filtro == 'administrador' %}border-color:var(--accent);color:var(--accent){% endif %}">
         ⭐ Administradores
     </a>
-    <a href="{{ url_for('usuarios.lista', tipo='empleado') }}"
+    <a href="{{ url_for('rh.personal', tipo='empleado') }}"
         class="btn-sm {% if tipo_filtro == 'empleado' %}active{% endif %}"
         style="{% if tipo_filtro == 'empleado' %}border-color:var(--accent);color:var(--accent){% endif %}">
         👤 Empleados
     </a>
 </div>
-{% endif %}
 
 <div class="panel">
     {% if usuarios %}
@@ -69,7 +63,7 @@
                     <th>Usuario</th>
                     <th>Nombre completo</th>
                     <th>Correo</th>
-                    {% if vista_global %}<th>Área</th>{% endif %}
+                    <th>Área</th>
                     <th>Tipo</th>
                     <th>Estatus</th>
                     <th>Acciones</th>
@@ -106,7 +100,6 @@
                         {% if u.ApellidoMaterno %} {{ u.ApellidoMaterno }}{% endif %}
                     </td>
                     <td style="color:var(--muted);font-size:12px">{{ u.Correo }}</td>
-                    {% if vista_global %}
                     <td>
                         {% if u.departamento_obj %}
                         <span style="font-size:13px">
@@ -119,7 +112,6 @@
                         <span style="color:var(--muted);font-size:12px">Sin área</span>
                         {% endif %}
                     </td>
-                    {% endif %}
                     <td>
                         {% if u.TipoUsuario == 'administrador' %}
                         <span class="badge" style="background:#dbeafe;color:#1d4ed8">⭐ Administrador</span>
@@ -142,21 +134,21 @@
                             {% set bloqueado_para_rh = (es_rh and (u.IdRol == 1 or u.TipoUsuario == 'administrador')) %}
 
                             {# Botón Permisos (individuales) #}
-                            {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'editar'))) %}
+                            {% if not bloqueado_para_rh %}
                             <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" class="btn-sm"
                                 title="Ver permisos">🔐 Permisos</a>
                             {% endif %}
 
                             {# Botón Editar #}
-                            {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'editar'))) %}
+                            {% if not bloqueado_para_rh %}
                             <button class="btn-sm" onclick="editarUsuario({{ u.IdUsuario }})" title="Editar">✏️
                                 Editar</button>
                             {% endif %}
 
                             {# Botón Eliminar #}
-                            {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'eliminar') and u.IdRol != 1)) %}
+                            {% if not bloqueado_para_rh %}
                             <button class="btn-sm btn-del" title="Eliminar"
-                                onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
+                                onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('rh.personal_eliminar', id=u.IdUsuario) }}')">
                                 🗑️
                             </button>
                             {% endif %}
@@ -177,16 +169,68 @@
 </div>
 
 <form id="form-eliminar" method="POST" style="display:none"></form>
-<form id="form-desbloquear" method="POST" style="display:none"></form>
 
 {# ─────────────────────────────────────────────── Modales ─────────────────────────────────────────────── #}
-{% include "usuarios/modales/lista/_modal_editar_usuario.html" %}
-{% include "usuarios/modales/lista/_modal_nuevo_usuario.html" %}
+{% include "rh/modales/_modal_editar_usuario.html" %}
+{% include "rh/modales/_modal_nuevo_usuario.html" %}
 
 {% endblock %}
 
-<!-- ───────────────────────────────────────────────scripts ─────────────────────────────────────────────── -->
-
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/usuarios/lista.js') }}"></script>
+<script>
+// Override URL del form editar para que apunte a rh.personal_editar
+function editarUsuario(id) {
+  fetch(`/rh/api/usuario/${id}`)
+    .then(r => r.json())
+    .then(u => {
+      document.getElementById('e-nombre').value = u.nombre;
+      document.getElementById('e-ap').value = u.apellido_paterno;
+      document.getElementById('e-am').value = u.apellido_materno;
+      document.getElementById('e-tel').value = u.telefono;
+      document.getElementById('e-user').value = u.username;
+      document.getElementById('e-correo').value = u.correo;
+      document.getElementById('e-estatus').value = u.estatus ? '1' : '0';
+
+      {% if current_user.IdRol == 1 or es_rh %}
+      if (document.getElementById('e-depto')) {
+        document.getElementById('e-depto').value = u.departamento_id || '';
+      }
+      {% endif %}
+
+      {% if current_user.IdRol == 1 %}
+      if (document.getElementById('e-tipo')) {
+        document.getElementById('e-tipo').value = u.tipo_usuario;
+      }
+      {% endif %}
+
+      document.getElementById('form-editar').action = `/rh/personal/${id}/editar`;
+      document.getElementById('modal-editar').classList.add('open');
+    });
+}
+
+function eliminarUsuario(nombre, url) {
+  if (confirm(`¿Eliminar al usuario "${nombre}"?`)) {
+    const form = document.getElementById('form-eliminar');
+    form.action = url;
+    form.submit();
+  }
+}
+
+function abrirModalNuevo() {
+  // Limpiar todos los campos del formulario
+  const form = document.getElementById('form-nuevo-usuario');
+  form.reset();
+  
+  // Limpiar mensajes de validación
+  const msgs = ['nombre', 'ap', 'am', 'tel', 'user', 'correo', 'pass'];
+  msgs.forEach(id => {
+    const msg = document.getElementById(`msg-${id}`);
+    if (msg) msg.innerHTML = '';
+  });
+  
+  // Abrir el modal
+  document.getElementById('modal-nuevo').classList.add('open');
+}
+</script>
 {% endblock %}

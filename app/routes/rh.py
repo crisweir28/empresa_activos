@@ -1,13 +1,34 @@
 # app/routes/rh.py
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
-from ..extensions import db
+from passlib.context import CryptContext
+from ..extensions import db, socketio
+from ..models.usuario import Usuario, Rol, AREAS_CON_MODULO
+from ..models.departamento import Departamento
 from datetime import datetime
+from ..tasks.correo import enviar_bienvenida
+from ..utils.permisos import tiene_permiso, es_admin_rh
 
 rh_bp = Blueprint('rh', __name__, url_prefix='/rh')
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# ── Mapa área → IdRol automático ──────────────────────────────
+AREA_ROL_MAP = {
+    'TI':               5,
+    'Tecnología':       5,
+    'Recursos Humanos': 4,
+    'Administrativo':   2,
+    'Almacén':          3,
+}
+
+def _rol_por_area(nombre_area: str, tipo: str) -> int:
+    """Asigna IdRol automáticamente según área y tipo."""
+    if nombre_area in AREA_ROL_MAP:
+        return AREA_ROL_MAP[nombre_area]
+    return 6  # Supervisor
 
 # ─────────────────────────────────────────────────────────────
-# Helper de permisos (igual que los otros blueprints)
+# Helper de permisos
 # ─────────────────────────────────────────────────────────────
 def _puede(accion='ver'):
     col_map = {'ver': 'PuedeVer', 'crear': 'PuedeCrear',
@@ -23,6 +44,229 @@ def _puede(accion='ver'):
         {'uid': current_user.IdUsuario}
     ).fetchone()
     return bool(row and row.ok)
+
+
+# ══════════════════════════════════════════════════════════════
+# GESTIÓN DE PERSONAL CORPORATIVO (todos los usuarios)
+# ══════════════════════════════════════════════════════════════
+@rh_bp.route('/personal')
+@login_required
+def personal():
+    
+    print(f">>> current_user.IdRol = {current_user.IdRol}")
+    print(f">>> tiene_permiso('Personal Corporativo', 'ver') = {tiene_permiso('Personal Corporativo', 'ver')}")
+    
+    if current_user.IdRol != 1 and not tiene_permiso('Personal Corporativo', 'ver'):
+        flash('No tienes permiso para gestionar personal corporativo.', 'warning')
+        return redirect(url_for('activos.dashboard'))
+
+    area_filtro = request.args.get("area", "")
+    tipo_filtro = request.args.get("tipo", "")
+    query       = Usuario.query
+
+    if area_filtro:
+        query = query.filter(Usuario.IdDepartamento == area_filtro)
+    if tipo_filtro:
+        query = query.filter(Usuario.TipoUsuario == tipo_filtro)
+
+    # Admin RH ve todos excepto super admins
+    # Super admin ve absolutamente todo
+    if current_user.IdRol != 1:
+        query = query.filter(Usuario.IdRol != 1)
+
+    usuarios      = query.order_by(Usuario.Nombre).all()
+    roles         = Rol.query.all()
+    departamentos = Departamento.query.order_by(Departamento.nombre).all()
+
+    return render_template("rh/personal.html",
+        usuarios      = usuarios,
+        roles         = roles,
+        departamentos = departamentos,
+        area_filtro   = area_filtro,
+        tipo_filtro   = tipo_filtro,
+        areas_modulo  = AREAS_CON_MODULO,
+    )
+
+
+@rh_bp.route('/personal/nuevo', methods=['POST'])
+@login_required
+def personal_nuevo():
+    """Crear usuario desde el módulo de RH corporativo."""
+    if current_user.IdRol != 1 and not tiene_permiso('Personal Corporativo', 'crear'):
+        flash('No tienes permiso.', 'error')
+        return redirect(url_for('rh.personal'))
+
+    username = request.form.get("username", "").strip()
+    correo   = request.form.get("correo",   "").strip()
+
+    if Usuario.query.filter_by(NombreUsuario=username).first():
+        flash(f"El usuario '{username}' ya existe.", "error")
+        return redirect(url_for("rh.personal"))
+    if Usuario.query.filter_by(Correo=correo).first():
+        flash(f"El correo '{correo}' ya está registrado.", "error")
+        return redirect(url_for("rh.personal"))
+
+    password = request.form.get("password", "").strip()
+    if len(password) < 6:
+        flash("La contraseña debe tener al menos 6 caracteres.", "error")
+        return redirect(url_for("rh.personal"))
+
+    depto_id = request.form.get("departamento_id")
+    tipo     = request.form.get("tipo_usuario", "empleado")
+
+    # Admin RH solo puede crear empleados (no administradores de área)
+    if current_user.IdRol != 1:
+        tipo = "empleado"
+        if not depto_id:
+            flash("Debes seleccionar un área para el usuario.", "error")
+            return redirect(url_for("rh.personal"))
+
+    depto  = Departamento.query.get(int(depto_id)) if depto_id else None
+    id_rol = _rol_por_area(depto.nombre if depto else '', tipo)
+
+    u = Usuario(
+        NombreUsuario   = username,
+        Nombre          = request.form.get("nombre", "").strip(),
+        ApellidoPaterno = request.form.get("apellido_paterno", "").strip(),
+        ApellidoMaterno = request.form.get("apellido_materno", "").strip() or None,
+        NumeroTelefono  = request.form.get("telefono", "").strip() or None,
+        Correo          = correo,
+        Contrasena      = pwd_context.hash(password),
+        Estatus         = True,
+        PrimerLogin     = True,
+        IdRol           = id_rol,
+        IdDepartamento  = int(depto_id) if depto_id else None,
+        TipoUsuario     = tipo,
+    )
+    db.session.add(u)
+    db.session.commit()
+
+    try:
+        enviar_bienvenida(
+            correo   = correo,
+            nombre   = f"{u.Nombre} {u.ApellidoPaterno}",
+            username = username,
+            password = password,
+        )
+        flash(f"Usuario '{username}' creado y correo enviado.", "success")
+    except Exception:
+        flash(f"Usuario '{username}' creado, pero no se pudo enviar el correo.", "warning")
+
+    socketio.emit('usuarios_actualizados', {'accion': 'nuevo'})
+    return redirect(url_for("rh.personal"))
+
+
+@rh_bp.route('/personal/<int:id>/editar', methods=['POST'])
+@login_required
+def personal_editar(id):
+    """Editar usuario desde el módulo de RH corporativo."""
+    if current_user.IdRol != 1 and not tiene_permiso('Personal Corporativo', 'editar'):
+        flash('No tienes permiso.', 'error')
+        return redirect(url_for('rh.personal'))
+
+    u        = Usuario.query.get_or_404(id)
+    username = request.form.get("username", "").strip()
+    correo   = request.form.get("correo",   "").strip()
+
+    # Admin RH no puede editar admins de área ni super admins
+    if current_user.IdRol != 1 and tiene_permiso('Personal Corporativo', 'ver'):
+        if u.TipoUsuario == "administrador":
+            flash("No tienes permiso para editar administradores de área.", "error")
+            return redirect(url_for("rh.personal"))
+        if u.IdRol == 1:
+            flash("No tienes permiso para editar al Super Administrador.", "error")
+            return redirect(url_for("rh.personal"))
+
+    dup_user = Usuario.query.filter(
+        Usuario.NombreUsuario == username, Usuario.IdUsuario != id
+    ).first()
+    dup_mail = Usuario.query.filter(
+        Usuario.Correo == correo, Usuario.IdUsuario != id
+    ).first()
+
+    if dup_user:
+        flash(f"El usuario '{username}' ya existe.", "error")
+        return redirect(url_for("rh.personal"))
+    if dup_mail:
+        flash(f"El correo '{correo}' ya está registrado.", "error")
+        return redirect(url_for("rh.personal"))
+
+    u.NombreUsuario   = username
+    u.Nombre          = request.form.get("nombre", "").strip()
+    u.ApellidoPaterno = request.form.get("apellido_paterno", "").strip()
+    u.ApellidoMaterno = request.form.get("apellido_materno", "").strip() or None
+    u.NumeroTelefono  = request.form.get("telefono", "").strip() or None
+    u.Correo          = correo
+    u.Estatus         = request.form.get("estatus") == "1"
+
+    # Cambio de área (super admin puede todo, admin RH solo área)
+    if current_user.IdRol == 1:
+        depto_id = request.form.get("departamento_id")
+        tipo     = request.form.get("tipo_usuario", "empleado")
+        depto    = Departamento.query.get(int(depto_id)) if depto_id else None
+        u.IdDepartamento = int(depto_id) if depto_id else None
+        u.TipoUsuario    = tipo
+        u.IdRol          = _rol_por_area(depto.nombre if depto else '', tipo)
+    elif tiene_permiso('Personal Corporativo', 'editar'):
+        depto_id = request.form.get("departamento_id")
+        if depto_id:
+            depto = Departamento.query.get(int(depto_id))
+            u.IdDepartamento = int(depto_id)
+            u.IdRol = _rol_por_area(depto.nombre if depto else '', u.TipoUsuario)
+
+    # Cambio de contraseña opcional
+    nueva_pass = request.form.get("nueva_password", "").strip()
+    if nueva_pass:
+        if len(nueva_pass) < 6:
+            flash("La contraseña debe tener al menos 6 caracteres.", "error")
+            return redirect(url_for("rh.personal"))
+        u.Contrasena  = pwd_context.hash(nueva_pass)
+        u.PrimerLogin = True
+
+    db.session.commit()
+    flash(f"Usuario '{username}' actualizado.", "success")
+    socketio.emit('usuarios_actualizados', {'accion': 'editar', 'usuario_id': id})
+    socketio.emit('permisos_actualizados', {'usuario_id': id})
+    return redirect(url_for("rh.personal"))
+
+
+@rh_bp.route('/personal/<int:id>/eliminar', methods=['POST'])
+@login_required
+def personal_eliminar(id):
+    """Eliminar usuario desde el módulo de RH corporativo."""
+    if current_user.IdRol != 1 and not tiene_permiso('Personal Corporativo', 'eliminar'):
+        flash("No tienes permiso para eliminar usuarios.", "error")
+        return redirect(url_for("rh.personal"))
+
+    if id == current_user.id:
+        flash("No puedes eliminar tu propia cuenta.", "error")
+        return redirect(url_for("rh.personal"))
+
+    u = Usuario.query.get_or_404(id)
+
+    # Admin RH NO puede eliminar admins de área ni super admins
+    if current_user.IdRol != 1 and tiene_permiso('Personal Corporativo', 'eliminar'):
+        if u.IdRol == 1:
+            flash("No puedes eliminar al Super Administrador.", "error")
+            return redirect(url_for("rh.personal"))
+        if u.TipoUsuario == "administrador":
+            flash("No tienes permiso para eliminar administradores de área.", "error")
+            return redirect(url_for("rh.personal"))
+
+    nombre = u.NombreUsuario
+
+    # Limpiar relaciones
+    db.session.execute(db.text("DELETE FROM permisousuario WHERE IdUsuario = :uid"),           {'uid': id})
+    db.session.execute(db.text("DELETE FROM proyectopersonal WHERE IdUsuario = :uid"),         {'uid': id})
+    db.session.execute(db.text("UPDATE electronico SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
+    db.session.execute(db.text("UPDATE asignacionherramienta SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
+    db.session.execute(db.text("UPDATE activos SET usuario_id = NULL WHERE usuario_id = :uid"), {'uid': id})
+
+    db.session.delete(u)
+    db.session.commit()
+    flash(f"Usuario '{nombre}' eliminado.", "success")
+    socketio.emit('usuarios_actualizados', {'accion': 'eliminar', 'usuario_id': id})
+    return redirect(url_for("rh.personal"))
 
 
 # ══════════════════════════════════════════════════════════════
@@ -440,9 +684,29 @@ def api_activos_usuario(uid):
     return jsonify([dict(r._mapping) for r in rows])
 
 
-# ============================================================
-#  AGREGAR ESTAS RUTAS AL FINAL DE app/routes/rh.py
-# ============================================================
+@rh_bp.route('/api/usuario/<int:id>')
+@login_required
+def api_usuario(id):
+    """API para modal editar: obtener datos del usuario."""
+    u = Usuario.query.get_or_404(id)
+    return jsonify({
+        "id":               u.IdUsuario,
+        "username":         u.NombreUsuario,
+        "nombre":           u.Nombre,
+        "apellido_paterno": u.ApellidoPaterno,
+        "apellido_materno": u.ApellidoMaterno or "",
+        "telefono":         u.NumeroTelefono or "",
+        "correo":           u.Correo,
+        "rol_id":           u.IdRol,
+        "departamento_id":  u.IdDepartamento,
+        "tipo_usuario":     u.TipoUsuario,
+        "estatus":          u.Estatus,
+        "primer_login":     u.PrimerLogin,
+        "area_nombre":      u.area_nombre or "",
+        "tiene_modulo":     u.tiene_modulo,
+        "bloqueado":        bool(u.BloqueadoHasta and u.BloqueadoHasta > datetime.now()),
+    })
+
 
 # ── Dashboard de empleado (todos sus activos + proyectos) ────
 
@@ -453,7 +717,6 @@ def empleado_dashboard(uid):
         flash('Sin permiso.', 'warning')
         return redirect(url_for('activos.dashboard'))
 
-    # Info del empleado
     empleado = db.session.execute(db.text("""
         SELECT u.IdUsuario,
                CONCAT(u.Nombre,' ',u.ApellidoPaterno) AS NombreCompleto,
@@ -468,14 +731,12 @@ def empleado_dashboard(uid):
         flash('Empleado no encontrado.', 'danger')
         return redirect(url_for('rh.activos_usuario'))
 
-    # Todos sus activos con proyecto relacionado
     activos = db.session.execute(db.text("""
         SELECT * FROM v_empleado_activos_completo
         WHERE IdUsuario = :uid
         ORDER BY TipoActivo, NombreActivo
     """), {'uid': uid}).fetchall()
 
-    # Proyectos en los que participa el empleado
     proyectos = db.session.execute(db.text("""
         SELECT p.IdProyecto, p.Nombre, p.Estatus,
                p.FechaInicio, p.FechaTermino,
@@ -489,7 +750,6 @@ def empleado_dashboard(uid):
         ORDER BY p.FechaInicio DESC
     """), {'uid': uid}).fetchall()
 
-    # Resumen por tipo
     resumen = {'electronico': 0, 'herramienta': 0, 'general': 0, 'total': 0}
     valor_total = 0
     for a in activos:
@@ -497,7 +757,6 @@ def empleado_dashboard(uid):
         resumen['total'] += 1
         valor_total += float(a.Valor or 0)
 
-    # Proceso de baja activo si existe
     baja_activa = db.session.execute(db.text("""
         SELECT * FROM v_procesos_baja
         WHERE IdUsuario = :uid
@@ -558,7 +817,6 @@ def reporte_consolidado():
         SELECT id, nombre FROM departamentos ORDER BY nombre
     """)).fetchall()
 
-    # Stats rápidos
     stats = {
         'total':        len(equipos),
         'con_usuario':  sum(1 for e in equipos if e.IdUsuario),

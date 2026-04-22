@@ -5,6 +5,7 @@
 from functools import wraps
 from flask import redirect, url_for, flash
 from flask_login import current_user
+from ..extensions import db
 
 # Roles con acceso total al sistema
 ROLES_ADMIN = {"admin"}
@@ -24,6 +25,39 @@ ROLES_VALIDOS = {"admin", "ti", "administrativo", "almacenista", "rh", "supervis
 
 def es_admin():
     return current_user.is_authenticated and current_user.rol == "admin"
+
+
+def es_admin_rh():
+    """True si el usuario es admin de área de RH Y tiene permiso en módulo 'Recursos Humanos'.
+    
+    Los admin de RH con este módulo tienen poderes transversales sobre usuarios de todas las áreas.
+    El módulo "Usuarios" (IdModulo=7) es solo para gestión del área propia.
+    El módulo "Recursos Humanos" (IdModulo=10) habilita gestión corporativa transversal.
+    """
+    if not current_user.is_authenticated:
+        return False
+    if current_user.IdRol == 1:
+        return False
+    if current_user.rol != "rh" or not current_user.es_administrador_area:
+        return False
+    
+    # CRÍTICO: verificar que tenga permiso en el módulo "Recursos Humanos"
+    # (no confundir con "Usuarios" que es solo para su propia área)
+    return tiene_permiso('Recursos Humanos', 'ver')
+
+
+def puede_gestionar_usuarios_globales():
+    """True si el usuario puede gestionar usuarios de CUALQUIER área.
+    
+    - Super admin: siempre puede
+    - Admin de RH con permiso en "Recursos Humanos": puede crear/editar usuarios en cualquier área
+      (pero sólo como 'empleado' y no puede eliminar admins de área)
+    """
+    if not current_user.is_authenticated:
+        return False
+    if current_user.IdRol == 1:
+        return True
+    return es_admin_rh()
 
 
 def puede_editar_activo(activo):
@@ -47,7 +81,15 @@ def tiene_permiso(modulo_nombre: str, accion: str = "ver") -> bool:
     try:
         from ..models.permiso import PermisoUsuario, PermisoRol, Modulo
 
+        # FORZAR REFRESH DE LA SESIÓN (limpiar cache de SQLAlchemy)
+        db.session.expire_all()
+
         modulo = Modulo.query.filter_by(Nombre=modulo_nombre).first()
+        
+        # DEBUG
+        print(f">>> Buscando módulo: '{modulo_nombre}'")
+        print(f">>> Módulo encontrado: {modulo}")
+        
         if not modulo:
             return False
 
@@ -56,6 +98,11 @@ def tiene_permiso(modulo_nombre: str, accion: str = "ver") -> bool:
             IdUsuario=current_user.id,
             IdModulo=modulo.IdModulo
         ).first()
+
+        # DEBUG
+        print(f">>> PermisoUsuario encontrado: {pu}")
+        if pu:
+            print(f">>> PuedeVer={pu.PuedeVer}, PuedeCrear={pu.PuedeCrear}, PuedeEditar={pu.PuedeEditar}, PuedeEliminar={pu.PuedeEliminar}")
 
         if pu:
             mapa = {
@@ -83,7 +130,8 @@ def tiene_permiso(modulo_nombre: str, accion: str = "ver") -> bool:
 
         return False
 
-    except Exception:
+    except Exception as e:
+        print(f">>> ERROR en tiene_permiso: {e}")
         return False
 
 

@@ -1,13 +1,12 @@
-<!--templates/usuarios/modales/lista/_modal_nuevo_usuario.html-->
+<!--templates/rh/modales/_modal_nuevo_usuario.html-->
 {# Admin RH puede elegir cualquier área (pero NO crear admins, solo empleados) #}
 {% set es_rh_modal = (current_user.IdRol != 1 and current_user.rol == 'rh' and current_user.es_administrador_area) %}
-{% set puede_elegir_area = (current_user.IdRol == 1 or es_rh_modal) %}
 {% set puede_elegir_tipo = (current_user.IdRol == 1) %}
 
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal" onclick="event.stopPropagation()">
         <h2>👤 Nuevo usuario</h2>
-        <form method="POST" action="{{ url_for('usuarios.nuevo') }}" id="form-nuevo-usuario">
+        <form method="POST" action="{{ url_for('rh.personal_nuevo') }}" id="form-nuevo-usuario">
             <div class="grid-2">
                 <div class="field">
                     <label>Nombre *</label>
@@ -57,7 +56,6 @@
                         onblur="validarCampo(this,'pass')" oninput="validarCampo(this,'pass')">
                     <div class="field-msg" id="msg-pass"></div>
                 </div>
-                {% if puede_elegir_area %}
                 <div class="field"><label>Área *</label>
                     <select name="departamento_id" required>
                         <option value="">— Seleccionar —</option>
@@ -68,13 +66,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                {% else %}
-                <div class="field"><label>Área</label>
-                    <input type="text" value="{{ current_user.area_nombre }}" disabled
-                        style="background:var(--surface);color:var(--muted)">
-                    <input type="hidden" name="departamento_id" value="{{ current_user.IdDepartamento }}">
-                </div>
-                {% endif %}
             </div>
             {% if puede_elegir_tipo %}
             <div class="grid-2">
@@ -86,7 +77,7 @@
                 </div>
             </div>
             {% else %}
-            {# Admin RH y otros admin de área solo pueden crear empleados #}
+            {# Admin RH solo puede crear empleados #}
             <input type="hidden" name="tipo_usuario" value="empleado">
             {% endif %}
             <div class="modal-footer">

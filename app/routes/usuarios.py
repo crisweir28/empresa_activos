@@ -1,80 +1,70 @@
 # app/routes/usuarios.py
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
-from ..extensions import socketio
+"""
+Gestión de usuarios DEL ÁREA PROPIA.
+Cada admin de área ve solo los usuarios de su departamento.
+Para gestión corporativa (todas las áreas), usar /rh/personal.
+"""
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from passlib.context import CryptContext
-from ..extensions import db
+from ..extensions import db, socketio
 from ..models.usuario import Usuario, Rol, AREAS_CON_MODULO
 from ..models.departamento import Departamento
-from datetime import datetime
 from ..tasks.correo import enviar_bienvenida
-from ..utils.permisos import requiere_permiso
 
-usuarios_bp = Blueprint("usuarios", __name__)
+usuarios_bp = Blueprint('usuarios', __name__, url_prefix='/usuarios')
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # ── Mapa área → IdRol automático ──────────────────────────────
 AREA_ROL_MAP = {
-    'TI':               5,  # Usuario TI
-    'Tecnología':       5,  # Usuario TI
-    'Recursos Humanos': 4,  # Recursos Humanos
-    'Administrativo':   2,  # Administrativo
-    'Almacén':          3,  # Almacenista
+    'TI':               5,
+    'Tecnología':       5,
+    'Recursos Humanos': 4,
+    'Administrativo':   2,
+    'Almacén':          3,
 }
 
 def _rol_por_area(nombre_area: str, tipo: str) -> int:
     """Asigna IdRol automáticamente según área y tipo."""
     if nombre_area in AREA_ROL_MAP:
         return AREA_ROL_MAP[nombre_area]
-    return 6  # Supervisor para áreas corporativas sin módulo
+    return 6  # Supervisor
 
 
-def _check_admin():
-    if current_user.IdRol == 1:
-        return True
-    if not current_user.es_administrador_area:
-        flash("No tienes permiso para gestionar usuarios.", "error")
-        return False
-    # Admin de área verifica permiso específico
-    from ..utils.permisos import tiene_permiso
-    if not tiene_permiso('Usuarios', 'ver'):
-        flash("No tienes permiso para gestionar usuarios.", "error")
-        return False
-    return True
-
-
-def _solo_super_admin():
-    if current_user.IdRol != 1:
-        flash("Solo el Super Administrador puede realizar esta acción.", "error")
-        return False
-    return True
-
-
-# ── Lista ─────────────────────────────────────────────────────
-@usuarios_bp.route("/")
+# ══════════════════════════════════════════════════════════════
+# LISTA DE USUARIOS DEL ÁREA PROPIA
+# ══════════════════════════════════════════════════════════════
+@usuarios_bp.route('/')
 @login_required
 def lista():
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
+    """Lista de usuarios del área propia del admin.
+    
+    - Super admin: ve todos los usuarios
+    - Admin de área (TI, RH, Administrativo, etc.): ve solo usuarios de su área
+    """
+    
+    # Super admin ve todos
+    if current_user.IdRol == 1:
+        query = Usuario.query
+    # Admin de área ve solo su área
+    elif current_user.es_administrador_area and current_user.IdDepartamento:
+        query = Usuario.query.filter_by(IdDepartamento=current_user.IdDepartamento)
+    else:
+        flash('No tienes permiso para gestionar usuarios.', 'warning')
+        return redirect(url_for('activos.dashboard'))
 
+    # Filtros
     area_filtro = request.args.get("area", "")
     tipo_filtro = request.args.get("tipo", "")
-    query       = Usuario.query
 
     if area_filtro:
         query = query.filter(Usuario.IdDepartamento == area_filtro)
     if tipo_filtro:
         query = query.filter(Usuario.TipoUsuario == tipo_filtro)
 
-    # Admin de área solo ve usuarios de su área
-    if current_user.IdRol != 1 and current_user.IdDepartamento:
-        query = query.filter(
-        Usuario.IdDepartamento == current_user.IdDepartamento,
-        Usuario.IdRol != 1  # ← ocultar ninjas
-    )
-
-    usuarios      = query.order_by(Usuario.Nombre).all()
-    roles         = Rol.query.all()
+    usuarios = query.order_by(Usuario.Nombre).all()
+    roles = Rol.query.all()
     departamentos = Departamento.query.order_by(Departamento.nombre).all()
 
     return render_template("usuarios/lista.html",
@@ -87,14 +77,18 @@ def lista():
     )
 
 
-# ── Crear ─────────────────────────────────────────────────────
-@usuarios_bp.route("/nuevo", methods=["POST"])
+# ══════════════════════════════════════════════════════════════
+# CREAR USUARIO (ÁREA PROPIA)
+# ══════════════════════════════════════════════════════════════
+@usuarios_bp.route('/nuevo', methods=['POST'])
 @login_required
-@requiere_permiso('Usuarios', 'crear')
 def nuevo():
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
-
+    """Crear usuario en el área propia.
+    
+    - Super admin: puede crear en cualquier área
+    - Admin de área: solo puede crear en su propia área
+    """
+    
     username = request.form.get("username", "").strip()
     correo   = request.form.get("correo",   "").strip()
 
@@ -110,17 +104,20 @@ def nuevo():
         flash("La contraseña debe tener al menos 6 caracteres.", "error")
         return redirect(url_for("usuarios.lista"))
 
-    depto_id = request.form.get("departamento_id")
-    tipo     = request.form.get("tipo_usuario", "empleado")
-
-    # Admin de área solo puede crear empleados de su área
-    if current_user.IdRol != 1:
+    # Super admin puede elegir área
+    if current_user.IdRol == 1:
+        depto_id = request.form.get("departamento_id")
+        tipo     = request.form.get("tipo_usuario", "empleado")
+    # Admin de área crea en su propia área
+    else:
+        if not current_user.es_administrador_area or not current_user.IdDepartamento:
+            flash("No tienes permiso para crear usuarios.", "error")
+            return redirect(url_for("usuarios.lista"))
         depto_id = current_user.IdDepartamento
-        tipo     = "empleado"
+        tipo     = request.form.get("tipo_usuario", "empleado")
 
-    # Asignar IdRol automáticamente según área
-    depto    = Departamento.query.get(int(depto_id)) if depto_id else None
-    id_rol   = _rol_por_area(depto.nombre if depto else '', tipo)
+    depto  = Departamento.query.get(int(depto_id)) if depto_id else None
+    id_rol = _rol_por_area(depto.nombre if depto else '', tipo)
 
     u = Usuario(
         NombreUsuario   = username,
@@ -144,7 +141,7 @@ def nuevo():
             correo   = correo,
             nombre   = f"{u.Nombre} {u.ApellidoPaterno}",
             username = username,
-            password = password,  # variable local, antes del hash
+            password = password,
         )
         flash(f"Usuario '{username}' creado y correo enviado.", "success")
     except Exception:
@@ -154,15 +151,32 @@ def nuevo():
     return redirect(url_for("usuarios.lista"))
 
 
-# ── Editar ────────────────────────────────────────────────────
-@usuarios_bp.route("/<int:id>/editar", methods=["POST"])
+# ══════════════════════════════════════════════════════════════
+# EDITAR USUARIO (ÁREA PROPIA)
+# ══════════════════════════════════════════════════════════════
+@usuarios_bp.route('/<int:id>/editar', methods=['POST'])
 @login_required
-@requiere_permiso('Usuarios', 'editar')
 def editar(id):
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
+    """Editar usuario del área propia.
+    
+    - Super admin: puede editar cualquier usuario
+    - Admin de área: solo puede editar usuarios de su área
+    """
+    
+    u = Usuario.query.get_or_404(id)
 
-    u        = Usuario.query.get_or_404(id)
+    # Verificar permisos
+    if current_user.IdRol != 1:
+        if not current_user.es_administrador_area:
+            flash("No tienes permiso para editar usuarios.", "error")
+            return redirect(url_for("usuarios.lista"))
+        if u.IdDepartamento != current_user.IdDepartamento:
+            flash("No puedes editar usuarios de otras áreas.", "error")
+            return redirect(url_for("usuarios.lista"))
+        if u.IdRol == 1:
+            flash("No puedes editar al Super Administrador.", "error")
+            return redirect(url_for("usuarios.lista"))
+
     username = request.form.get("username", "").strip()
     correo   = request.form.get("correo",   "").strip()
 
@@ -188,11 +202,11 @@ def editar(id):
     u.Correo          = correo
     u.Estatus         = request.form.get("estatus") == "1"
 
-     # Solo super admin puede cambiar área y tipo
+    # Solo super admin puede cambiar área y tipo
     if current_user.IdRol == 1:
         depto_id = request.form.get("departamento_id")
         tipo     = request.form.get("tipo_usuario", "empleado")
-        depto          = Departamento.query.get(int(depto_id)) if depto_id else None
+        depto    = Departamento.query.get(int(depto_id)) if depto_id else None
         u.IdDepartamento = int(depto_id) if depto_id else None
         u.TipoUsuario    = tipo
         u.IdRol          = _rol_por_area(depto.nombre if depto else '', tipo)
@@ -204,30 +218,51 @@ def editar(id):
             flash("La contraseña debe tener al menos 6 caracteres.", "error")
             return redirect(url_for("usuarios.lista"))
         u.Contrasena  = pwd_context.hash(nueva_pass)
-        u.PrimerLogin = True  # obliga a cambiarla en el próximo login
+        u.PrimerLogin = True
 
-    db.session.commit()  # ← un solo commit al final
+    db.session.commit()
     flash(f"Usuario '{username}' actualizado.", "success")
     socketio.emit('usuarios_actualizados', {'accion': 'editar', 'usuario_id': id})
     socketio.emit('permisos_actualizados', {'usuario_id': id})
     return redirect(url_for("usuarios.lista"))
 
 
-# ── Eliminar ──────────────────────────────────────────────────
-@usuarios_bp.route("/<int:id>/eliminar", methods=["POST"])
+# ══════════════════════════════════════════════════════════════
+# ELIMINAR USUARIO (ÁREA PROPIA)
+# ══════════════════════════════════════════════════════════════
+@usuarios_bp.route('/<int:id>/eliminar', methods=['POST'])
 @login_required
-@requiere_permiso('Usuarios', 'eliminar')
 def eliminar(id):
-    if not _solo_super_admin():
-        return redirect(url_for("usuarios.lista"))
+    """Eliminar usuario del área propia.
+    
+    - Super admin: puede eliminar cualquier usuario (excepto a sí mismo)
+    - Admin de área: solo puede eliminar usuarios de su área (solo empleados)
+    """
+    
     if id == current_user.id:
         flash("No puedes eliminar tu propia cuenta.", "error")
         return redirect(url_for("usuarios.lista"))
 
     u = Usuario.query.get_or_404(id)
+
+    # Verificar permisos
+    if current_user.IdRol != 1:
+        if not current_user.es_administrador_area:
+            flash("No tienes permiso para eliminar usuarios.", "error")
+            return redirect(url_for("usuarios.lista"))
+        if u.IdDepartamento != current_user.IdDepartamento:
+            flash("No puedes eliminar usuarios de otras áreas.", "error")
+            return redirect(url_for("usuarios.lista"))
+        if u.TipoUsuario == "administrador":
+            flash("No puedes eliminar administradores de área.", "error")
+            return redirect(url_for("usuarios.lista"))
+        if u.IdRol == 1:
+            flash("No puedes eliminar al Super Administrador.", "error")
+            return redirect(url_for("usuarios.lista"))
+
     nombre = u.NombreUsuario
 
-    # Limpiar relaciones antes de eliminar
+    # Limpiar relaciones
     db.session.execute(db.text("DELETE FROM permisousuario WHERE IdUsuario = :uid"),           {'uid': id})
     db.session.execute(db.text("DELETE FROM proyectopersonal WHERE IdUsuario = :uid"),         {'uid': id})
     db.session.execute(db.text("UPDATE electronico SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
@@ -237,36 +272,26 @@ def eliminar(id):
     db.session.delete(u)
     db.session.commit()
     flash(f"Usuario '{nombre}' eliminado.", "success")
-    socketio.emit('usuarios_actualizados', {'accion': 'eliminar', 'usuario_id': id})  # ← agrega esto
+    socketio.emit('usuarios_actualizados', {'accion': 'eliminar', 'usuario_id': id})
     return redirect(url_for("usuarios.lista"))
 
 
-# ── Reset contraseña ──────────────────────────────────────────
-@usuarios_bp.route("/<int:id>/reset-password", methods=["POST"])
-@login_required
-def reset_password(id):
-    if not _check_admin():
-        return redirect(url_for("activos.dashboard"))
-
-    u     = Usuario.query.get_or_404(id)
-    nueva = request.form.get("nueva_password", "").strip()
-
-    if len(nueva) < 6:
-        flash("La contraseña debe tener al menos 6 caracteres.", "error")
-        return redirect(url_for("usuarios.lista"))
-
-    u.Contrasena  = pwd_context.hash(nueva)
-    u.PrimerLogin = True
-    db.session.commit()
-    flash(f"Contraseña de '{u.NombreUsuario}' restablecida.", "success")
-    return redirect(url_for("usuarios.lista"))
-
-
-# ── API ───────────────────────────────────────────────────────
-@usuarios_bp.route("/api/<int:id>")
+# ══════════════════════════════════════════════════════════════
+# API PARA MODAL EDITAR
+# ══════════════════════════════════════════════════════════════
+@usuarios_bp.route('/api/<int:id>')
 @login_required
 def api_usuario(id):
+    """API para obtener datos del usuario (modal editar)."""
     u = Usuario.query.get_or_404(id)
+    
+    # Verificar permisos de lectura
+    if current_user.IdRol != 1:
+        if not current_user.es_administrador_area:
+            return jsonify({'error': 'Sin permiso'}), 403
+        if u.IdDepartamento != current_user.IdDepartamento:
+            return jsonify({'error': 'Sin permiso'}), 403
+
     return jsonify({
         "id":               u.IdUsuario,
         "username":         u.NombreUsuario,
@@ -282,5 +307,4 @@ def api_usuario(id):
         "primer_login":     u.PrimerLogin,
         "area_nombre":      u.area_nombre or "",
         "tiene_modulo":     u.tiene_modulo,
-        "bloqueado":        bool(u.BloqueadoHasta and u.BloqueadoHasta > datetime.now()),
     })

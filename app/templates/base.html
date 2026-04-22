@@ -1,268 +1,312 @@
 <!-- app/templates/base.html -->
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Panel{% endblock %} — ActivosApp</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   {% set _temas = {
-    "admin":          {"c1": "#9B2335", "c2": "#c0392b"},
-    "ti":             {"c1": "#2563eb", "c2": "#4f46e5"},
-    "administrativo": {"c1": "#d97706", "c2": "#b45309"},
-    "almacenista":    {"c1": "#16a34a", "c2": "#0891b2"},
-    "rh":             {"c1": "#7c3aed", "c2": "#6d28d9"},
-    "supervisor":     {"c1": "#dc2626", "c2": "#ea580c"},
+  "admin": {"c1": "#9B2335", "c2": "#c0392b"},
+  "ti": {"c1": "#2563eb", "c2": "#4f46e5"},
+  "administrativo": {"c1": "#d97706", "c2": "#b45309"},
+  "almacenista": {"c1": "#16a34a", "c2": "#0891b2"},
+  "rh": {"c1": "#7c3aed", "c2": "#6d28d9"},
+  "supervisor": {"c1": "#dc2626", "c2": "#ea580c"},
   } %}
   {% set _t = _temas.get(current_user.rol, _temas["ti"]) %}
   <style>
-    :root { --accent: {{ _t.c1 }}; --accent2: {{ _t.c2 }}; }
-    .sb-group { overflow: hidden; }
-    .sb-group-btn {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 6px 16px; cursor: pointer;
-      font-size: 10px; font-weight: 700; letter-spacing: .08em;
-      text-transform: uppercase; color: var(--muted);
-      user-select: none; border: none; background: transparent; width: 100%;
+    
+  :root {
+    --accent: {{ _t.c1 }};
+    --accent2: {{ _t.c2 }};
+  }
+    .sb-group {
+      overflow: hidden;
     }
-    .sb-group-btn:hover { color: var(--text); }
-    .sb-group-arrow { font-size: 9px; transition: transform .2s; display: inline-block; }
-    .sb-group-btn.collapsed .sb-group-arrow { transform: rotate(-90deg); }
-    .sb-group-body { overflow: hidden; transition: max-height .25s ease; }
-    .sb-group-body.collapsed { max-height: 0 !important; }
+
+    .sb-group-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      user-select: none;
+      border: none;
+      background: transparent;
+      width: 100%;
+    }
+
+    .sb-group-btn:hover {
+      color: var(--text);
+    }
+
+    .sb-group-arrow {
+      font-size: 9px;
+      transition: transform .2s;
+      display: inline-block;
+    }
+
+    .sb-group-btn.collapsed .sb-group-arrow {
+      transform: rotate(-90deg);
+    }
+
+    .sb-group-body {
+      overflow: hidden;
+      transition: max-height .25s ease;
+    }
+
+    .sb-group-body.collapsed {
+      max-height: 0 !important;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
+
 <body>
-<!-- Hamburger -->
-<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menú">☰</button>
-<!-- Backdrop -->
-<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
-<aside class="sidebar" style="display:flex;flex-direction:column;overflow:hidden">
-  <div class="sb-logo" style="flex-shrink:0">
-    <div class="sb-logo-icon">🏢</div>
-    <span class="sb-logo-text">ActivosApp</span>
-  </div>
-
-  <nav style="flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:8px">
-
-    {# ── Principal ── #}
-    <div class="sb-group">
-      <div class="sb-group-body" style="max-height:200px">
-
-        {% if current_user.rol not in ('administrativo', 'almacenista', 'ti') and tiene_permiso('Activos') %}
-        <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
-           href="{{ url_for('activos.lista') }}">
-          <span class="ic">📦</span>
-          {% if current_user.rol == 'admin' %}Todos los activos{% else %}Mis activos{% endif %}
-        </a>
-        {% endif %}
-
-      </div>
+  <!-- Hamburger -->
+  <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Menú">☰</button>
+  <!-- Backdrop -->
+  <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" style="display:flex;flex-direction:column;overflow:hidden">
+    <div class="sb-logo" style="flex-shrink:0">
+      <div class="sb-logo-icon">🏢</div>
+      <span class="sb-logo-text">ActivosApp</span>
     </div>
 
+    <nav style="flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:8px">
 
-  {# ── Administración — solo super admin #}
-    {% if current_user.rol == 'admin' %}
-    <div class="sb-group">
-      <button class="sb-group-btn {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
-              onclick="toggleGroup(this)">
-        Administración <span class="sb-group-arrow">▾</span>
-      </button>
-      <div class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
-           style="max-height:200px">
-        <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
-           href="{{ url_for('permisos.index') }}">
-          <span class="ic">🔐</span> Roles & Permisos
-        </a>
-        <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
-           href="{{ url_for('usuarios.lista') }}">
-          <span class="ic">👥</span> Usuarios
-        </a>
-        <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
-           href="{{ url_for('departamentos.lista') }}">
-          <span class="ic">🏬</span> Departamentos
-        </a>
+      {# ── Principal ── #}
+      <div class="sb-group">
+        <div class="sb-group-body" style="max-height:200px">
+
+          {% if current_user.rol not in ('administrativo', 'almacenista', 'ti') and tiene_permiso('Activos') %}
+          <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
+            href="{{ url_for('activos.lista') }}">
+            <span class="ic">📦</span>
+            {% if current_user.rol == 'admin' %}Todos los activos{% else %}Mis activos{% endif %}
+          </a>
+          {% endif %}
+
+        </div>
       </div>
-    </div>
-    {% endif %}
 
 
-    {# ── Vehículos ── #}
-{% if current_user.rol in ('admin', 'administrativo') and (current_user.es_admin or current_user.es_administrador_area) and
-    (tiene_permiso('Dashboard') or tiene_permiso('Vehículos', 'ver') or tiene_permiso('Mantenimiento', 'ver') or tiene_permiso('Vehículos', 'crear')) %}
-<div class="sb-group">
-  <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
+      {# ── Administración — solo super admin #}
+      {% if current_user.rol == 'admin' %}
+      <div class="sb-group">
+        <button
+          class="sb-group-btn {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
           onclick="toggleGroup(this)">
-    Vehículos <span class="sb-group-arrow">▾</span>
-  </button>
-  <div class="sb-group-body {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
-       style="max-height:200px">
-
-    {% if tiene_permiso('Dashboard') %}
-    <a class="nav-link {% if request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
-       href="{{ url_for('administrativo.dashboard') }}">
-      <span class="ic">📊</span> Dashboard
-    </a>
-    {% endif %}
-
-    {% if tiene_permiso('Vehículos', 'ver') %}
-    <a class="nav-link {% if request.endpoint == 'administrativo.vehiculos' %}active{% endif %}"
-       href="{{ url_for('administrativo.vehiculos') }}">
-      <span class="ic">🚗</span> Vehículos
-    </a>
-    {% endif %}
-
-    {% if tiene_permiso('Mantenimiento', 'ver') %}
-    <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
-       href="{{ url_for('administrativo.mantenimiento_lista') }}">
-      <span class="ic">🔧</span> Mantenimiento
-    </a>
-    {% endif %}
-
-    {% if tiene_permiso('Vehículos', 'crear') or current_user.rol == 'admin' %}
-    <a class="nav-link {% if request.endpoint == 'administrativo.personal' %}active{% endif %}"
-       href="{{ url_for('administrativo.personal') }}">
-      <span class="ic">👤</span> Personal
-    </a>
-    {% endif %}
-
-  </div>
-</div>
-{% endif %}
-
-    {# ── Almacén ── #}
-    {% if current_user.rol in ('admin', 'almacenista') and tiene_permiso('Almacén') %}
-    <div class="sb-group">
-      <button class="sb-group-btn {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
-              onclick="toggleGroup(this)">
-        Almacén <span class="sb-group-arrow">▾</span>
-      </button>
-      <div class="sb-group-body {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
-           style="max-height:200px">
-        <a class="nav-link {% if request.endpoint == 'almacenista.dashboard' %}active{% endif %}"
-           href="{{ url_for('almacenista.dashboard') }}">
-          <span class="ic">📊</span> Dashboard
-        </a>
-        <a class="nav-link {% if request.endpoint == 'almacenista.inventario' %}active{% endif %}"
-           href="{{ url_for('almacenista.inventario') }}">
-          <span class="ic">🔧</span> Inventario
-        </a>
-        <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
-           href="{{ url_for('almacenista.historial') }}">
-          <span class="ic">📋</span> Historial
-        </a>
+          Administración <span class="sb-group-arrow">▾</span>
+        </button>
+        <div
+          class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
+          style="max-height:200px">
+          <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
+            href="{{ url_for('permisos.index') }}">
+            <span class="ic">🔐</span> Roles & Permisos
+          </a>
+          <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
+            href="{{ url_for('usuarios.lista') }}">
+            <span class="ic">👥</span> Usuarios
+          </a>
+          <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
+            href="{{ url_for('departamentos.lista') }}">
+            <span class="ic">🏬</span> Departamentos
+          </a>
+        </div>
       </div>
-    </div>
-    {% endif %}
+      {% endif %}
 
-    {# ── Equipos TI ── #}
-    {% if current_user.rol in ('ti', 'admin') and tiene_permiso('Equipos TI') %}
-    <div class="sb-group">
-      <button class="sb-group-btn {% if request.blueprint != 'ti' %}collapsed{% endif %}"
-              onclick="toggleGroup(this)">
-        Equipos TI <span class="sb-group-arrow">▾</span>
-      </button>
-      <div class="sb-group-body {% if request.blueprint != 'ti' %}collapsed{% endif %}"
-           style="max-height:200px">
-        <a class="nav-link {% if request.endpoint == 'ti.dashboard' %}active{% endif %}"
-           href="{{ url_for('ti.dashboard') }}">
-          <span class="ic">📊</span> Dashboard
-        </a>
-        <a class="nav-link {% if request.endpoint == 'ti.equipos' %}active{% endif %}"
-           href="{{ url_for('ti.equipos') }}">
-          <span class="ic">💻</span> Equipos
-        </a>
-        <a class="nav-link {% if request.endpoint == 'ti.validacion_estados' %}active{% endif %}"
-           href="{{ url_for('ti.validacion_estados') }}">
-          <span class="ic">✅</span> Validación estados
-        </a>
-      </div>
-    </div>
-    {% endif %}
 
-    {# ── Proyectos ── #}
-    {% if current_user.rol in ('admin', 'ti', 'rh', 'administrativo') and tiene_permiso('Proyectos') %}
-    <div class="sb-group">
-      <button class="sb-group-btn {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
-              onclick="toggleGroup(this)">
-        Proyectos <span class="sb-group-arrow">▾</span>
-      </button>
-      <div class="sb-group-body {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
-           style="max-height:200px">
-        <a class="nav-link {% if request.blueprint == 'proyectos' %}active{% endif %}"
-           href="{{ url_for('proyectos.lista') }}">
-          <span class="ic">📋</span> Proyectos
-        </a>
-      </div>
-    </div>
-    {% endif %}
-   
-  {# ── Gestión de área — para admins de área (no super admin) #}
-{% if current_user.IdRol != 1 and current_user.es_administrador_area %}
-<div class="sb-group">
-  <button class="sb-group-btn {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
+      {# ── Vehículos ── #}
+      {% if current_user.rol in ('admin', 'administrativo') and (current_user.es_admin or
+      current_user.es_administrador_area) and
+      (tiene_permiso('Dashboard') or tiene_permiso('Vehículos', 'ver') or tiene_permiso('Mantenimiento', 'ver') or
+      tiene_permiso('Vehículos', 'crear')) %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
           onclick="toggleGroup(this)">
-    Mi Área <span class="sb-group-arrow">▾</span>
-  </button>
-  <div class="sb-group-body {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
-       style="max-height:200px">
-    {% if tiene_permiso('Usuarios', 'ver') %}
-    <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
-       href="{{ url_for('usuarios.lista') }}">
-      <span class="ic">👥</span> Usuarios del área
-    </a>
-    {% endif %}
-    {% if tiene_permiso('Roles', 'ver') %}
-    <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
-       href="{{ url_for('usuarios.lista') }}">
-      <span class="ic">🔐</span> Permisos
-    </a>
-    {% endif %}
-  </div>
-</div>
-{% endif %}
+          Vehículos <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
+          style="max-height:200px">
 
-  {% if current_user.rol in ('admin', 'rh') and tiene_permiso('Recursos Humanos') %}
-    <div class="sb-group">
-    <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-    Recursos Humanos <span class="sb-group-arrow">▾</span>
-    </button>
-  <div class="sb-group-body {% if request.blueprint != 'rh' %}collapsed{% endif %}"
-       style="max-height:300px">
-    <a class="nav-link {% if request.endpoint == 'rh.activos_usuario' %}active{% endif %}"
-       href="{{ url_for('rh.activos_usuario') }}"><span class="ic">👤</span> Activos por Empleado</a>
-    <a class="nav-link {% if request.endpoint == 'rh.activos_area' %}active{% endif %}"
-       href="{{ url_for('rh.activos_area') }}"><span class="ic">🏢</span> Activos por Área</a>
-    <a class="nav-link {% if request.endpoint == 'rh.bajas_lista' %}active{% endif %}"
-       href="{{ url_for('rh.bajas_lista') }}"><span class="ic">📋</span> Procesos de Baja</a>
-    <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
-       href="{{ url_for('rh.auditoria') }}"><span class="ic">🔍</span> Auditoría</a>
-    <a class="nav-link {% if request.endpoint == 'rh.reporte_consolidado' %}active{% endif %}" href="{{ url_for('rh.reporte_consolidado') }}"><span class="ic">📊</span> Reporte consolidado</a>
-  </div>
-</div>
-{% endif %}
+          {% if tiene_permiso('Dashboard') %}
+          <a class="nav-link {% if request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
+            href="{{ url_for('administrativo.dashboard') }}">
+            <span class="ic">📊</span> Dashboard
+          </a>
+          {% endif %}
 
-  </nav>
+          {% if tiene_permiso('Vehículos', 'ver') %}
+          <a class="nav-link {% if request.endpoint == 'administrativo.vehiculos' %}active{% endif %}"
+            href="{{ url_for('administrativo.vehiculos') }}">
+            <span class="ic">🚗</span> Vehículos
+          </a>
+          {% endif %}
 
-  <div class="sb-footer" style="flex-shrink:0">
-    <div class="user-chip">
-      <div class="avatar">{{ current_user.nombre[0]|upper }}</div>
-      <div style="flex:1;min-width:0">
-        <div class="u-name">{{ current_user.nombre.split()[0] }}</div>
-        <div class="u-rol">{{ current_user.rol_label }}</div>
+          {% if tiene_permiso('Mantenimiento', 'ver') %}
+          <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
+            href="{{ url_for('administrativo.mantenimiento_lista') }}">
+            <span class="ic">🔧</span> Mantenimiento
+          </a>
+          {% endif %}
+
+          {% if tiene_permiso('Vehículos', 'crear') or current_user.rol == 'admin' %}
+          <a class="nav-link {% if request.endpoint == 'administrativo.personal' %}active{% endif %}"
+            href="{{ url_for('administrativo.personal') }}">
+            <span class="ic">👤</span> Personal
+          </a>
+          {% endif %}
+
+        </div>
       </div>
-     <a href="#" class="logout" title="Salir" onclick="confirmarLogout(event)">⏻</a>
-    </div>
-  </div>
-</aside>
+      {% endif %}
 
-<main class="main">
-  {% with messages = get_flashed_messages(with_categories=True) %}
+      {# ── Almacén ── #}
+      {% if current_user.rol in ('admin', 'almacenista') and tiene_permiso('Almacén') %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
+          onclick="toggleGroup(this)">
+          Almacén <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
+          style="max-height:200px">
+          <a class="nav-link {% if request.endpoint == 'almacenista.dashboard' %}active{% endif %}"
+            href="{{ url_for('almacenista.dashboard') }}">
+            <span class="ic">📊</span> Dashboard
+          </a>
+          <a class="nav-link {% if request.endpoint == 'almacenista.inventario' %}active{% endif %}"
+            href="{{ url_for('almacenista.inventario') }}">
+            <span class="ic">🔧</span> Inventario
+          </a>
+          <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
+            href="{{ url_for('almacenista.historial') }}">
+            <span class="ic">📋</span> Historial
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Equipos TI ── #}
+      {% if current_user.rol in ('ti', 'admin') and tiene_permiso('Equipos TI') %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint != 'ti' %}collapsed{% endif %}" onclick="toggleGroup(this)">
+          Equipos TI <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint != 'ti' %}collapsed{% endif %}" style="max-height:200px">
+          <a class="nav-link {% if request.endpoint == 'ti.dashboard' %}active{% endif %}"
+            href="{{ url_for('ti.dashboard') }}">
+            <span class="ic">📊</span> Dashboard
+          </a>
+          <a class="nav-link {% if request.endpoint == 'ti.equipos' %}active{% endif %}"
+            href="{{ url_for('ti.equipos') }}">
+            <span class="ic">💻</span> Equipos
+          </a>
+          <a class="nav-link {% if request.endpoint == 'ti.validacion_estados' %}active{% endif %}"
+            href="{{ url_for('ti.validacion_estados') }}">
+            <span class="ic">✅</span> Validación estados
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Proyectos ── #}
+      {% if current_user.rol in ('admin', 'ti', 'rh', 'administrativo') and tiene_permiso('Proyectos') %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
+          onclick="toggleGroup(this)">
+          Proyectos <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
+          style="max-height:200px">
+          <a class="nav-link {% if request.blueprint == 'proyectos' %}active{% endif %}"
+            href="{{ url_for('proyectos.lista') }}">
+            <span class="ic">📋</span> Proyectos
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      {# ── Gestión de área — para admins de área (no super admin) #}
+      {% if current_user.IdRol != 1 and current_user.es_administrador_area %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
+          onclick="toggleGroup(this)">
+          Mi Área <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
+          style="max-height:200px">
+
+          {% if tiene_permiso('Usuarios', 'ver') %}
+          <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
+            href="{{ url_for('usuarios.lista') }}">
+            <span class="ic">👥</span> Usuarios del área
+          </a>
+          {% endif %}
+
+          {% if tiene_permiso('Usuarios', 'ver') and tiene_permiso('Roles', 'ver') %}
+          <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
+            href="{{ url_for('permisos.index') }}">
+            <span class="ic">🔐</span> Permisos
+          </a>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endif %}
+
+      {% if current_user.rol in ('admin', 'rh') and tiene_permiso('Recursos Humanos') %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}" onclick="toggleGroup(this)">
+          Recursos Humanos <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint != 'rh' %}collapsed{% endif %}" style="max-height:300px">
+          <a class="nav-link {% if request.endpoint == 'rh.personal' %}active{% endif %}"
+            href="{{ url_for('rh.personal') }}"><span class="ic">👥</span> Personal Corporativo</a>
+          <a class="nav-link {% if request.endpoint == 'rh.activos_usuario' %}active{% endif %}"
+            href="{{ url_for('rh.activos_usuario') }}"><span class="ic">👤</span> Activos por Empleado</a>
+          <a class="nav-link {% if request.endpoint == 'rh.activos_area' %}active{% endif %}"
+            href="{{ url_for('rh.activos_area') }}"><span class="ic">🏢</span> Activos por Área</a>
+          <a class="nav-link {% if request.endpoint == 'rh.bajas_lista' %}active{% endif %}"
+            href="{{ url_for('rh.bajas_lista') }}"><span class="ic">📋</span> Procesos de Baja</a>
+          <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
+            href="{{ url_for('rh.auditoria') }}"><span class="ic">🔍</span> Auditoría</a>
+          <a class="nav-link {% if request.endpoint == 'rh.reporte_consolidado' %}active{% endif %}"
+            href="{{ url_for('rh.reporte_consolidado') }}"><span class="ic">📊</span> Reporte consolidado</a>
+        </div>
+      </div>
+      {% endif %}
+
+    </nav>
+
+    <div class="sb-footer" style="flex-shrink:0">
+      <div class="user-chip">
+        <div class="avatar">{{ current_user.nombre[0]|upper }}</div>
+        <div style="flex:1;min-width:0">
+          <div class="u-name">{{ current_user.nombre.split()[0] }}</div>
+          <div class="u-rol">{{ current_user.rol_label }}</div>
+        </div>
+        <a href="#" class="logout" title="Salir" onclick="confirmarLogout(event)">⏻</a>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=True) %}
     {% for cat, msg in messages %}
     <script>
       Swal.fire({
@@ -277,123 +321,124 @@
       });
     </script>
     {% endfor %}
-  {% endwith %}
-  {% block content %}{% endblock %}
-</main>
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
 
-<script src="{{ url_for('static', filename='js/base.js') }}"></script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-function toggleGroup(btn) {
-  const body = btn.nextElementSibling;
-  const isCollapsed = body.classList.contains('collapsed');
-  if (isCollapsed) {
-    body.classList.remove('collapsed');
-    btn.classList.remove('collapsed');
-  } else {
-    body.classList.add('collapsed');
-    btn.classList.add('collapsed');
-  }
-}
-
-// ── Toast helper global con SweetAlert2 ──────────────────────
-function toast(icon, title) {
-  Swal.fire({
-    toast: true,
-    position: 'top-end',
-    icon: icon,
-    title: title,
-    showConfirmButton: false,
-    timer: 3000,
-    timerProgressBar: true,
-  });
-}
-
-function confirmarLogout(e) {
-  e.preventDefault();
-  Swal.fire({
-    title: '¿Cerrar sesión?',
-    text: 'Tu sesión actual será terminada.',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonColor: '#9B2335',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Sí, salir',
-    cancelButtonText: 'Cancelar',
-    reverseButtons: true,
-  }).then(result => {
-    if (result.isConfirmed) {
-      window.location.href = '{{ url_for("auth.logout") }}';
+  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    function toggleGroup(btn) {
+      const body = btn.nextElementSibling;
+      const isCollapsed = body.classList.contains('collapsed');
+      if (isCollapsed) {
+        body.classList.remove('collapsed');
+        btn.classList.remove('collapsed');
+      } else {
+        body.classList.add('collapsed');
+        btn.classList.add('collapsed');
+      }
     }
-  });
-}
 
-function toggleSidebar() {
-  const sidebar  = document.querySelector('.sidebar');
-  const backdrop = document.getElementById('sidebar-backdrop');
-  sidebar.classList.toggle('open');
-  backdrop.classList.toggle('open');
-}
+    // ── Toast helper global con SweetAlert2 ──────────────────────
+    function toast(icon, title) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: icon,
+        title: title,
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    }
 
-// ── Socket.IO ─────────────────────────────────────────────────
-const socket = io();
-socket.emit('join', { usuario_id: {{ current_user.id }} });
-
-socket.on('permisos_actualizados', function(data) {
-  if (data.usuario_id === {{ current_user.id }}) {
-    toast('info', '🔐 Tus permisos fueron actualizados');
-    setTimeout(() => location.reload(), 2000);
-  }
-});
-
-socket.on('usuarios_actualizados', function(data) {
-  if (window.location.pathname.includes('/usuarios')) {
-    toast('info', '👥 Lista de usuarios actualizada');
-    setTimeout(() => location.reload(), 2000);
-  }
-});
-
-socket.on('proyectos_actualizados', function(data) {
-  if (window.location.pathname.includes('/proyectos')) {
-    toast('info', '📋 Proyectos actualizados');
-    setTimeout(() => location.reload(), 2000);
-  }
-});
-
-socket.on('usuario_bloqueado', function(data) {
-  if (window.location.pathname.includes('/usuarios')) {
-    location.reload();
-  }
-});
-
-socket.on('ti_equipos_update', function() {
-  // Notificación en cualquier página
-  toast('info', '💻 Lista de equipos TI actualizada');
-
-  // Si está en /ti/equipos, actualizar la tabla también
-  if (window.location.pathname.includes('/ti/equipos')) {
-    fetch(window.location.href)
-      .then(r => r.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc    = parser.parseFromString(html, 'text/html');
-        const nuevaTbody = doc.querySelector('.panel table tbody');
-        const actualTbody = document.querySelector('.panel table tbody');
-        if (nuevaTbody && actualTbody) {
-          actualTbody.innerHTML = nuevaTbody.innerHTML;
+    function confirmarLogout(e) {
+      e.preventDefault();
+      Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: 'Tu sesión actual será terminada.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9B2335',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.location.href = '{{ url_for("auth.logout") }}';
         }
       });
-  }
-});
-</script>
+    }
 
-<style>
-  .swal-toast-custom {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 13px !important;
-  }
-</style>
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      sidebar.classList.toggle('open');
+      backdrop.classList.toggle('open');
+    }
 
-{% block scripts %}{% endblock %}
+    // ── Socket.IO ─────────────────────────────────────────────────
+    const socket = io();
+    socket.emit('join', { usuario_id: {{ current_user.id }} });
+
+    socket.on('permisos_actualizados', function (data) {
+      if (data.usuario_id === {{ current_user.id }}) {  // ✅ CORREGIDO
+      toast('info', '🔐 Tus permisos fueron actualizados');
+      setTimeout(() => location.reload(), 2000);
+    }
+  });
+
+    socket.on('usuarios_actualizados', function (data) {
+      if (window.location.pathname.includes('/usuarios')) {
+        toast('info', '👥 Lista de usuarios actualizada');
+        setTimeout(() => location.reload(), 2000);
+      }
+    });
+
+    socket.on('proyectos_actualizados', function (data) {
+      if (window.location.pathname.includes('/proyectos')) {
+        toast('info', '📋 Proyectos actualizados');
+        setTimeout(() => location.reload(), 2000);
+      }
+    });
+
+    socket.on('usuario_bloqueado', function (data) {
+      if (window.location.pathname.includes('/usuarios')) {
+        location.reload();
+      }
+    });
+
+    socket.on('ti_equipos_update', function () {
+      // Notificación en cualquier página
+      toast('info', '💻 Lista de equipos TI actualizada');
+
+      // Si está en /ti/equipos, actualizar la tabla también
+      if (window.location.pathname.includes('/ti/equipos')) {
+        fetch(window.location.href)
+          .then(r => r.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const nuevaTbody = doc.querySelector('.panel table tbody');
+            const actualTbody = document.querySelector('.panel table tbody');
+            if (nuevaTbody && actualTbody) {
+              actualTbody.innerHTML = nuevaTbody.innerHTML;
+            }
+          });
+      }
+    });
+  </script>
+
+  <style>
+    .swal-toast-custom {
+      font-family: 'Inter', sans-serif !important;
+      font-size: 13px !important;
+    }
+  </style>
+
+  {% block scripts %}{% endblock %}
 </body>
+
 </html>

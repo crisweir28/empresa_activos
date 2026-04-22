@@ -6,19 +6,54 @@ from sqlalchemy import text as sqla_text
 from ..extensions import db
 from ..models.usuario import Rol, Usuario
 from ..models.permiso import Modulo, PermisoRol, PermisoUsuario
+from ..utils.permisos import es_admin_rh
 
 permisos_bp = Blueprint("permisos", __name__)
 
 
 def _check_super_admin():
-    """Solo el super administrador puede gestionar permisos de roles globales."""
+    """Solo el super administrador puede gestionar permisos de TODOS los roles."""
     if current_user.IdRol != 1:
         flash("Solo el Super Administrador puede gestionar permisos de roles.", "error")
         return False
     return True
 
 
+def _check_puede_ver_permisos_rol():
+    """Permite super admin OR admin de área (cada uno ve/edita su propio rol)."""
+    if current_user.IdRol == 1:
+        return True
+    if current_user.es_administrador_area:
+        from ..utils.permisos import tiene_permiso
+        if tiene_permiso('Roles', 'ver'):
+            return True
+    flash("No tienes permiso para gestionar permisos de roles.", "error")
+    return False
+
+
+def _check_puede_editar_rol(rol_id: int):
+    """Super admin edita cualquier rol. Admin de área solo su propio rol."""
+    if current_user.IdRol == 1:
+        return True
+    if not current_user.es_administrador_area:
+        flash("No tienes permiso para modificar permisos de roles.", "error")
+        return False
+    from ..utils.permisos import tiene_permiso
+    if not tiene_permiso('Roles', 'editar'):
+        flash("No tienes permiso para modificar permisos de roles.", "error")
+        return False
+    if rol_id != current_user.IdRol:
+        flash("Solo puedes modificar permisos del rol de tu área.", "error")
+        return False
+    return True
+
+
 def _check_puede_editar_usuario(usuario_id):
+    """Validación de si el usuario actual puede editar permisos de otro usuario.
+    - Super admin: puede editar cualquiera
+    - Admin RH: puede editar usuarios de CUALQUIER área (excepto admins de área y super admins)
+    - Otros admin de área: solo usuarios de su propia área
+    """
     if current_user.IdRol == 1:
         return True
 
@@ -40,6 +75,14 @@ def _check_puede_editar_usuario(usuario_id):
         flash("No puedes modificar permisos de un Super Administrador.", "error")
         return False
 
+    # Admin RH: puede editar usuarios de cualquier área, EXCEPTO admins de área
+    if es_admin_rh():
+        if usuario.TipoUsuario == "administrador":
+            flash("No tienes permiso para modificar permisos de administradores de área.", "error")
+            return False
+        return True
+
+    # Otros admin de área: solo usuarios de su misma área
     if usuario.IdDepartamento != current_user.IdDepartamento:
         flash("Solo puedes gestionar permisos de usuarios de tu área.", "error")
         return False
@@ -47,19 +90,40 @@ def _check_puede_editar_usuario(usuario_id):
     return True
 
 
-# ── Permisos por rol (solo super admin) ───────────────────────
+# ── Permisos por rol ──────────────────────────────────────────
+# Super admin: ve y edita todos los roles
+# Admin de área: ve y edita solo el rol de su área
 @permisos_bp.route("/")
 @login_required
 def index():
-    if not _check_super_admin():
-        # Admin de área → redirigir a lista de usuarios de su área
-        return redirect(url_for("usuarios.lista"))
+    if not _check_puede_ver_permisos_rol():
+        return redirect(url_for("activos.dashboard"))
 
-    roles   = Rol.query.order_by(Rol.IdRol).all()
+    es_super = (current_user.IdRol == 1)
+
+    if es_super:
+        roles = Rol.query.order_by(Rol.IdRol).all()
+    else:
+        # Admin de área → solo su propio rol
+        roles = Rol.query.filter_by(IdRol=current_user.IdRol).all()
+
     modulos = Modulo.query.order_by(Modulo.Orden).all()
 
-    rol_id  = request.args.get("rol", roles[0].IdRol if roles else None, type=int)
+    # Determinar rol seleccionado
+    rol_id = request.args.get("rol", type=int)
+    if not es_super:
+        # Admin de área: forzar a su propio rol (ignora ?rol=...)
+        rol_id = current_user.IdRol
+    elif not rol_id and roles:
+        rol_id = roles[0].IdRol
+
     rol_sel = Rol.query.get(rol_id) if rol_id else None
+
+    # Filtrar módulos según área (solo para admin de área)
+    if not es_super and current_user.area_nombre:
+        modulos_ids_area = _modulos_de_area(current_user.area_nombre)
+        if modulos_ids_area:
+            modulos = [m for m in modulos if m.IdModulo in modulos_ids_area]
 
     permisos_raw = PermisoRol.query.filter_by(IdRol=rol_id).all() if rol_id else []
     permisos_map = {
@@ -87,11 +151,22 @@ def index():
 @permisos_bp.route("/guardar", methods=["POST"])
 @login_required
 def guardar():
-    if not _check_super_admin():
+    try:
+        rol_id = int(request.form.get("rol_id"))
+    except (TypeError, ValueError):
+        flash("Rol inválido.", "error")
+        return redirect(url_for("permisos.index"))
+
+    if not _check_puede_editar_rol(rol_id):
         return redirect(url_for("activos.dashboard"))
 
-    rol_id  = int(request.form.get("rol_id"))
     modulos = Modulo.query.all()
+
+    # Admin de área: solo puede tocar módulos de su área
+    if current_user.IdRol != 1 and current_user.area_nombre:
+        modulos_ids_area = _modulos_de_area(current_user.area_nombre)
+        if modulos_ids_area:
+            modulos = [m for m in modulos if m.IdModulo in modulos_ids_area]
 
     for m in modulos:
         prefix = f"mod_{m.IdModulo}_"
@@ -222,7 +297,7 @@ def _modulos_de_area(area_nombre: str) -> list:
     mapa = {
         'TI':               [6],
         'Tecnología':       [6],
-        'Recursos Humanos': [10],
+        'Recursos Humanos': [10, 13],  # Recursos Humanos + Personal Corporativo
         'Administrativo':   [3, 4],
         'Almacén':          [5],
     }
@@ -233,7 +308,8 @@ def _modulos_de_area(area_nombre: str) -> list:
 @permisos_bp.route("/api/rol/<int:rol_id>")
 @login_required
 def api_permisos_rol(rol_id):
-    if current_user.IdRol != 1:
+    # Super admin ve cualquier rol; admin de área solo su propio rol
+    if current_user.IdRol != 1 and rol_id != current_user.IdRol:
         return jsonify({"error": "Sin acceso"}), 403
     permisos = PermisoRol.query.filter_by(IdRol=rol_id).all()
     return jsonify([p.to_dict() for p in permisos])
