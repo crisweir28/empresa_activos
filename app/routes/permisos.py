@@ -199,15 +199,10 @@ def usuario_permisos(usuario_id):
         return redirect(url_for("usuarios.lista"))
 
     usuario = Usuario.query.get_or_404(usuario_id)
-    modulos = Modulo.query.order_by(Modulo.Orden).all()
-
-    # Filtrar módulos según el área del usuario que se está editando
-    area_usuario = usuario.area_nombre  # área del usuario editado, no del editor
-    if area_usuario:
-        modulos_ids_area = _modulos_de_area(area_usuario)
-        if modulos_ids_area:
-            modulos = [m for m in modulos if m.IdModulo in modulos_ids_area]
-    # Si el usuario editado es super admin (sin área), mostrar todos
+    todos_modulos = Modulo.query.order_by(Modulo.Orden).all()  # ← CAMBIO: todos_modulos
+    
+    # Agrupar módulos por área
+    modulos_agrupados = _agrupar_modulos_por_area(todos_modulos)  # ← NUEVO
 
     permisos_raw = PermisoUsuario.query.filter_by(IdUsuario=usuario_id).all()
     permisos_map = {
@@ -233,12 +228,11 @@ def usuario_permisos(usuario_id):
 
     return render_template("usuarios/permisos_usuario.html",
         usuario              = usuario,
-        modulos              = modulos,
+        modulos_agrupados    = modulos_agrupados,  # ← CAMBIO: era "modulos"
         permisos_map         = permisos_map,
         permisos_rol         = permisos_rol,
         tiene_personalizados = tiene_personalizados,
     )
-
 
 @permisos_bp.route("/usuario/<int:usuario_id>/guardar", methods=["POST"])
 @login_required
@@ -295,14 +289,48 @@ def usuario_permisos_reset(usuario_id):
 def _modulos_de_area(area_nombre: str) -> list:
     base = [1, 7, 12, 11]  # Dashboard + Usuarios + Roles + Portal Empleado
     mapa = {
-        'TI':               [6],
-        'Tecnología':       [6],
-        'Recursos Humanos': [10, 13],  # Recursos Humanos + Personal Corporativo
-        'Administrativo':   [3, 4],
+        'TI':               [6, 13],     # Equipos TI + Personal Corporativo
+        'Tecnología':       [6, 13],     # Equipos TI + Personal Corporativo
+        'Recursos Humanos': [10, 13],    # Recursos Humanos + Personal Corporativo
+        'Administrativo':   [3, 4, 13],  # Vehículos + Mantenimiento + Personal Corporativo
         'Almacén':          [5],
     }
     return base + mapa.get(area_nombre, [])
 
+def _agrupar_modulos_por_area(modulos):
+    """Agrupa módulos en categorías para mostrar en UI de permisos."""
+    
+    # Definir las áreas y sus módulos
+    areas = {
+        'Generales': [1, 7, 12, 11],  # Dashboard, Usuarios, Roles, Portal Empleado
+        'Administrativo': [3, 4],      # Vehículos, Mantenimiento
+        'TI / Tecnología': [6],        # Equipos TI
+        'Recursos Humanos': [10],      # RH
+        'Almacén': [5],                # Almacén
+        'Personal Corporativo': [13],  # Personal Corporativo (cross-area)
+    }
+    
+    agrupados = []
+    modulos_dict = {m.IdModulo: m for m in modulos}
+    
+    for area_nombre, ids_modulos in areas.items():
+        modulos_area = [modulos_dict[mid] for mid in ids_modulos if mid in modulos_dict]
+        if modulos_area:
+            agrupados.append({
+                'area': area_nombre,
+                'modulos': modulos_area
+            })
+    
+    # Agregar módulos que no están en ninguna categoría
+    ids_categorizados = [mid for ids in areas.values() for mid in ids]
+    modulos_otros = [m for m in modulos if m.IdModulo not in ids_categorizados]
+    if modulos_otros:
+        agrupados.append({
+            'area': 'Otros',
+            'modulos': modulos_otros
+        })
+    
+    return agrupados
 
 # ── API ───────────────────────────────────────────────────────
 @permisos_bp.route("/api/rol/<int:rol_id>")

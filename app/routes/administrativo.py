@@ -25,7 +25,6 @@ def _check_acceso():
         return False
     return True
 
-
 @administrativo_bp.route("/")
 @login_required
 @requiere_permiso('Dashboard') 
@@ -33,25 +32,32 @@ def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    vehiculos       = VVehiculo.query.all()
+    # Obtener TODOS los vehículos (incluidos baja)
+    todos_vehiculos = VVehiculo.query.all()
+    vehiculos_activos = [v for v in todos_vehiculos if v.estado != 'baja']
+    vehiculos_baja = [v for v in todos_vehiculos if v.estado == 'baja']
+    
     permisos_vencer = VPermisosVencer.query.filter(
         VPermisosVencer.dias_restantes <= 30
     ).order_by(VPermisosVencer.dias_restantes).limit(10).all()
+    
     mantenimientos  = VMantenimientoVehiculo.query.filter_by(estatus="en_proceso").limit(8).all()
+    
     alertas = VAlertasMantenimiento.query.filter(
         (VAlertasMantenimiento.AlertaKilometraje == 1) |
         (VAlertasMantenimiento.AlertaFecha == 1)
     ).all()
 
     return render_template("administrativo/dashboard.html",
-        total_vehiculos  = len(vehiculos),
-        activos          = sum(1 for v in vehiculos if v.estado == "activo"),
-        en_mantenimiento = sum(1 for v in vehiculos if v.estado == "mantenimiento"),
-        alertas_permisos = sum(1 for v in vehiculos if v.permisos_por_vencer > 0),
+        total_vehiculos  = len(vehiculos_activos),
+        activos          = sum(1 for v in vehiculos_activos if v.estado == "activo"),
+        en_mantenimiento = sum(1 for v in vehiculos_activos if v.estado == "mantenimiento"),
+        vehiculos_baja   = len(vehiculos_baja),
         permisos_vencer  = permisos_vencer,
         mantenimientos   = mantenimientos,
-        vehiculos        = vehiculos[:8],
+        vehiculos        = todos_vehiculos,  # ← Pasar TODOS para que JavaScript filtre
         alertas_prox     = alertas,
+        ubicaciones      = Ubicacion.query.all(),  # ← Para el modal de nuevo vehículo
     )
 
 
@@ -61,15 +67,27 @@ def dashboard():
 def vehiculos():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-    estado = request.args.get("estado", "")
-    query  = VVehiculo.query
+    
+    estado  = request.args.get("estado", "")
+    alertas = request.args.get("alertas", "")
+    
+    query = VVehiculo.query
+    
+    # Filtro por estado
     if estado:
         query = query.filter_by(estado=estado)
     else:
         query = query.filter(VVehiculo.estado != 'baja')
+    
+    # Filtro por alertas de permisos
+    if alertas == '1':
+        query = query.filter(VVehiculo.permisos_por_vencer > 0)
+    
     return render_template("administrativo/vehiculos.html",
-        vehiculos   = query.all(),
-        ubicaciones = Ubicacion.query.all(),
+        vehiculos      = query.all(),
+        ubicaciones    = Ubicacion.query.all(),
+        filtro_estado  = estado,
+        filtro_alertas = alertas,
     )
 
 
@@ -173,6 +191,7 @@ def vehiculo_detalle(id):
     permisos       = PermisosVehiculo.query.filter_by(IdVehiculo=id).order_by(PermisosVehiculo.FechaVencimiento.asc()).all()
     mantenimientos = VMantenimientoVehiculo.query.filter_by(vehiculo_id=id).all()
     conductor_act  = ConductorVehiculo.query.filter_by(IdVehiculo=id, FechaFin=None).first()
+    historial_conductores = ConductorVehiculo.query.filter_by(IdVehiculo=id).order_by(ConductorVehiculo.FechaInicio.desc()).all()  # ← NUEVO
     tipos          = TipoServicio.query.all()
     personal       = Personal.query.filter_by(Activo=True).order_by(Personal.Nombre).all()
     return render_template("administrativo/vehiculo_detalle.html",
@@ -180,6 +199,7 @@ def vehiculo_detalle(id):
         permisos       = permisos,
         mantenimientos = mantenimientos,
         conductor_act  = conductor_act,
+        historial_conductores = historial_conductores,  # ← NUEVO
         tipos          = tipos,
         personal       = personal,
         today_date     = date.today(),

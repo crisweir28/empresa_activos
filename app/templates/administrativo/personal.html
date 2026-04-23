@@ -18,7 +18,15 @@
   <div style="overflow-x:auto">
     <table>
       <thead>
-        <tr><th>Nombre</th><th>Área</th><th>Teléfono</th><th>Licencia</th><th>Vigencia licencia</th><th>Seguro médico</th><th>Acciones</th></tr>
+        <tr>
+          <th>Nombre</th>
+          <th>Área</th>
+          <th>Teléfono</th>
+          <th>Licencia</th>
+          <th>Vigencia licencia</th>
+          <th>Seguro médico</th>
+          <th>Acciones</th>
+        </tr>
       </thead>
       <tbody>
         {% for p in personal %}
@@ -32,15 +40,22 @@
           <td style="color:var(--muted);font-family:monospace;font-size:12px">{{ p.LicenciaNumero or '—' }}</td>
           <td>
             {% if p.LicenciaVigencia %}
-              {% set hoy = namespace(val=0) %}
-              <span style="color:var(--text);font-size:12px">{{ p.LicenciaVigencia }}</span>
+            {% set hoy = namespace(val=0) %}
+            <span style="color:var(--text);font-size:12px">{{ p.LicenciaVigencia }}</span>
             {% else %}
-              <span style="color:var(--muted)">—</span>
+            <span style="color:var(--muted)">—</span>
             {% endif %}
           </td>
           <td style="color:var(--muted)">{{ p.SeguroMedico or '—' }}</td>
           <td>
-            <button class="btn-sm" onclick="editarPersonal({{ p.to_dict()|tojson }})">✏️ Editar</button>
+            <button class="btn-sm" data-id="{{ p.IdPersonal }}" data-nombre="{{ p.Nombre }}"
+              data-apellido="{{ p.Apellido }}" data-telefono="{{ p.Telefono or '' }}" data-area="{{ p.Area or '' }}"
+              data-correo="{{ p.Correo or '' }}" data-jefe="{{ p.JefeInmediato or '' }}"
+              data-licencia="{{ p.LicenciaNumero or '' }}" data-lic-vig="{{ p.LicenciaVigencia or '' }}"
+              data-seguro="{{ p.SeguroMedico or '' }}" data-seg-vig="{{ p.SeguroVigencia or '' }}"
+              onclick="editarPersonalData(this)">
+              ✏️ Editar
+            </button>
           </td>
         </tr>
         {% endfor %}

@@ -112,3 +112,73 @@ function completarMant(id) {
   document.getElementById('form-completar').action = `/administrativo/mantenimiento/${id}/completar`;
   abrirModal('modal-completar');
 }
+
+// ══ Filtrado de vehículos en dashboard ═══════════════════════
+let filtroActual = 'todos';
+
+const titulos = {
+  'todos': 'Todos los vehículos',
+  'activo': 'Vehículos activos',
+  'mantenimiento': 'Vehículos en mantenimiento',
+  'baja': 'Vehículos dados de baja'
+};
+
+function filtrarVehiculos(filtro) {
+  filtroActual = filtro;
+  
+  // Actualizar cards activas
+  document.querySelectorAll('.filtro-card').forEach(card => {
+    card.classList.remove('active');
+    if (card.dataset.filtro === filtro) {
+      card.classList.add('active');
+    }
+  });
+  
+  // Filtrar filas
+  const filas = document.querySelectorAll('.vehiculo-row');
+  let visibles = 0;
+  
+  filas.forEach(fila => {
+    const estado = fila.dataset.estado;
+    if (filtro === 'todos' || estado === filtro) {
+      fila.style.display = '';
+      visibles++;
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+  
+  // Actualizar título y contador
+  document.getElementById('titulo-tabla').textContent = titulos[filtro];
+  document.getElementById('contador-vehiculos').textContent = `(${visibles})`;
+  
+  // Mostrar mensaje si no hay resultados
+  const tabla = document.getElementById('tabla-vehiculos');
+  const sinResultados = document.getElementById('sin-resultados');
+  if (visibles === 0) {
+    tabla.style.display = 'none';
+    sinResultados.style.display = 'block';
+  } else {
+    tabla.style.display = '';
+    sinResultados.style.display = 'none';
+  }
+}
+
+// ══ Estilos dinámicos para dashboard ═════════════════════════
+(function initDashboardStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .filtro-card {
+      transition: all 0.2s ease;
+    }
+    .filtro-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .filtro-card.active {
+      border: 2px solid var(--accent);
+      box-shadow: 0 4px 16px rgba(124,92,252,0.15);
+    }
+  `;
+  document.head.appendChild(style);
+})();

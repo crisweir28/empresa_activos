@@ -114,17 +114,17 @@
         <div
           class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
           style="max-height:200px">
-          <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
-            href="{{ url_for('permisos.index') }}">
-            <span class="ic">🔐</span> Roles & Permisos
+          <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
+            href="{{ url_for('departamentos.lista') }}">
+            <span class="ic">🏬</span> Departamentos
           </a>
           <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
             href="{{ url_for('usuarios.lista') }}">
             <span class="ic">👥</span> Usuarios
           </a>
-          <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
-            href="{{ url_for('departamentos.lista') }}">
-            <span class="ic">🏬</span> Departamentos
+          <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
+            href="{{ url_for('permisos.index') }}">
+            <span class="ic">🔐</span> Roles & Permisos
           </a>
         </div>
       </div>
@@ -132,10 +132,7 @@
 
 
       {# ── Vehículos ── #}
-      {% if current_user.rol in ('admin', 'administrativo') and (current_user.es_admin or
-      current_user.es_administrador_area) and
-      (tiene_permiso('Dashboard') or tiene_permiso('Vehículos', 'ver') or tiene_permiso('Mantenimiento', 'ver') or
-      tiene_permiso('Vehículos', 'crear')) %}
+      {% if tiene_permiso('Dashboard') or tiene_permiso('Vehículos', 'ver') or tiene_permiso('Mantenimiento', 'ver') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
           onclick="toggleGroup(this)">
@@ -150,14 +147,6 @@
             <span class="ic">📊</span> Dashboard
           </a>
           {% endif %}
-
-          {% if tiene_permiso('Vehículos', 'ver') %}
-          <a class="nav-link {% if request.endpoint == 'administrativo.vehiculos' %}active{% endif %}"
-            href="{{ url_for('administrativo.vehiculos') }}">
-            <span class="ic">🚗</span> Vehículos
-          </a>
-          {% endif %}
-
           {% if tiene_permiso('Mantenimiento', 'ver') %}
           <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
             href="{{ url_for('administrativo.mantenimiento_lista') }}">
@@ -177,7 +166,7 @@
       {% endif %}
 
       {# ── Almacén ── #}
-      {% if current_user.rol in ('admin', 'almacenista') and tiene_permiso('Almacén') %}
+      {% if tiene_permiso('Almacén') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
           onclick="toggleGroup(this)">
@@ -202,7 +191,7 @@
       {% endif %}
 
       {# ── Equipos TI ── #}
-      {% if current_user.rol in ('ti', 'admin') and tiene_permiso('Equipos TI') %}
+      {% if tiene_permiso('Equipos TI') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'ti' %}collapsed{% endif %}" onclick="toggleGroup(this)">
           Equipos TI <span class="sb-group-arrow">▾</span>
@@ -225,7 +214,7 @@
       {% endif %}
 
       {# ── Proyectos ── #}
-      {% if current_user.rol in ('admin', 'ti', 'rh', 'administrativo') and tiene_permiso('Proyectos') %}
+      {% if tiene_permiso('Proyectos') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
           onclick="toggleGroup(this)">
@@ -269,7 +258,7 @@
       </div>
       {% endif %}
 
-      {% if current_user.rol in ('admin', 'rh') and tiene_permiso('Recursos Humanos') %}
+      {% if tiene_permiso('Recursos Humanos') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}" onclick="toggleGroup(this)">
           Recursos Humanos <span class="sb-group-arrow">▾</span>

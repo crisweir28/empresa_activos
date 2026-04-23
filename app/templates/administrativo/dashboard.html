@@ -2,115 +2,172 @@
 {% extends "base.html" %}
 {% block title %}Dashboard Vehicular{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/administrativo/administrativo.css') }}">
+
+{% endblock %}
+
 {% block content %}
+<!-- Botón Nuevo vehículo - solo si tiene permiso crear -->
 <div class="topbar">
   <div>
     <div class="page-title">🚗 Dashboard Vehicular</div>
     <div class="page-sub">Gestión de vehículos, conductores y permisos</div>
   </div>
+  {% if tiene_permiso('Vehículos', 'crear') %}
+  <button class="btn btn-primary" onclick="abrirModal('modal-nuevo')">
+    + Nuevo vehículo
+  </button>
+  {% endif %}
 </div>
 
+<!-- Cards de filtro (clicables) -->
 <div class="stats-grid" style="margin-bottom:22px">
-  <div class="stat-card" style="animation-delay:.0s">
+  <div class="stat-card filtro-card active" data-filtro="todos" onclick="filtrarVehiculos('todos')" style="animation-delay:.0s;cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <span class="stat-label">Total vehículos</span>
       <span style="font-size:22px">🚗</span>
     </div>
     <div class="stat-val" style="color:var(--accent)">{{ total_vehiculos }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.07s">
+  
+  <div class="stat-card filtro-card" data-filtro="activo" onclick="filtrarVehiculos('activo')" style="animation-delay:.07s;cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <span class="stat-label">Activos</span>
       <span style="font-size:22px">✅</span>
     </div>
     <div class="stat-val" style="color:var(--green)">{{ activos }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.14s">
+  
+  <div class="stat-card filtro-card" data-filtro="mantenimiento" onclick="filtrarVehiculos('mantenimiento')" style="animation-delay:.14s;cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <span class="stat-label">En mantenimiento</span>
       <span style="font-size:22px">🔧</span>
     </div>
     <div class="stat-val" style="color:var(--yellow)">{{ en_mantenimiento }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.21s">
+  
+  <div class="stat-card filtro-card" data-filtro="baja" onclick="filtrarVehiculos('baja')" style="animation-delay:.21s;cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <span class="stat-label">Alertas permisos</span>
-      <span style="font-size:22px">⚠️</span>
+      <span class="stat-label">Dados de baja</span>
+      <span style="font-size:22px">🗑️</span>
     </div>
-    <div class="stat-val" style="color:var(--red)">{{ alertas_permisos }}</div>
+    <div class="stat-val" style="color:var(--red)">{{ vehiculos_baja }}</div>
   </div>
 </div>
 
 <div class="layout-2col">
 
-  <!-- Vehículos recientes -->
-  <div class="panel">
-    <div class="panel-title">
-      🚗 Vehículos registrados
-      <a href="{{ url_for('administrativo.vehiculos') }}" class="btn-sm">Ver todos →</a>
-    </div>
-    {% if vehiculos %}
-    <div style="overflow-x:auto">
-      <table>
-        <thead>
-          <tr><th>Vehículo</th><th>Placa</th><th>Conductor</th><th>Estado</th><th>Permisos</th></tr>
-        </thead>
-        <tbody>
-          {% for v in vehiculos %}
-          <tr>
-            <td>
-              <strong>{{ v.nombre }}</strong>
-              {% if v.marca or v.modelo %}
-              <br><span style="font-size:11px;color:var(--muted)">{{ v.marca }} {{ v.modelo }}</span>
-              {% endif %}
-            </td>
-            <td style="color:var(--muted);font-size:12px;font-family:monospace">{{ v.matricula }}</td>
-            <td style="color:var(--muted)">{{ v.conductor_nombre or '—' }}</td>
-            <td><span class="badge badge-{{ v.estado }}">{{ v.estado }}</span></td>
-            <td>
-              {% if v.permisos_por_vencer > 0 %}
-              <span style="color:var(--yellow);font-size:12px">⚠️ {{ v.permisos_por_vencer }} por vencer</span>
-              {% else %}
-              <span style="color:var(--green);font-size:12px">✅ Al día</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">
-      Sin vehículos registrados.
-      <a href="{{ url_for('administrativo.vehiculos') }}" style="color:var(--accent)">Agregar →</a>
-    </p>
-    {% endif %}
+ <!-- Tabla de vehículos (filtrable) -->
+<div class="panel">
+  <div class="panel-title">
+    🚗 <span id="titulo-tabla">Todos los vehículos</span>
+    <span id="contador-vehiculos" style="color:var(--muted);font-size:13px;font-weight:400">({{ vehiculos|length }})</span>
   </div>
+  {% if vehiculos %}
+  <div style="overflow-x:auto">
+    <table id="tabla-vehiculos">
+      <thead>
+        <tr>
+          <th>Vehículo</th><th>Placa</th><th>Conductor</th><th>Estado</th><th>Permisos</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vehiculos %}
+        <tr data-estado="{{ v.estado }}" class="vehiculo-row">
+          <td>
+            <strong>{{ v.nombre }}</strong>
+            {% if v.marca or v.modelo %}
+            <br><span style="font-size:11px;color:var(--muted)">{{ v.marca }} {{ v.modelo }}</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--muted);font-size:12px;font-family:monospace">{{ v.matricula }}</td>
+          <td style="color:var(--muted)">{{ v.conductor_nombre or '—' }}</td>
+          <td><span class="badge badge-{{ v.estado }}">{{ v.estado }}</span></td>
+          <td>
+            {% if v.permisos_por_vencer > 0 %}
+            <span style="color:var(--yellow);font-size:12px">⚠️ {{ v.permisos_por_vencer }} por vencer</span>
+            {% else %}
+            <span style="color:var(--green);font-size:12px">✅ Al día</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if tiene_permiso('Vehículos', 'ver') %}
+            <a href="{{ url_for('administrativo.vehiculo_detalle', id=v.id) }}" class="btn-sm">👁 Ver</a>
+            {% endif %}
+            
+            {% if tiene_permiso('Vehículos', 'editar') %}
+            <button class="btn-sm" onclick="editarVehiculo({{ v.id }},'{{ v.nombre }}','{{ v.matricula }}','{{ v.marca or '' }}','{{ v.modelo or '' }}',{{ v.kilometraje or 0 }},'{{ v.tipo_adquisicion or '' }}','{{ v.estado }}',{{ v.valor or 0 }},'{{ v.fecha_adquisicion or '' }}')">✏️ Editar</button>
+            {% endif %}
+            
+            {% if tiene_permiso('Vehículos', 'eliminar') and v.estado != 'baja' %}
+            <form method="POST" action="/administrativo/vehiculos/{{ v.id }}/baja" style="display:inline" id="baja-v-{{ v.id }}"></form>
+            <button class="btn-sm btn-del" onclick="confirmarBaja('{{ v.nombre }}','baja-v-{{ v.id }}')">🗑️</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="sin-resultados" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:40px">
+    Sin vehículos en este filtro.
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">
+    Sin vehículos registrados.
+    {% if tiene_permiso('Vehículos', 'crear') %}
+    <button onclick="abrirModal('modal-nuevo')" style="color:var(--accent);background:none;border:none;cursor:pointer;text-decoration:underline">Agregar →</button>
+    {% endif %}
+  </p>
+  {% endif %}
+</div>
 
   <!-- Panel derecho -->
   <div style="display:flex;flex-direction:column;gap:16px">
 
+    <!-- Calendario de permisos -->
     <div class="panel">
-      <div class="panel-title">⚠️ Permisos por vencer</div>
+      <div class="panel-title">📅 Permisos por vencer</div>
       {% if permisos_vencer %}
-        {% for p in permisos_vencer %}
-        <div style="background:var(--bg);border:1px solid {% if p.dias_restantes <= 7 %}rgba(248,113,113,.3){% else %}rgba(251,191,36,.3){% endif %};border-radius:10px;padding:10px 14px;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <strong style="font-size:13px">{{ p.vehiculo_nombre }}</strong>
-            <span style="font-size:11px;color:{% if p.dias_restantes <= 7 %}var(--red){% else %}var(--yellow){% endif %}">
-              {{ p.dias_restantes }} días
-            </span>
+        <div class="calendario-permisos">
+          {% for p in permisos_vencer %}
+          <div class="permiso-card {% if p.dias_restantes <= 7 %}critico{% elif p.dias_restantes <= 30 %}proximo{% else %}ok{% endif %}">
+            <div class="permiso-vehiculo">{{ p.vehiculo_nombre }}</div>
+            <div class="permiso-tipo">{{ p.tipo }} · {{ p.matricula }}</div>
+            <div class="permiso-fecha {% if p.dias_restantes <= 7 %}critico{% elif p.dias_restantes <= 30 %}proximo{% else %}ok{% endif %}">
+              <span>
+                {% if p.dias_restantes <= 0 %}
+                ⚠️ Vencido
+                {% elif p.dias_restantes == 1 %}
+                ⏰ Mañana
+                {% else %}
+                📅 {{ p.fecha_vencimiento }}
+                {% endif %}
+              </span>
+              <span class="dias-badge">
+                {% if p.dias_restantes <= 0 %}
+                Vencido
+                {% elif p.dias_restantes == 1 %}
+                1 día
+                {% else %}
+                {{ p.dias_restantes }} días
+                {% endif %}
+              </span>
+            </div>
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px">
-            {{ p.tipo }} · {{ p.matricula }}
-          </div>
+          {% endfor %}
         </div>
-        {% endfor %}
       {% else %}
-        <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin alertas</p>
+        <div class="sin-alertas">
+          <div class="sin-alertas-icon">✅</div>
+          <div style="font-weight:600;margin-bottom:4px">Todo en orden</div>
+          <div style="font-size:12px;color:var(--muted)">No hay permisos por vencer</div>
+        </div>
       {% endif %}
     </div>
 
+    <!-- Mantenimientos activos -->
     <div class="panel">
       <div class="panel-title">🔧 Mantenimientos activos</div>
       {% if mantenimientos %}
@@ -123,10 +180,23 @@
         </div>
         {% endfor %}
       {% else %}
-        <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
+        <div class="sin-alertas" style="padding:24px">
+          <div class="sin-alertas-icon" style="font-size:32px">✅</div>
+          <div style="font-size:12px;color:var(--muted)">Sin mantenimientos activos</div>
+        </div>
       {% endif %}
     </div>
 
   </div>
 </div>
+
+{# ── Modales ─────────────────────────────────────────────── #}
+{% include "administrativo/modales/vehiculos/_modal_vehiculo_nuevo.html" %}
+{% include "administrativo/modales/vehiculos/_modal_vehiculo_editar.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/administrativo/administrativo.js') }}"></script>
+<script src="{{ url_for('static', filename='js/administrativo/administrativo/vehiculos.js') }}"></script>
 {% endblock %}

@@ -22,16 +22,32 @@
   .modulo-name { font-size: 13px; font-weight: 600; }
   .modulo-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
-  .toggle-wrap { display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 4px; }
-  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .slider { position: absolute; inset: 0; cursor: pointer; background: #e2e8f0; border-radius: 20px; transition: .2s; border: 1.5px solid #cbd5e1; }
-  .slider:before { content: ''; position: absolute; height: 13px; width: 13px; left: 2px; bottom: 2px; background: #94a3b8; border-radius: 50%; transition: .2s; }
-  input:checked + .slider { background: var(--accent); border-color: var(--accent); }
-  input:checked + .slider:before { transform: translateX(15px); background: white; }
+.switch-container { position: relative; display: inline-block; width: 36px; height: 20px; }
+.switch-container input { opacity: 0; width: 0; height: 0; }
+.switch-slider { position: absolute; inset: 0; cursor: pointer; background: #e2e8f0; border-radius: 20px; transition: .2s; border: 1.5px solid #cbd5e1; }
+.switch-slider:before { content: ''; position: absolute; height: 13px; width: 13px; left: 2px; bottom: 2px; background: #94a3b8; border-radius: 50%; transition: .2s; }
+input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
+input:checked + .switch-slider:before { transform: translateX(15px); background: white; }
 
   .rol-ref { font-size: 9px; color: var(--muted); }
   .personalizado-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 4px; }
+
+  table thead {
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+table th {
+  padding: 12px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);  /* ← Cambiar de 1px a 2px */
+}
 </style>
 {% endblock %}
 
@@ -48,81 +64,83 @@
 </div>
 
 <div class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border)">
-    <div>
-      <div style="font-size:14px;font-weight:600">Permisos de {{ usuario.Nombre }}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:3px">
-        {% if tiene_personalizados %}
-        <span style="color:var(--accent)">● Tiene permisos personalizados</span>
-        — diferentes a los del rol {{ usuario.rol_label }}
-        {% else %}
-        <span style="color:var(--muted)">○ Sin personalizar</span>
-        — se muestran los permisos del rol {{ usuario.rol_label }} como referencia
-        {% endif %}
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
+  <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+    Permisos de {{ usuario.Usuario }}
+    <div style="display:flex;gap:8px">
       {% if tiene_personalizados %}
-      <form method="POST" action="{{ url_for('permisos.usuario_permisos_reset', usuario_id=usuario.IdUsuario) }}"
-            onsubmit="return confirm('¿Restablecer permisos al rol? Se perderán los permisos personalizados.')">
-        <button type="submit" class="btn-cancel">↺ Restablecer al rol</button>
+      <form method="POST" action="{{ url_for('permisos.usuario_permisos_reset', usuario_id=usuario.IdUsuario) }}" 
+            onsubmit="return confirm('¿Restablecer permisos desde el rol?')" style="display:inline">
+        <button type="submit" class="btn-sm">🔄 Restablecer al rol</button>
       </form>
       {% endif %}
-      <button type="button" class="btn-cancel" onclick="history.back()">Cancelar</button>
-      <button type="button" class="btn btn-primary" onclick="document.getElementById('form-permisos').submit()">
-        💾 Guardar permisos
-      </button>
+      <button type="button" class="btn-cancel" onclick="window.history.back()">Cancelar</button>
+      <button type="submit" form="form-permisos" class="btn btn-primary">💾 Guardar permisos</button>
     </div>
   </div>
-
-  <form method="POST" action="{{ url_for('permisos.usuario_permisos_guardar', usuario_id=usuario.IdUsuario) }}"
-        id="form-permisos">
-    <table class="permisos-table">
+ 
+  <form method="POST" action="{{ url_for('permisos.usuario_permisos_guardar', usuario_id=usuario.IdUsuario) }}" id="form-permisos">
+    
+    {% for grupo in modulos_agrupados %}
+    <!-- Separador de área -->
+    <div style="background:linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(124,92,252,0.03) 100%);
+            border-left:5px solid var(--accent);
+            padding:14px 20px;
+            margin:32px 0 16px;
+            border-radius:10px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.04)">
+  <strong style="font-size:15px;color:var(--text);letter-spacing:0.03em">
+    {% if grupo.area == 'Generales' %}📊 MÓDULOS GENERALES
+    {% elif grupo.area == 'Administrativo' %}🚗 ADMINISTRATIVO
+    {% elif grupo.area == 'TI / Tecnología' %}💻 TI / TECNOLOGÍA
+    {% elif grupo.area == 'Recursos Humanos' %}👥 RECURSOS HUMANOS
+    {% elif grupo.area == 'Almacén' %}📦 ALMACÉN
+    {% elif grupo.area == 'Personal Corporativo' %}🌐 PERSONAL CORPORATIVO
+    {% else %}🔧 {{ grupo.area|upper }}
+    {% endif %}
+  </strong>
+</div>
+ 
+    <!-- Tabla de módulos del área -->
+    <table style="margin-bottom:24px">
       <thead>
         <tr>
-          <th>Módulo</th>
-          <th>Ver</th>
-          <th>Crear</th>
-          <th>Editar</th>
-          <th>Eliminar</th>
+          <th style="width:35%">Módulo</th>
+          <th style="width:15%;text-align:center">VER</th>
+          <th style="width:15%;text-align:center">CREAR</th>
+          <th style="width:15%;text-align:center">EDITAR</th>
+          <th style="width:15%;text-align:center">ELIMINAR</th>
         </tr>
       </thead>
       <tbody>
-        {% for m in modulos %}
-        {% set p = permisos_map.get(m.IdModulo) %}
-        {% set r = permisos_rol.get(m.IdModulo) %}
-        <tr>
+        {% for m in grupo.modulos %}
+        {% set perm_usuario = permisos_map.get(m.IdModulo, {}) %}
+        {% set perm_rol = permisos_rol.get(m.IdModulo, {}) %}
+        {% set es_personalizado = perm_usuario.get('EsPersonalizado', False) %}
+        <tr {% if es_personalizado %}style="background:rgba(251,191,36,0.05)"{% endif %}>
           <td>
-            <div class="modulo-info">
-              <div class="modulo-icon">{{ m.Icono or '📦' }}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">{{ m.Icono or '📄' }}</span>
               <div>
-                <div class="modulo-name">
-                  {{ m.Nombre }}
-                  {% if p and p.get('EsPersonalizado') %}
-                  <span class="personalizado-dot" title="Permiso personalizado"></span>
-                  {% endif %}
-                </div>
-                <div class="modulo-desc">{{ m.Descripcion or '' }}</div>
+                <strong>{{ m.NombreModulo }}</strong>
+                {% if es_personalizado %}
+                <span style="color:var(--yellow);font-size:11px;margin-left:6px">●</span>
+                {% endif %}
+                <br><span style="font-size:11px;color:var(--muted)">{{ m.Descripcion or '' }}</span>
               </div>
             </div>
           </td>
-          {% for accion, label in [('ver','Ver'),('crear','Crear'),('editar','Editar'),('eliminar','Eliminar')] %}
-          {% set campo = 'Puede' ~ accion|capitalize %}
-          {% set val_usuario = p.get(campo, False) if p else None %}
-          {% set val_rol = r.get(campo, False) if r else False %}
-          <td>
-            <div class="toggle-wrap">
-              <label class="toggle">
-                <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}"
-                       {% if val_usuario is not none %}
-                         {% if val_usuario %}checked{% endif %}
-                       {% elif val_rol %}checked{% endif %}
-                       onchange="marcarCambio()">
-                <span class="slider"></span>
-              </label>
-              <span class="rol-ref" title="Permiso del rol">
-                rol: {% if val_rol %}✓{% else %}✗{% endif %}
-              </span>
+          
+          {% for accion in ['ver', 'crear', 'editar', 'eliminar'] %}
+          {% set checked_usuario = perm_usuario.get('Puede' + accion|capitalize, False) %}
+          {% set checked_rol = perm_rol.get('Puede' + accion|capitalize, False) %}
+          <td style="text-align:center">
+            <label class="switch-container" style="margin:0;justify-content:center">
+              <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}" 
+                     {% if checked_usuario %}checked{% endif %}>
+              <span class="switch-slider"></span>
+            </label>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">
+              rol: {% if checked_rol %}<span style="color:var(--green)">✓</span>{% else %}<span style="color:var(--muted)">✗</span>{% endif %}
             </div>
           </td>
           {% endfor %}
@@ -130,7 +148,15 @@
         {% endfor %}
       </tbody>
     </table>
+    {% endfor %}
+ 
+    <div style="font-size:11px;color:var(--muted);margin-top:16px;padding:12px;background:var(--bg);border-radius:8px">
+      <span style="color:var(--yellow)">●</span> = permiso personalizado distinto al rol · 
+      <strong>rol: ✓/✗</strong> = referencia del rol base
+    </div>
+ 
   </form>
+</div>
 
   <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
     <span style="font-size:11px;color:var(--muted)" id="sync-status">● Sincronizado</span>
