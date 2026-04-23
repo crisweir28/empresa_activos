@@ -293,21 +293,20 @@ def _modulos_de_area(area_nombre: str) -> list:
         'Tecnología':       [6, 13],     # Equipos TI + Personal Corporativo
         'Recursos Humanos': [10, 13],    # Recursos Humanos + Personal Corporativo
         'Administrativo':   [3, 4, 13],  # Vehículos + Mantenimiento + Personal Corporativo
-        'Almacén':          [5],
+        'Almacén':          [5],         # ← DEBE ESTAR ESTA LÍNEA
     }
     return base + mapa.get(area_nombre, [])
 
 def _agrupar_modulos_por_area(modulos):
     """Agrupa módulos en categorías para mostrar en UI de permisos."""
     
-    # Definir las áreas y sus módulos
     areas = {
-        'Generales': [1, 7, 12, 11],  # Dashboard, Usuarios, Roles, Portal Empleado
-        'Administrativo': [3, 4],      # Vehículos, Mantenimiento
-        'TI / Tecnología': [6],        # Equipos TI
-        'Recursos Humanos': [10],      # RH
-        'Almacén': [5],                # Almacén
-        'Personal Corporativo': [13],  # Personal Corporativo (cross-area)
+        'Generales': [1, 7, 12, 11],
+        'Administrativo': [3, 4],
+        'TI / Tecnología': [6],
+        'Recursos Humanos': [10],
+        'Almacén': [5],
+        'Personal Corporativo': [13],
     }
     
     agrupados = []

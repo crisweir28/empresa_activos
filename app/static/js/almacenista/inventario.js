@@ -1,3 +1,4 @@
+// ── Validaciones de formulario ────────────────────────────────
 function setMsg(input, msgId, ok, msg) {
   const el = document.getElementById('msg-' + msgId);
   input.classList.toggle('input-ok',  ok);
@@ -103,5 +104,95 @@ function confirmarBaja(nombre, formId) {
     if (result.isConfirmed) {
       document.getElementById(formId).submit();
     }
+  });
+}
+
+// ── Filtrado de herramientas en dashboard ─────────────────────
+function filtrarHerramientas(filtro) {
+  const filas = document.querySelectorAll('#tabla-herramientas tbody tr');
+  const mensajeVacio = document.getElementById('mensaje-vacio');
+  const titulo = document.getElementById('titulo-inventario');
+  const contador = document.getElementById('contador-herramientas');
+  const cards = document.querySelectorAll('.stat-card');
+  
+  let visibles = 0;
+  
+  // Actualizar estado activo de las cards
+  cards.forEach((card, idx) => {
+    card.style.transform = '';
+    card.style.boxShadow = '';
+  });
+  
+  const cardMap = {
+    'todos': 0,
+    'disponible': 1,
+    'asignado': 2,
+    'daniado': 3,
+    'baja': 4
+  };
+  
+  if (cardMap[filtro] !== undefined) {
+    const activeCard = cards[cardMap[filtro]];
+    activeCard.style.transform = 'scale(1.02)';
+    activeCard.style.boxShadow = '0 8px 24px rgba(124,92,252,0.15)';
+  }
+  
+  // Filtrar filas
+  filas.forEach(fila => {
+    const estado = fila.dataset.estado;
+    let mostrar = false;
+    
+    if (filtro === 'todos') {
+      mostrar = true;
+    } else if (filtro === 'daniado') {
+      mostrar = (estado === 'dañado' || estado === 'perdido');
+    } else {
+      mostrar = (estado === filtro);
+    }
+    
+    if (mostrar) {
+      fila.style.display = '';
+      visibles++;
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+  
+  // Actualizar título y contador
+  const titulos = {
+    'todos': '📋 Inventario completo',
+    'disponible': '✅ Herramientas disponibles',
+    'asignado': '👤 Herramientas asignadas',
+    'daniado': '⚠️ Herramientas dañadas / perdidas',
+    'baja': '🗑️ Herramientas dadas de baja'
+  };
+  
+  titulo.textContent = titulos[filtro] || '📋 Inventario';
+  contador.textContent = visibles;
+  
+  // Mostrar/ocultar mensaje de vacío
+  if (visibles === 0) {
+    document.querySelector('#tabla-herramientas').style.display = 'none';
+    mensajeVacio.style.display = 'block';
+  } else {
+    document.querySelector('#tabla-herramientas').style.display = 'table';
+    mensajeVacio.style.display = 'none';
+  }
+}
+
+// Estilo hover para las cards (solo en dashboard)
+if (document.querySelector('.stat-card')) {
+  document.querySelectorAll('.stat-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+      if (!this.style.transform) {
+        this.style.transform = 'translateY(-2px)';
+      }
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      if (this.style.transform === 'translateY(-2px)') {
+        this.style.transform = '';
+      }
+    });
   });
 }

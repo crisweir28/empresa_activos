@@ -1,5 +1,29 @@
+<!-- app/templates/almacenista/dashboard.html -->
 {% extends "base.html" %}
 {% block title %}Almacén — Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Sobrescribir grid de stats para Almacén */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="topbar">
@@ -7,29 +31,140 @@
     <div class="page-title">📦 Almacén</div>
     <div class="page-sub">Gestión de herramientas e inventario</div>
   </div>
+  {% if tiene_permiso('Almacén', 'crear') %}
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nueva').classList.add('open')">
+    + Alta herramienta
+  </button>
+  {% endif %}
 </div>
 
-<!-- Stats -->
+<!-- Stats con filtros clickables -->
 <div class="stats-grid" style="margin-bottom:22px">
-  <div class="stat-card" style="animation-delay:.0s">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Total herramientas</span><span style="font-size:22px">🔧</span></div>
+  <div class="stat-card" style="animation-delay:.0s;cursor:pointer" onclick="filtrarHerramientas('todos')">
+    <div style="display:flex;justify-content:space-between">
+      <span class="stat-label">Total herramientas</span>
+      <span style="font-size:22px">🔧</span>
+    </div>
     <div class="stat-val" style="color:var(--accent)">{{ total }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.07s">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Disponibles</span><span style="font-size:22px">✅</span></div>
+  
+  <div class="stat-card" style="animation-delay:.07s;cursor:pointer" onclick="filtrarHerramientas('disponible')">
+    <div style="display:flex;justify-content:space-between">
+      <span class="stat-label">Disponibles</span>
+      <span style="font-size:22px">✅</span>
+    </div>
     <div class="stat-val" style="color:var(--green)">{{ disponibles }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.14s">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignadas</span><span style="font-size:22px">👤</span></div>
+  
+  <div class="stat-card" style="animation-delay:.14s;cursor:pointer" onclick="filtrarHerramientas('asignado')">
+    <div style="display:flex;justify-content:space-between">
+      <span class="stat-label">Asignadas</span>
+      <span style="font-size:22px">👤</span>
+    </div>
     <div class="stat-val" style="color:var(--accent)">{{ asignados }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.21s">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Dañadas / Perdidas</span><span style="font-size:22px">⚠️</span></div>
+  
+  <div class="stat-card" style="animation-delay:.21s;cursor:pointer" onclick="filtrarHerramientas('daniado')">
+    <div style="display:flex;justify-content:space-between">
+      <span class="stat-label">Dañadas / Perdidas</span>
+      <span style="font-size:22px">⚠️</span>
+    </div>
     <div class="stat-val" style="color:var(--red)">{{ daniados }}</div>
+  </div>
+  
+  <div class="stat-card" style="animation-delay:.28s;cursor:pointer" onclick="filtrarHerramientas('baja')">
+    <div style="display:flex;justify-content:space-between">
+      <span class="stat-label">Dadas de baja</span>
+      <span style="font-size:22px">🗑️</span>
+    </div>
+    <div class="stat-val" style="color:var(--muted)">{{ bajas }}</div>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 340px;gap:16px">
+<!-- Inventario completo con filtros -->
+<div class="panel">
+  <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+    <span id="titulo-inventario">📋 Inventario completo</span>
+    <span style="font-size:13px;color:var(--muted);font-weight:400">
+      <span id="contador-herramientas">{{ herramientas|length }}</span> herramientas
+    </span>
+  </div>
+  
+  {% if herramientas %}
+  <div style="overflow-x:auto">
+    <table id="tabla-herramientas">
+      <thead>
+        <tr>
+          <th>Herramienta</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Asignada a</th>
+          <th>Costo</th>
+          <th>Reportes</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in herramientas %}
+        <tr data-estado="{{ h.Estado }}">
+          <td>
+            <strong>{{ h.Nombre }}</strong>
+            {% if h.Marca or h.Modelo %}
+            <br><span style="font-size:11px;color:var(--muted)">{{ h.Marca or '' }} {{ h.Modelo or '' }}</span>
+            {% endif %}
+          </td>
+          <td style="font-family:monospace;color:var(--muted);font-size:12px">{{ h.NumeroSerie or '—' }}</td>
+          <td>
+            {% set colores = {'disponible':'badge-activo','asignado':'','dañado':'badge-baja','perdido':'badge-baja','mantenimiento':'badge-mantenimiento','baja':'badge-baja'} %}
+            <span class="badge {{ colores.get(h.Estado, '') }}"
+                  style="{% if h.Estado == 'asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
+              {{ h.Estado }}
+            </span>
+          </td>
+          <td style="color:var(--muted)">{{ h.UsuarioAsignado or '—' }}</td>
+          <td style="color:var(--muted)">${{ "%.2f"|format(h.Costo or 0) }}</td>
+          <td>
+            {% if h.TotalReportes > 0 %}
+            <span style="color:var(--red);font-size:12px">⚠️ {{ h.TotalReportes }}</span>
+            {% else %}
+            <span style="color:var(--green);font-size:12px">✅</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if tiene_permiso('Almacén', 'ver') %}
+            <a href="{{ url_for('almacenista.herramienta_detalle', id=h.IdHerramienta) }}" class="btn-sm">👁 Ver</a>
+            {% endif %}
+            
+            {% if h.Estado == 'disponible' and tiene_permiso('Almacén', 'editar') %}
+            <button class="btn-sm" onclick="asignarHerr({{ h.IdHerramienta }}, '{{ h.Nombre }}')">👤 Asignar</button>
+            {% endif %}
+            
+            {% if h.Estado != 'baja' and tiene_permiso('Almacén', 'eliminar') %}
+            <form method="POST" action="/almacen/herramientas/{{ h.IdHerramienta }}/baja"
+                  style="display:inline" id="baja-herr-{{ h.IdHerramienta }}"></form>
+            <button class="btn-sm btn-del"
+                    onclick="confirmarBaja('{{ h.Nombre }}','baja-herr-{{ h.IdHerramienta }}')">
+              🗑️
+            </button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Mensaje cuando no hay herramientas en el filtro -->
+  <p id="mensaje-vacio" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:40px">
+    Sin herramientas en este filtro
+  </p>
+  
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin herramientas registradas.</p>
+  {% endif %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-top:16px">
 
   <!-- Asignaciones activas -->
   <div class="panel">
@@ -75,4 +210,14 @@
   </div>
 
 </div>
+
+<!-- ================================== Modales ================================== -->
+{% include "almacenista/modales/inventario/_modal_alta_herramienta.html" %}
+{% include "almacenista/modales/inventario/_modal_asignar_herramienta.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/almacenista/inventario.js') }}"></script>
+<script src="{{ url_for('static', filename='js/almacenista/almacenista.js') }}"></script>
 {% endblock %}

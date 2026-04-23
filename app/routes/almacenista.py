@@ -27,6 +27,8 @@ def _check_acceso():
 
 
 # ── Dashboard ─────────────────────────────────────────────────
+# app/routes/almacenista.py - Actualizar la función dashboard()
+
 @almacenista_bp.route("/")
 @login_required
 @requiere_permiso('Almacén')
@@ -39,17 +41,31 @@ def dashboard():
     disponibles = sum(1 for h in inventario if h.Estado == "disponible")
     asignados   = sum(1 for h in inventario if h.Estado == "asignado")
     daniados    = sum(1 for h in inventario if h.Estado in ("dañado", "perdido"))
+    bajas       = sum(1 for h in inventario if h.Estado == "baja")  # ← NUEVO
 
     recientes = VHistorialAsignaciones.query.filter_by(EstadoAsignacion="activa").limit(8).all()
     reportes  = ReporteDanio.query.order_by(ReporteDanio.CreadoEn.desc()).limit(5).all()
+    
+    # Traer TODAS las herramientas para filtrado JS (igual que Vehículos)
+    herramientas = inventario  # ← NUEVO
+    usuarios = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()  # ← NUEVO para modal
+    categorias = Categoria.query.order_by(Categoria.Nombre).all()  # ← NUEVO
+    ubicaciones = Ubicacion.query.order_by(Ubicacion.Nombre).all()  # ← NUEVO
+    departamentos = Departamento.query.order_by(Departamento.nombre).all()  # ← NUEVO
 
     return render_template("almacenista/dashboard.html",
-        total       = total,
-        disponibles = disponibles,
-        asignados   = asignados,
-        daniados    = daniados,
-        recientes   = recientes,
-        reportes    = reportes,
+        total         = total,
+        disponibles   = disponibles,
+        asignados     = asignados,
+        daniados      = daniados,
+        bajas         = bajas,  # ← NUEVO
+        recientes     = recientes,
+        reportes      = reportes,
+        herramientas  = herramientas,  # ← NUEVO
+        usuarios      = usuarios,  # ← NUEVO
+        categorias    = categorias,  # ← NUEVO
+        ubicaciones   = ubicaciones,  # ← NUEVO
+        departamentos = departamentos,  # ← NUEVO
     )
 
 

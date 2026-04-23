@@ -178,10 +178,6 @@
             href="{{ url_for('almacenista.dashboard') }}">
             <span class="ic">📊</span> Dashboard
           </a>
-          <a class="nav-link {% if request.endpoint == 'almacenista.inventario' %}active{% endif %}"
-            href="{{ url_for('almacenista.inventario') }}">
-            <span class="ic">🔧</span> Inventario
-          </a>
           <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
             href="{{ url_for('almacenista.historial') }}">
             <span class="ic">📋</span> Historial
