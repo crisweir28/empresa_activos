@@ -132,7 +132,7 @@
 
 
       {# ── Vehículos ── #}
-      {% if tiene_permiso('Dashboard') or tiene_permiso('Vehículos', 'ver') or tiene_permiso('Mantenimiento', 'ver') %}
+      {% if tiene_permiso('Vehículos') or tiene_permiso('Mantenimiento') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
           onclick="toggleGroup(this)">
@@ -141,12 +141,13 @@
         <div class="sb-group-body {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
           style="max-height:200px">
 
-          {% if tiene_permiso('Dashboard') %}
+          {% if tiene_permiso('Vehículos') %}
           <a class="nav-link {% if request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
             href="{{ url_for('administrativo.dashboard') }}">
             <span class="ic">📊</span> Dashboard
           </a>
           {% endif %}
+          
           {% if tiene_permiso('Mantenimiento', 'ver') %}
           <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
             href="{{ url_for('administrativo.mantenimiento_lista') }}">
@@ -196,10 +197,6 @@
           <a class="nav-link {% if request.endpoint == 'ti.dashboard' %}active{% endif %}"
             href="{{ url_for('ti.dashboard') }}">
             <span class="ic">📊</span> Dashboard
-          </a>
-          <a class="nav-link {% if request.endpoint == 'ti.equipos' %}active{% endif %}"
-            href="{{ url_for('ti.equipos') }}">
-            <span class="ic">💻</span> Equipos
           </a>
           <a class="nav-link {% if request.endpoint == 'ti.validacion_estados' %}active{% endif %}"
             href="{{ url_for('ti.validacion_estados') }}">

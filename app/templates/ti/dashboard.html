@@ -2,69 +2,114 @@
 {% extends "base.html" %}
 {% block title %}Dashboard TI{% endblock %}
 
+{% block extra_head %}
+<style>
+/* Sobrescribir grid de stats para TI */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="topbar">
   <div>
     <div class="page-title">💻 Gestión de Equipos TI</div>
     <div class="page-sub">Control de equipos, mantenimiento y validación de estados</div>
   </div>
+  {% if tiene_permiso('Equipos TI', 'crear') %}
+  <button class="btn btn-primary" onclick="abrirModal('modal-nuevo')">
+    + Nuevo equipo
+  </button>
+  {% endif %}
 </div>
 
-<!-- Stats -->
+<!-- Stats con filtros clickables -->
 <div class="stats-grid" style="margin-bottom:22px">
-  <div class="stat-card" style="animation-delay:.0s">
+  <div class="stat-card" style="animation-delay:.0s;cursor:pointer" onclick="filtrarEquipos('todos')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Total equipos</span><span style="font-size:22px">💻</span></div>
     <div class="stat-val" style="color:var(--accent)">{{ stats.TotalEquipos if stats else 0 }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.07s">
+  
+  <div class="stat-card" style="animation-delay:.07s;cursor:pointer" onclick="filtrarEquipos('almacen')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">En almacén</span><span style="font-size:22px">📦</span></div>
     <div class="stat-val" style="color:var(--green)">{{ stats.EnAlmacen if stats else 0 }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.14s">
+  
+  <div class="stat-card" style="animation-delay:.14s;cursor:pointer" onclick="filtrarEquipos('asignado')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignados</span><span style="font-size:22px">👤</span></div>
     <div class="stat-val" style="color:var(--accent)">{{ stats.Asignados if stats else 0 }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.21s">
+  
+  <div class="stat-card" style="animation-delay:.21s;cursor:pointer" onclick="filtrarEquipos('bueno')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Buen estado</span><span style="font-size:22px">✅</span></div>
     <div class="stat-val" style="color:var(--green)">{{ stats.EnBuenEstado if stats else 0 }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.28s">
+  
+  <div class="stat-card" style="animation-delay:.28s;cursor:pointer" onclick="filtrarEquipos('malo')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Mal estado</span><span style="font-size:22px">⚠️</span></div>
     <div class="stat-val" style="color:var(--red)">{{ stats.EnMalEstado if stats else 0 }}</div>
   </div>
-  <div class="stat-card" style="animation-delay:.35s">
+  
+  <div class="stat-card" style="animation-delay:.35s;cursor:pointer" onclick="filtrarEquipos('mantenimiento')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Mantenimiento</span><span style="font-size:22px">🔧</span></div>
     <div class="stat-val" style="color:var(--yellow)">{{ stats.EnMantenimiento if stats else 0 }}</div>
   </div>
+  
+  <div class="stat-card" style="animation-delay:.42s;cursor:pointer" onclick="filtrarEquipos('baja')">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Dados de baja</span><span style="font-size:22px">🗑️</span></div>
+    <div class="stat-val" style="color:var(--muted)">{{ bajas }}</div>
+  </div>
 </div>
 
-<div class="layout-2col">
-
-  <!-- Equipos recientes -->
-  <div class="panel">
-    <div class="panel-title">
-      💻 Equipos registrados
-      <a href="{{ url_for('ti.equipos') }}" class="btn-sm">Ver todos →</a>
-    </div>
-    {% if equipos %}
-    <table>
-      <thead><tr><th>Equipo</th><th>Tipo</th><th>Asignado a</th><th>Estado</th><th>Condición</th></tr></thead>
+<!-- Inventario completo con filtros -->
+<div class="panel">
+  <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+    <span id="titulo-equipos">💻 Equipos registrados</span>
+    <span style="font-size:13px;color:var(--muted);font-weight:400">
+      <span id="contador-equipos">{{ equipos|length }}</span> equipos
+    </span>
+  </div>
+  
+  {% if equipos %}
+  <div style="overflow-x:auto">
+    <table id="tabla-equipos">
+      <thead>
+        <tr>
+          <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th>
+          <th>Condición</th><th>Asignado a</th><th>Acciones</th>
+        </tr>
+      </thead>
       <tbody>
         {% for e in equipos %}
-        <tr>
+        <tr data-estado="{{ e.Estado }}" data-condicion="{{ e.Condicion }}">
           <td>
             <strong>{{ e.Nombre }}</strong>
             <br><span style="font-size:11px;color:var(--muted)">{{ e.Marca or '' }} {{ e.Modelo or '' }}</span>
           </td>
           <td style="color:var(--muted)">
-            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
-            {{ iconos.get(e.TipoEquipo, '📦') }} {{ e.TipoEquipo }}
+            {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐','otro':'📦'} %}
+            {{ iconos.get(e.TipoEquipo,'📦') }} {{ e.TipoEquipo }}
           </td>
-          <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
+          <td style="font-family:monospace;color:var(--muted);font-size:12px">{{ e.NumeroSerie or '—' }}</td>
           <td>
-            {% set colores = {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja','mal_estado':'badge-baja'} %}
+            {% set colores = {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja'} %}
             <span class="badge {{ colores.get(e.Estado,'') }}"
-                  style="{% if e.Estado=='asignado' %}background:rgba(124,92,252,.15);color:#a78bfa{% endif %}">
+                  style="{% if e.Estado=='asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
               {{ e.Estado }}
             </span>
           </td>
@@ -72,46 +117,185 @@
             {% set cond_color = {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
             <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">{{ e.Condicion }}</span>
           </td>
+          <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
+          <td>
+            {% if tiene_permiso('Equipos TI', 'ver') %}
+            <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
+            {% endif %}
+            
+            {% if tiene_permiso('Equipos TI', 'editar') %}
+            <button class="btn-sm"
+                    onclick="editarEquipo({{ e.IdElectronico }},'{{ e.Nombre }}','{{ e.TipoEquipo }}','{{ e.Marca or '' }}','{{ e.Modelo or '' }}','{{ e.NumeroSerie or '' }}','{{ e.Condicion }}',{{ e.Costo or 0 }},'{{ e.FechaAdquisicion or '' }}')">
+              ✏️
+            </button>
+            {% endif %}
+            
+            {% if e.Estado != 'baja' and tiene_permiso('Equipos TI', 'eliminar') %}
+            <form method="POST" action="/ti/equipos/{{ e.IdElectronico }}/baja"
+                  style="display:inline" id="baja-eq-{{ e.IdElectronico }}"></form>
+            <button class="btn-sm btn-del"
+                    onclick="confirmarBaja('{{ e.Nombre }}','baja-eq-{{ e.IdElectronico }}')">
+              🗑️
+            </button>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    {% else %}
-    <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin equipos registrados.</p>
-    {% endif %}
   </div>
+  
+  <!-- Mensaje cuando no hay equipos en el filtro -->
+  <p id="mensaje-vacio" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:40px">
+    Sin equipos en este filtro
+  </p>
+  
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin equipos registrados.</p>
+  {% endif %}
+</div>
 
-  <!-- Panel derecho -->
-  <div style="display:flex;flex-direction:column;gap:16px">
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-top:16px">
 
-    <!-- Por tipo -->
-    <div class="panel">
-      <div class="panel-title">📊 Por tipo</div>
+  <!-- Por tipo -->
+  <div class="panel">
+    <div class="panel-title">📊 Por tipo</div>
+    {% if por_tipo %}
       {% for tipo, count in por_tipo.items() %}
       <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
         <span style="color:var(--muted)">
-          {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','red':'🌐','otro':'📦'} %}
+          {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐','otro':'📦'} %}
           {{ iconos.get(tipo,'📦') }} {{ tipo }}
         </span>
         <strong style="color:var(--accent)">{{ count }}</strong>
       </div>
       {% endfor %}
-    </div>
-
-    <!-- Mantenimientos activos -->
-    <div class="panel">
-      <div class="panel-title">🔧 En mantenimiento</div>
-      {% if mantenimientos %}
-        {% for m in mantenimientos %}
-        <div style="background:var(--bg);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 14px;margin-bottom:8px">
-          <div style="font-size:13px;font-weight:500">{{ m.EquipoNombre }}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px">{{ m.Tipo }} · {{ m.FechaInicio }}</div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
-      {% endif %}
-    </div>
+    {% else %}
+    <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Sin equipos registrados</p>
+    {% endif %}
   </div>
+
+  <!-- Mantenimientos activos -->
+  <div class="panel">
+    <div class="panel-title">🔧 En mantenimiento</div>
+    {% if mantenimientos %}
+      {% for m in mantenimientos %}
+      <div style="background:var(--bg);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:500">{{ m.EquipoNombre }}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">{{ m.Tipo }} · {{ m.FechaInicio }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
+    {% endif %}
+  </div>
+
 </div>
+
+{# ── Modales ─────────────────────────────────────────────── #}
+{% include "ti/modales/modal-equipos/_modal_equipo_nuevo.html" %}
+{% include "ti/modales/modal-equipos/_modal_equipo_editar.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ti/shared.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ti/ti.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ti/equipos.js') }}"></script>
+<script>
+// Filtrado de equipos en vivo
+function filtrarEquipos(filtro) {
+  const filas = document.querySelectorAll('#tabla-equipos tbody tr');
+  const mensajeVacio = document.getElementById('mensaje-vacio');
+  const titulo = document.getElementById('titulo-equipos');
+  const contador = document.getElementById('contador-equipos');
+  const cards = document.querySelectorAll('.stat-card');
+  
+  let visibles = 0;
+  
+  // Actualizar estado activo de las cards
+  cards.forEach((card, idx) => {
+    card.style.transform = '';
+    card.style.boxShadow = '';
+  });
+  
+  const cardMap = {
+    'todos': 0,
+    'almacen': 1,
+    'asignado': 2,
+    'bueno': 3,
+    'malo': 4,
+    'mantenimiento': 5,
+    'baja': 6
+  };
+  
+  if (cardMap[filtro] !== undefined) {
+    const activeCard = cards[cardMap[filtro]];
+    activeCard.style.transform = 'scale(1.02)';
+    activeCard.style.boxShadow = '0 8px 24px rgba(124,92,252,0.15)';
+  }
+  
+  // Filtrar filas
+  filas.forEach(fila => {
+    const estado = fila.dataset.estado;
+    const condicion = fila.dataset.condicion;
+    let mostrar = false;
+    
+    if (filtro === 'todos') {
+      mostrar = true;
+    } else if (filtro === 'malo') {
+      mostrar = (condicion === 'malo' || condicion === 'dañado' || condicion === 'regular');
+    } else if (filtro === 'bueno') {
+      mostrar = (condicion === 'bueno');
+    } else {
+      mostrar = (estado === filtro);
+    }
+    
+    if (mostrar) {
+      fila.style.display = '';
+      visibles++;
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+  
+  // Actualizar título y contador
+  const titulos = {
+    'todos': '💻 Equipos registrados',
+    'almacen': '📦 Equipos en almacén',
+    'asignado': '👤 Equipos asignados',
+    'bueno': '✅ Equipos en buen estado',
+    'malo': '⚠️ Equipos en mal estado',
+    'mantenimiento': '🔧 Equipos en mantenimiento',
+    'baja': '🗑️ Equipos dados de baja'
+  };
+  
+  titulo.textContent = titulos[filtro] || '💻 Equipos';
+  contador.textContent = visibles;
+  
+  // Mostrar/ocultar mensaje de vacío
+  if (visibles === 0) {
+    document.querySelector('#tabla-equipos').style.display = 'none';
+    mensajeVacio.style.display = 'block';
+  } else {
+    document.querySelector('#tabla-equipos').style.display = 'table';
+    mensajeVacio.style.display = 'none';
+  }
+}
+
+// Estilo hover para las cards
+document.querySelectorAll('.stat-card').forEach(card => {
+  card.addEventListener('mouseenter', function() {
+    if (!this.style.transform) {
+      this.style.transform = 'translateY(-2px)';
+    }
+  });
+  
+  card.addEventListener('mouseleave', function() {
+    if (this.style.transform === 'translateY(-2px)') {
+      this.style.transform = '';
+    }
+  });
+});
+</script>
 {% endblock %}

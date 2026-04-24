@@ -37,27 +37,36 @@ def dashboard():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    stats          = VEstadisticasTI.query.first()
-    equipos        = VEquiposTI.query.all()
+    stats = VEstadisticasTI.query.first()
+    todos_equipos = VEquiposTI.query.all()  # ← CAMBIO: Traer TODOS los equipos
     mantenimientos = VMantenimientoElectronico.query.filter_by(Estatus="en_proceso").limit(8).all()
 
+    # Calcular bajas
+    bajas = sum(1 for e in todos_equipos if e.Estado == 'baja')  # ← NUEVO
+
     por_tipo = {}
-    for e in equipos:
+    for e in todos_equipos:
         por_tipo[e.TipoEquipo] = por_tipo.get(e.TipoEquipo, 0) + 1
 
     por_area = {}
-    for e in equipos:
+    for e in todos_equipos:
         if e.UsuarioRol:
             por_area[e.UsuarioRol] = por_area.get(e.UsuarioRol, 0) + 1
 
-    return render_template("ti/dashboard.html",
-        stats          = stats,
-        equipos        = equipos[:10],
-        mantenimientos = mantenimientos,
-        por_tipo       = por_tipo,
-        por_area       = por_area,
-    )
+    # Para modales
+    usuarios = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()  # ← NUEVO
+    ubicaciones = Ubicacion.query.all()  # ← NUEVO
 
+    return render_template("ti/dashboard.html",
+        stats=stats,
+        equipos=todos_equipos,  # ← CAMBIO: antes era equipos[:10], ahora todos
+        mantenimientos=mantenimientos,
+        por_tipo=por_tipo,
+        por_area=por_area,
+        bajas=bajas,  # ← NUEVO
+        usuarios=usuarios,  # ← NUEVO
+        ubicaciones=ubicaciones,  # ← NUEVO
+    )
 
 # ── Gestión de equipos ────────────────────────────────────────
 @ti_bp.route("/equipos")
