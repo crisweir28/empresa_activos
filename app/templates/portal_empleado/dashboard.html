@@ -1,0 +1,227 @@
+<!-- app/templates/portal_empleado/dashboard.html -->
+{% extends "base.html" %}
+{% block title %}Portal Empleado{% endblock %}
+
+{% block content %}
+
+{# ── Header de bienvenida ── #}
+<div style="background:linear-gradient(135deg,var(--accent),var(--accent2));
+            border-radius:16px;padding:28px 32px;margin-bottom:24px;
+            display:flex;align-items:center;gap:20px">
+  <div style="width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.2);
+              display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">
+    👤
+  </div>
+  <div style="flex:1">
+    <div style="font-size:22px;font-weight:800;color:#fff">
+      Bienvenido, {{ current_user.Nombre }}
+    </div>
+    <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:2px">
+      {{ area_nombre }} · Empleado
+    </div>
+  </div>
+  
+  {# Alertas de documentos #}
+  {% if docs_vencidos > 0 or docs_por_vencer > 0 %}
+  <div style="display:flex;gap:8px">
+    {% if docs_vencidos > 0 %}
+    <div style="background:rgba(248,113,113,.2);padding:8px 16px;border-radius:10px;
+                display:flex;align-items:center;gap:6px">
+      <span style="font-size:18px">⚠️</span>
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7)">Vencidos</div>
+        <div style="font-size:16px;font-weight:700;color:#fff">{{ docs_vencidos }}</div>
+      </div>
+    </div>
+    {% endif %}
+    {% if docs_por_vencer > 0 %}
+    <div style="background:rgba(251,191,36,.2);padding:8px 16px;border-radius:10px;
+                display:flex;align-items:center;gap:6px">
+      <span style="font-size:18px">⏰</span>
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7)">Por vencer</div>
+        <div style="font-size:16px;font-weight:700;color:#fff">{{ docs_por_vencer }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+{# ── Vehículo asignado ── #}
+{% if mis_vehiculos %}
+{% set v = mis_vehiculos[0] %}
+<div class="panel" style="margin-bottom:20px">
+  <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+    <span>🚗 Mi Vehículo Asignado</span>
+    <span class="badge {% if v.Estado == 'asignado' %} {% elif v.Estado == 'mantenimiento' %}badge-mantenimiento{% endif %}"
+          style="{% if v.Estado == 'asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
+      {{ v.Estado }}
+    </span>
+  </div>
+  
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Vehículo</div>
+      <div style="font-weight:600">{{ v.Marca }} {{ v.Modelo }}</div>
+      <div style="font-size:12px;color:var(--muted)">Año {{ v.Anio }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Matrícula</div>
+      <div style="font-family:monospace;font-weight:600">{{ v.Matricula }}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Kilometraje</div>
+      <div style="font-weight:600">{{ '{:,}'.format(v.Kilometraje or 0) }} km</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Estado</div>
+      <div style="font-weight:600;color:var(--green)">{{ v.Estado }}</div>
+    </div>
+  </div>
+  
+  {# Permisos del vehículo #}
+  {% if permisos_vehiculo %}
+  <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+    <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text)">
+      📋 Documentos del Vehículo
+    </h4>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">
+      {% for p in permisos_vehiculo %}
+      <div style="background:var(--surface2);padding:12px;border-radius:10px;
+                  border-left:3px solid {% if p.Estado == 'vencido' %}var(--red){% elif p.Estado == 'por_vencer' %}var(--yellow){% else %}var(--green){% endif %}">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
+          <div style="font-size:12px;font-weight:600">{{ p.Descripcion }}</div>
+          <span class="badge" style="font-size:10px;
+                {% if p.Estado == 'vencido' %}background:rgba(248,113,113,.12);color:var(--red)
+                {% elif p.Estado == 'por_vencer' %}background:rgba(251,191,36,.12);color:var(--yellow)
+                {% else %}background:rgba(34,211,165,.12);color:var(--green){% endif %}">
+            {{ p.Estado.replace('_', ' ') }}
+          </span>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">
+          Vence: {{ p.FechaVencimiento }}
+        </div>
+        {% if p.ArchivoUrl %}
+        <a href="{{ p.ArchivoUrl }}" target="_blank" 
+           style="font-size:11px;color:var(--accent);text-decoration:none;margin-top:6px;display:block">
+          📄 Ver documento
+        </a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── Mis Documentos Personales ── #}
+<div class="panel" style="margin-bottom:20px">
+  <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+    <span>📄 Mis Documentos Personales</span>
+    <button class="btn btn-primary" style="font-size:12px;padding:6px 14px"
+            onclick="abrirModal('modal-subir-doc')">
+      + Subir Documento
+    </button>
+  </div>
+  
+  {% if mis_documentos %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+    {% for d in mis_documentos %}
+    <div style="background:var(--surface2);padding:14px;border-radius:12px;
+                border-left:4px solid {% if d.EstadoDocumento == 'vencido' %}var(--red){% elif d.EstadoDocumento == 'por_vencer' %}var(--yellow){% else %}var(--green){% endif %}">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">
+            {{ d.TipoDocumento.replace('_', ' ').title() }}
+          </div>
+          {% if d.NumeroDocumento %}
+          <div style="font-size:11px;color:var(--muted);font-family:monospace">
+            {{ d.NumeroDocumento }}
+          </div>
+          {% endif %}
+        </div>
+        <span class="badge" style="font-size:10px;
+              {% if d.EstadoDocumento == 'vencido' %}background:rgba(248,113,113,.12);color:var(--red)
+              {% elif d.EstadoDocumento == 'por_vencer' %}background:rgba(251,191,36,.12);color:var(--yellow)
+              {% else %}background:rgba(34,211,165,.12);color:var(--green){% endif %}">
+          {{ d.EstadoDocumento.replace('_', ' ') }}
+        </span>
+      </div>
+      
+      {% if d.FechaVencimiento %}
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        Vence: {{ d.FechaVencimiento }}
+        {% if d.DiasParaVencer and d.DiasParaVencer > 0 %}
+        ({{ d.DiasParaVencer }} días)
+        {% endif %}
+      </div>
+      {% endif %}
+      
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <a href="{{ d.ArchivoUrl }}" target="_blank" 
+           class="btn-sm" style="flex:1;text-align:center;text-decoration:none">
+          📄 Ver
+        </a>
+        <form method="POST" action="{{ url_for('portal.eliminar_documento', id=d.IdDocumento) }}"
+              style="flex:1" id="form-del-{{ d.IdDocumento }}" 
+              onsubmit="return confirm('¿Eliminar este documento?')">
+          <button type="submit" class="btn-sm btn-del" style="width:100%">
+            🗑️
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:32px;color:var(--muted)">
+    <div style="font-size:40px;margin-bottom:12px">📭</div>
+    <div style="font-weight:600;margin-bottom:6px">Sin documentos cargados</div>
+    <div style="font-size:13px">Sube tu licencia, INE y otros documentos requeridos</div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Equipos TI (si tiene) ── #}
+{% if mis_equipos %}
+<div class="panel">
+  <div class="panel-title">💻 Mis Equipos TI ({{ mis_equipos|length }})</div>
+  <table>
+    <thead>
+      <tr><th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th><th>Condición</th></tr>
+    </thead>
+    <tbody>
+      {% for e in mis_equipos %}
+      <tr>
+        <td><strong>{{ e.nombre }}</strong></td>
+        <td style="color:var(--muted);font-size:12px">{{ e.categoria }}</td>
+        <td style="font-family:monospace;font-size:11px;color:var(--muted)">{{ e.NumeroSerie or '—' }}</td>
+        <td>
+          <span class="badge {% if e.estado == 'asignado' %}{% elif e.estado == 'mantenimiento' %}badge-mantenimiento{% endif %}"
+                style="{% if e.estado == 'asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
+            {{ e.estado }}
+          </span>
+        </td>
+        <td>
+          {% set cond_color = {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)'} %}
+          <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">
+            {{ e.Condicion }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# ── Modal Subir Documento ── #}
+{% include "portal_empleado/modales/_modal_subir_documento.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/base.js') }}"></script>
+{% endblock %}

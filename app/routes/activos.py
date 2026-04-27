@@ -1,12 +1,14 @@
 # app/routes/activos.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
+from datetime import date
 from sqlalchemy import text
 from ..extensions import db
 from ..models.activo import Activo
 from ..models.departamento import Departamento
 from ..views import VActivo, VDashboardStats, VActivoPorDepartamento
 from ..utils.permisos import es_admin, puede_editar_activo
+
 
 activos_bp = Blueprint("activos", __name__)
 
@@ -65,20 +67,117 @@ def _get_departamentos():
 
 def _portal_empleado():
     """Renderiza el portal de empleado con sus activos."""
-    uid  = current_user.id
-    area = current_user.area_nombre or "Mi área"
-    activos = db.session.execute(text("""
-        SELECT a.nombre, a.categoria, a.estado, a.valor, a.creado_en
-        FROM activos a
-        WHERE a.usuario_id = :uid
-        ORDER BY a.creado_en DESC
-        LIMIT 20
+    uid = current_user.id
+    
+    # Obtener equipos TI asignados
+    mis_equipos = db.session.execute(text("""
+        SELECT 
+            e.IdElectronico as id,
+            e.Nombre as nombre,
+            e.Marca,
+            e.Modelo,
+            e.TipoEquipo as categoria,
+            e.NumeroSerie,
+            e.Estado as estado,
+            e.Condicion,
+            e.Costo as valor
+        FROM electronico e
+        WHERE e.IdUsuario = :uid
+        AND e.Estado != 'baja'
     """), {'uid': uid}).fetchall()
-    return render_template("portal_empleado.html",
-        area_nombre = area,
-        activos     = activos,
+    
+    # Obtener vehículos asignados
+    try:
+        mis_vehiculos = db.session.execute(text("""
+            SELECT 
+                v.IdVehiculo,
+                v.Marca,
+                v.Modelo,
+                v.Ano,
+                v.Placa,
+                v.NumeroSerie,
+                v.Color,
+                v.Estado,
+                v.Condicion,
+                v.Costo,
+                v.Kilometraje,
+                v.FechaAsignacion
+            FROM vehiculo v
+            WHERE v.IdUsuario = :uid
+            AND v.Estado != 'baja'
+        """), {'uid': uid}).fetchall()
+    except:
+        mis_vehiculos = []
+    
+    # Obtener documentos del usuario
+    try:
+        mis_documentos = db.session.execute(text("""
+            SELECT 
+                IdDocumento,
+                TipoDocumento,
+                NombreArchivo,
+                ArchivoUrl,
+                FechaEmision,
+                FechaVencimiento,
+                NumeroDocumento,
+                DiasParaVencer,
+                EstadoDocumento,
+                CreadoEn
+            FROM v_documentos_usuario
+            WHERE IdUsuario = :uid
+            ORDER BY 
+                CASE EstadoDocumento
+                    WHEN 'vencido' THEN 1
+                    WHEN 'por_vencer' THEN 2
+                    WHEN 'vigente' THEN 3
+                    ELSE 4
+                END,
+                FechaVencimiento ASC
+        """), {'uid': uid}).fetchall()
+    except:
+        mis_documentos = []
+    
+    # Obtener permisos del vehículo (si tiene vehículo asignado)
+    permisos_vehiculo = []
+    if mis_vehiculos:
+        id_vehiculo = mis_vehiculos[0].IdVehiculo
+        try:
+            permisos_vehiculo = db.session.execute(text("""
+                SELECT 
+                    IdPermiso,
+                    Descripcion,
+                    Numero,
+                    FechaInicio,
+                    FechaVencimiento,
+                    ArchivoUrl,
+                    CASE 
+                        WHEN FechaVencimiento < CURDATE() THEN 'vencido'
+                        WHEN DATEDIFF(FechaVencimiento, CURDATE()) <= 30 THEN 'por_vencer'
+                        ELSE 'vigente'
+                    END AS Estado
+                FROM permisovehiculo
+                WHERE IdVehiculo = :vid
+                ORDER BY FechaVencimiento ASC
+            """), {'vid': id_vehiculo}).fetchall()
+        except:
+            permisos_vehiculo = []
+    
+    # Estadísticas de documentos
+    docs_vencidos = sum(1 for d in mis_documentos if hasattr(d, 'EstadoDocumento') and d.EstadoDocumento == 'vencido')
+    docs_por_vencer = sum(1 for d in mis_documentos if hasattr(d, 'EstadoDocumento') and d.EstadoDocumento == 'por_vencer')
+    total_activos = len(mis_equipos) + len(mis_vehiculos)
+    
+    return render_template("portal_empleado/dashboard.html",
+        area_nombre=current_user.rol_label or "Empleado",
+        mis_equipos=mis_equipos,
+        mis_vehiculos=mis_vehiculos,
+        mis_documentos=mis_documentos,
+        permisos_vehiculo=permisos_vehiculo,
+        total_activos=total_activos,
+        docs_vencidos=docs_vencidos,
+        docs_por_vencer=docs_por_vencer,
+        hoy=date.today()
     )
-
 
 @activos_bp.route("/dashboard")
 @login_required

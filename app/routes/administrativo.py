@@ -4,11 +4,7 @@ from flask_login import login_required, current_user
 from datetime import date
 from sqlalchemy import text as sqla_text
 from ..extensions import db
-from ..models.vehiculo import (
-    Vehiculo, Personal, ConductorVehiculo,
-    PermisosVehiculo, MantenimientoVehiculo,
-    TipoServicio, Ubicacion, Condicion
-)
+from ..models.vehiculo import (Vehiculo, Personal, ConductorVehiculo,PermisosVehiculo, MantenimientoVehiculo,TipoServicio, Ubicacion, Condicion)
 from ..views.vehiculo_vistas import VVehiculo, VPermisosVencer, VMantenimientoVehiculo, VAlertasMantenimiento
 from ..utils.permisos import requiere_rol, requiere_permiso
 from ..utils.archivos import guardar_archivo
@@ -59,37 +55,6 @@ def dashboard():
         alertas_prox     = alertas,
         ubicaciones      = Ubicacion.query.all(),  # ← Para el modal de nuevo vehículo
     )
-
-
-@administrativo_bp.route("/vehiculos")
-@login_required
-@requiere_permiso('Vehículos')
-def vehiculos():
-    if not _check_acceso():
-        return redirect(url_for("activos.dashboard"))
-    
-    estado  = request.args.get("estado", "")
-    alertas = request.args.get("alertas", "")
-    
-    query = VVehiculo.query
-    
-    # Filtro por estado
-    if estado:
-        query = query.filter_by(estado=estado)
-    else:
-        query = query.filter(VVehiculo.estado != 'baja')
-    
-    # Filtro por alertas de permisos
-    if alertas == '1':
-        query = query.filter(VVehiculo.permisos_por_vencer > 0)
-    
-    return render_template("administrativo/vehiculos.html",
-        vehiculos      = query.all(),
-        ubicaciones    = Ubicacion.query.all(),
-        filtro_estado  = estado,
-        filtro_alertas = alertas,
-    )
-
 
 @administrativo_bp.route("/vehiculos/nuevo", methods=["POST"])
 @login_required
@@ -181,7 +146,6 @@ def vehiculo_editar(id):
     flash("Vehículo actualizado.", "success")
     return redirect(url_for("administrativo.vehiculos"))
 
-
 @administrativo_bp.route("/vehiculos/<int:id>")
 @login_required
 def vehiculo_detalle(id):
@@ -204,7 +168,6 @@ def vehiculo_detalle(id):
         personal       = personal,
         today_date     = date.today(),
     )
-
 
 @administrativo_bp.route("/vehiculos/<int:id>/permisos/nuevo", methods=["POST"])
 @login_required
@@ -240,7 +203,6 @@ def permiso_nuevo(id):
 
     return redirect(url_for("administrativo.vehiculo_detalle", id=id))
 
-
 @administrativo_bp.route("/permisos/<int:id>/eliminar", methods=["POST"])
 @login_required
 @requiere_permiso('Vehículos', 'eliminar') 
@@ -253,7 +215,6 @@ def permiso_eliminar(id):
     db.session.commit()
     flash("Permiso eliminado.", "success")
     return redirect(url_for("administrativo.vehiculo_detalle", id=vid))
-
 
 @administrativo_bp.route("/mantenimiento")
 @login_required
@@ -277,7 +238,6 @@ def mantenimiento_lista():
         alertas        = alertas,
         tipos          = TipoServicio.query.filter(TipoServicio.IdCategoria == 1).all(),
     )
-
 
 @administrativo_bp.route("/vehiculos/<int:id>/mantenimiento/nuevo", methods=["POST"])
 @login_required
@@ -316,7 +276,6 @@ def mantenimiento_nuevo(id):
         db.session.rollback()
         flash(f"Error: {str(e)}", "error")
     return redirect(url_for("administrativo.vehiculo_detalle", id=id))
-
 
 @administrativo_bp.route("/mantenimiento/<int:id>/completar", methods=["POST"])
 @login_required
@@ -358,7 +317,6 @@ def personal():
         condiciones = Condicion.query.all(),
     )
 
-
 @administrativo_bp.route("/personal/nuevo", methods=["POST"])
 @login_required
 @requiere_permiso('Vehículos', 'crear')
@@ -383,7 +341,6 @@ def personal_nuevo():
     flash("Personal registrado correctamente.", "success")
     return redirect(url_for("administrativo.personal"))
 
-
 @administrativo_bp.route("/personal/<int:id>/editar", methods=["POST"])
 @login_required
 @requiere_permiso('Vehículos', 'editar')
@@ -406,7 +363,6 @@ def personal_editar(id):
     flash("Personal actualizado.", "success")
     return redirect(url_for("administrativo.personal"))
 
-
 @administrativo_bp.route("/vehiculos/<int:id>/asignar-conductor", methods=["POST"])
 @login_required
 @requiere_permiso('Vehículos', 'editar')
@@ -425,7 +381,6 @@ def asignar_conductor(id):
     db.session.commit()
     flash("Conductor asignado correctamente.", "success")
     return redirect(url_for("administrativo.vehiculo_detalle", id=id))
-
 
 # ── Baja vehículo ─────────────────────────────────────────────
 @administrativo_bp.route("/vehiculos/<int:id>/baja", methods=["POST"])
@@ -446,10 +401,145 @@ def vehiculo_baja(id):
     flash(f"'{v.Nombre}' dado de baja.", "success")
     return redirect(url_for("administrativo.vehiculos"))
 
-
 # ── API ───────────────────────────────────────────────────────
 @administrativo_bp.route("/api/vehiculo/<int:id>")
 @login_required
 def api_vehiculo(id):
     v = Vehiculo.query.get_or_404(id)
     return jsonify(v.to_dict())
+
+@administrativo_bp.route("/api/verificar-documentos-conductor/<int:id_personal>")
+@login_required
+def verificar_documentos_conductor(id_personal):
+    """
+    Verifica el estado de los documentos de un conductor.
+    Retorna: estado general, documentos faltantes/vencidos, riesgos.
+    """
+    try:
+        # Buscar el IdUsuario correspondiente al IdPersonal
+        # Nota: Necesitas una relación entre Personal y Usuario
+        # Por ahora, asumimos que el conductor tiene documentos en documentousuario
+        
+        # Obtener documentos del conductor
+        docs = db.session.execute(sqla_text("""
+            SELECT 
+                TipoDocumento,
+                NumeroDocumento,
+                FechaVencimiento,
+                EstadoDocumento,
+                DiasParaVencer
+            FROM v_documentos_usuario
+            WHERE IdUsuario = (
+                SELECT IdUsuario FROM usuario 
+                WHERE NombreUsuario = (
+                    SELECT CONCAT(Nombre, Apellido) 
+                    FROM personal 
+                    WHERE IdPersonal = :id_personal
+                )
+                LIMIT 1
+            )
+        """), {'id_personal': id_personal}).fetchall()
+        
+        # Documentos críticos para conductores
+        docs_criticos = ['licencia_conducir', 'examen_medico']
+        docs_recomendados = ['ine', 'curp']
+        
+        # Análisis de documentos
+        docs_vencidos = []
+        docs_por_vencer = []
+        docs_faltantes_criticos = []
+        docs_faltantes_recomendados = []
+        
+        tipos_presentes = [d.TipoDocumento for d in docs]
+        
+        # Verificar documentos críticos
+        for tipo in docs_criticos:
+            doc = next((d for d in docs if d.TipoDocumento == tipo), None)
+            if not doc:
+                docs_faltantes_criticos.append(tipo)
+            elif doc.EstadoDocumento == 'vencido':
+                docs_vencidos.append({
+                    'tipo': tipo,
+                    'numero': doc.NumeroDocumento,
+                    'vencimiento': str(doc.FechaVencimiento)
+                })
+            elif doc.EstadoDocumento == 'por_vencer':
+                docs_por_vencer.append({
+                    'tipo': tipo,
+                    'dias': doc.DiasParaVencer,
+                    'vencimiento': str(doc.FechaVencimiento)
+                })
+        
+        # Verificar documentos recomendados
+        for tipo in docs_recomendados:
+            if tipo not in tipos_presentes:
+                docs_faltantes_recomendados.append(tipo)
+        
+        # Determinar nivel de riesgo
+        tiene_criticos_vencidos = len(docs_vencidos) > 0 or len(docs_faltantes_criticos) > 0
+        tiene_advertencias = len(docs_por_vencer) > 0 or len(docs_faltantes_recomendados) > 0
+        
+        # Calcular estado general
+        if tiene_criticos_vencidos:
+            estado = 'bloqueado'  # No se puede asignar
+            nivel_riesgo = 'alto'
+        elif tiene_advertencias:
+            estado = 'advertencia'  # Se puede asignar con advertencia
+            nivel_riesgo = 'medio'
+        else:
+            estado = 'ok'
+            nivel_riesgo = 'bajo'
+        
+        # Riesgos asociados
+        riesgos_conductor = []
+        riesgos_empresa = []
+        
+        if docs_faltantes_criticos or docs_vencidos:
+            if 'licencia_conducir' in docs_faltantes_criticos or any(d['tipo'] == 'licencia_conducir' for d in docs_vencidos):
+                riesgos_conductor.extend([
+                    'Multas y sanciones por conducir sin licencia vigente',
+                    'Sin cobertura del seguro en caso de accidente',
+                    'Posible retención del vehículo por autoridades'
+                ])
+                riesgos_empresa.extend([
+                    'Responsabilidad civil y penal en accidentes',
+                    'Invalidación de póliza de seguro del vehículo',
+                    'Sanciones laborales y multas administrativas',
+                    'Daño reputacional y legal'
+                ])
+            
+            if 'examen_medico' in docs_faltantes_criticos or any(d['tipo'] == 'examen_medico' for d in docs_vencidos):
+                riesgos_conductor.append('Riesgo de salud no detectado que puede causar accidentes')
+                riesgos_empresa.append('Responsabilidad por accidentes causados por condiciones médicas no evaluadas')
+        
+        return jsonify({
+            'ok': True,
+            'estado': estado,
+            'nivel_riesgo': nivel_riesgo,
+            'puede_asignar': estado != 'bloqueado',
+            'requiere_confirmacion': estado == 'advertencia',
+            'resumen': {
+                'docs_vencidos': len(docs_vencidos),
+                'docs_por_vencer': len(docs_por_vencer),
+                'docs_faltantes_criticos': len(docs_faltantes_criticos),
+                'docs_faltantes_recomendados': len(docs_faltantes_recomendados)
+            },
+            'detalles': {
+                'vencidos': docs_vencidos,
+                'por_vencer': docs_por_vencer,
+                'faltantes_criticos': docs_faltantes_criticos,
+                'faltantes_recomendados': docs_faltantes_recomendados
+            },
+            'riesgos': {
+                'conductor': riesgos_conductor,
+                'empresa': riesgos_empresa
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'ok': False,
+            'error': str(e),
+            'estado': 'error',
+            'puede_asignar': False
+        }), 500

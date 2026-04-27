@@ -1,4 +1,68 @@
-/* app/static/css/administrativo.css
+/* app/static/css/administrativo/administrativo.css */
+
+/* ══ Modales ══════════════════════════════════════════════ */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.overlay.open {
+  display: flex !important;
+}
+
+.modal {
+  background: #ffffff !important; /* Fondo blanco forzado */
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.2s ease;
+  position: relative;
+  z-index: 10000;
+  display: block !important; /* Forzar visibilidad */
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: #000000 !important; /* Texto negro forzado */
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+
+/* Asegurar que SweetAlert esté por encima del modal */
+.swal2-container {
+  z-index: 10001 !important;
+}
 
 /* ── Validación de formularios ────────────────────────────── */
 .field input.input-ok,

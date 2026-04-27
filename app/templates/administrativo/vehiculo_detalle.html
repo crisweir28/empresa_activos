@@ -3,9 +3,13 @@
 {% block title %}{{ vehiculo.Nombre }}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/administrativo.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/administrativo/administrativo.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/administrativo/vehiculo_detalle.css') }}">
+<!-- Agregar SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 {% endblock %}
+
+
 
 {% block content %}
 <div class="topbar">
@@ -17,7 +21,7 @@
       <span class="badge badge-{{ vehiculo.Estado }}">{{ vehiculo.Estado }}</span>
     </div>
   </div>
-  <a href="{{ url_for('administrativo.vehiculos') }}" class="btn-sm">← Volver</a>
+  <a href="{{ url_for('administrativo.dashboard') }}" class="btn-sm">← Volver</a>
 </div>
 
 <div class="layout-2col-equal">
@@ -290,9 +294,12 @@
 {% include "administrativo/modales/vehiculo_detalle/_modal_mantenimiento_completar.html" %}
 {% include "administrativo/modales/vehiculo_detalle/_modal_permiso.html" %}
 {% include "administrativo/modales/vehiculo_detalle/_modal_conductor.html" %}
-
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/administrativo/administrativo.js') }}"></script>
+<script src="{{ url_for('static', filename='js/administrativo/vehiculos.js') }}"></script>
+<!-- Agregar SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock %}
+

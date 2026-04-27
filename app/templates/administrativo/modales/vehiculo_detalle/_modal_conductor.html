@@ -1,20 +1,29 @@
-{# app/templates/administrativo/modales/vehiculo_detalle/modal conductor.html #}
+{# app/templates/administrativo/modales/vehiculo_detalle/_modal_conductor.html #}
 
 <div class="overlay" id="modal-conductor" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>👤 Asignar conductor</h2>
-    <form method="POST" action="{{ url_for('administrativo.asignar_conductor', id=vehiculo.IdVehiculo) }}">
-      <div class="field"><label>Conductor *</label>
+    <form method="POST" id="form-asignar-conductor" action="{{ url_for('administrativo.asignar_conductor', id=vehiculo.IdVehiculo) }}">
+      <div class="field">
+        <label>Conductor *</label>
         <select name="personal_id" required>
           <option value="">— Seleccionar —</option>
-          {% for p in personal %}<option value="{{ p.IdPersonal }}">{{ p.Nombre }} {{ p.Apellido }}</option>{% endfor %}
+          {% for p in personal %}
+            <option value="{{ p.IdPersonal }}">{{ p.Nombre }} {{ p.Apellido }}</option>
+          {% endfor %}
         </select>
       </div>
-      <div class="field"><label>Fecha inicio</label><input name="fecha_inicio" type="date"></div>
+      <div class="field">
+        <label>Fecha inicio</label>
+        <input name="fecha_inicio" type="date">
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-conductor')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Asignar</button>
+        <button type="button" class="btn btn-primary" onclick="validarYAsignarConductor({{ vehiculo.IdVehiculo }})">
+          🔍 Verificar y asignar conductor
+        </button>
       </div>
+      <input type="hidden" name="id_vehiculo" value="{{ vehiculo.IdVehiculo }}">
     </form>
   </div>
 </div>

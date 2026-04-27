@@ -2,11 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 from datetime import date
 from ..extensions import db
-from ..models.vehiculo import (
-    Vehiculo, Personal, ConductorVehiculo,
-    PermisosVehiculo, MantenimientoVehiculo,
-    TipoServicio, Ubicacion, Condicion
-)
+from ..models.vehiculo import (Vehiculo, Personal, ConductorVehiculo,PermisosVehiculo, MantenimientoVehiculo,TipoServicio, Ubicacion, Condicion)
 from ..views.vehiculo_vistas import VVehiculo, VPermisosVencer, VMantenimientoVehiculo, VAlertasMantenimiento
 from ..utils.permisos import requiere_rol
 
@@ -57,28 +53,6 @@ def dashboard():
         vehiculos        = vehiculos[:8],
         alertas_prox     = alertas,
     )
-
-
-# ── CRUD Vehículos ────────────────────────────────────────────
-@administrativo_bp.route("/vehiculos")
-@login_required
-def vehiculos():
-    if not _check_acceso():
-        return redirect(url_for("activos.dashboard"))
-
-    estado  = request.args.get("estado", "")
-    query   = VVehiculo.query
-    if estado:
-        query = query.filter_by(estado=estado)
-
-    lista       = query.all()
-    ubicaciones = Ubicacion.query.all()
-
-    return render_template("administrativo/vehiculos.html",
-        vehiculos   = lista,
-        ubicaciones = ubicaciones,
-    )
-
 
 @administrativo_bp.route("/vehiculos/nuevo", methods=["POST"])
 @login_required
@@ -355,7 +329,6 @@ def mantenimiento_lista():
         tipos          = tipos,
     )
 
-
 @administrativo_bp.route("/vehiculos/<int:id>/mantenimiento/nuevo", methods=["POST"])
 @login_required
 def mantenimiento_nuevo(id):
@@ -396,7 +369,6 @@ def mantenimiento_nuevo(id):
         flash(f"Error: {str(e)}", "error")
 
     return redirect(url_for("administrativo.vehiculo_detalle", id=id))
-
 
 @administrativo_bp.route("/mantenimiento/<int:id>/completar", methods=["POST"])
 @login_required

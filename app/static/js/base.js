@@ -21,3 +21,11 @@ document.querySelectorAll('a[href*="logout"]').forEach(function(btn) {
     });
   });
 });
+
+function abrirModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function cerrarModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
