@@ -217,6 +217,7 @@ function filtrarEquipos(filtro) {
   cards.forEach((card, idx) => {
     card.style.transform = '';
     card.style.boxShadow = '';
+    card.style.border = '1px solid var(--border)';
   });
   
   const cardMap = {
@@ -233,6 +234,7 @@ function filtrarEquipos(filtro) {
     const activeCard = cards[cardMap[filtro]];
     activeCard.style.transform = 'scale(1.02)';
     activeCard.style.boxShadow = '0 8px 24px rgba(124,92,252,0.15)';
+    activeCard.style.border = '1px solid var(--accent)';
   }
   
   // Filtrar filas

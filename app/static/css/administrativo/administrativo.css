@@ -21,7 +21,7 @@
 }
 
 .modal {
-  background: #ffffff !important; /* Fondo blanco forzado */
+  background: var(--bg) !important;
   border-radius: 16px;
   padding: 24px;
   max-width: 600px;
@@ -32,7 +32,6 @@
   animation: modalSlideIn 0.2s ease;
   position: relative;
   z-index: 10000;
-  display: block !important; /* Forzar visibilidad */
 }
 
 @keyframes modalSlideIn {
@@ -49,7 +48,7 @@
 .modal h2 {
   margin: 0 0 20px 0;
   font-size: 20px;
-  color: #000000 !important; /* Texto negro forzado */
+  color: var(--text);
 }
 
 .modal-footer {
@@ -62,6 +61,16 @@
 /* Asegurar que SweetAlert esté por encima del modal */
 .swal2-container {
   z-index: 10001 !important;
+}
+
+/* Estilos para el contenido de SweetAlert */
+.swal2-popup {
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+.swal2-html-container {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 /* ── Validación de formularios ────────────────────────────── */
@@ -97,6 +106,15 @@
 .tab-btn:hover  { color: var(--text); }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* ── Cards de permisos ──────────────────────────────────── */
 .calendario-permisos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -166,6 +184,7 @@
   margin-left: auto;
 }
 
+/* ── Estados vacíos ──────────────────────────────────────── */
 .sin-alertas {
   text-align: center;
   padding: 40px 20px;
@@ -177,6 +196,19 @@
   margin-bottom: 12px;
 }
 
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .tab-btn { padding: 8px 12px; font-size: 12px; }
+  .tab-btn { 
+    padding: 8px 12px; 
+    font-size: 12px; 
+  }
+  
+  .modal {
+    max-width: 95%;
+    padding: 20px;
+  }
+  
+  .calendario-permisos {
+    grid-template-columns: 1fr;
+  }
 }

@@ -69,106 +69,90 @@ def _portal_empleado():
     """Renderiza el portal de empleado con sus activos."""
     uid = current_user.id
     
+    # Verificar si es conductor
+    es_conductor = db.session.execute(text("""
+        SELECT COUNT(*) as count FROM personal p
+        INNER JOIN usuario u ON CONCAT(p.Nombre, p.Apellido) = u.NombreUsuario
+        WHERE u.IdUsuario = :uid AND p.Activo = TRUE
+    """), {'uid': uid}).fetchone().count > 0
+    
     # Obtener equipos TI asignados
-    mis_equipos = db.session.execute(text("""
-        SELECT 
-            e.IdElectronico as id,
-            e.Nombre as nombre,
-            e.Marca,
-            e.Modelo,
-            e.TipoEquipo as categoria,
-            e.NumeroSerie,
-            e.Estado as estado,
-            e.Condicion,
-            e.Costo as valor
-        FROM electronico e
-        WHERE e.IdUsuario = :uid
-        AND e.Estado != 'baja'
+    equipos_raw = db.session.execute(text("""
+        SELECT IdEquipo, Nombre, Marca, Modelo, MarcaModelo, TipoEquipo, 
+               NumeroSerie, Estado, Condicion, Valor
+        FROM v_equipos_usuario 
+        WHERE IdUsuario = :uid
     """), {'uid': uid}).fetchall()
     
+    # Convertir a diccionarios
+    mis_equipos = []
+    for row in equipos_raw:
+        mis_equipos.append({
+            'IdEquipo': row[0],
+            'Nombre': row[1],
+            'Marca': row[2],
+            'Modelo': row[3],
+            'MarcaModelo': row[4],
+            'TipoEquipo': row[5],
+            'NumeroSerie': row[6],
+            'Estado': row[7],
+            'Condicion': row[8],
+            'Valor': row[9]
+        })
+    
     # Obtener vehículos asignados
-    try:
-        mis_vehiculos = db.session.execute(text("""
-            SELECT 
-                v.IdVehiculo,
-                v.Marca,
-                v.Modelo,
-                v.Ano,
-                v.Placa,
-                v.NumeroSerie,
-                v.Color,
-                v.Estado,
-                v.Condicion,
-                v.Costo,
-                v.Kilometraje,
-                v.FechaAsignacion
-            FROM vehiculo v
-            WHERE v.IdUsuario = :uid
-            AND v.Estado != 'baja'
-        """), {'uid': uid}).fetchall()
-    except:
-        mis_vehiculos = []
+    mis_vehiculos = []
+    if es_conductor:
+        try:
+            vehiculos_raw = db.session.execute(text("""
+                SELECT * FROM v_vehiculos_usuario WHERE IdUsuario = :uid
+            """), {'uid': uid}).fetchall()
+            mis_vehiculos = [dict(row._mapping) for row in vehiculos_raw]
+        except:
+            mis_vehiculos = []
     
     # Obtener documentos del usuario
-    try:
-        mis_documentos = db.session.execute(text("""
-            SELECT 
-                IdDocumento,
-                TipoDocumento,
-                NombreArchivo,
-                ArchivoUrl,
-                FechaEmision,
-                FechaVencimiento,
-                NumeroDocumento,
-                DiasParaVencer,
-                EstadoDocumento,
-                CreadoEn
-            FROM v_documentos_usuario
-            WHERE IdUsuario = :uid
-            ORDER BY 
-                CASE EstadoDocumento
-                    WHEN 'vencido' THEN 1
-                    WHEN 'por_vencer' THEN 2
-                    WHEN 'vigente' THEN 3
-                    ELSE 4
-                END,
-                FechaVencimiento ASC
-        """), {'uid': uid}).fetchall()
-    except:
-        mis_documentos = []
-    
-    # Obtener permisos del vehículo (si tiene vehículo asignado)
+    mis_documentos = []
     permisos_vehiculo = []
-    if mis_vehiculos:
-        id_vehiculo = mis_vehiculos[0].IdVehiculo
+    if es_conductor:
         try:
-            permisos_vehiculo = db.session.execute(text("""
-                SELECT 
-                    IdPermiso,
-                    Descripcion,
-                    Numero,
-                    FechaInicio,
-                    FechaVencimiento,
-                    ArchivoUrl,
-                    CASE 
-                        WHEN FechaVencimiento < CURDATE() THEN 'vencido'
-                        WHEN DATEDIFF(FechaVencimiento, CURDATE()) <= 30 THEN 'por_vencer'
-                        ELSE 'vigente'
-                    END AS Estado
-                FROM permisovehiculo
-                WHERE IdVehiculo = :vid
-                ORDER BY FechaVencimiento ASC
-            """), {'vid': id_vehiculo}).fetchall()
+            docs_raw = db.session.execute(text("""
+                SELECT * FROM v_documentos_usuario 
+                WHERE IdUsuario = :uid
+                ORDER BY 
+                    CASE EstadoDocumento
+                        WHEN 'vencido' THEN 1
+                        WHEN 'por_vencer' THEN 2
+                        WHEN 'vigente' THEN 3
+                        ELSE 4
+                    END,
+                    FechaVencimiento ASC
+            """), {'uid': uid}).fetchall()
+            mis_documentos = [dict(row._mapping) for row in docs_raw]
         except:
-            permisos_vehiculo = []
+            mis_documentos = []
+        
+        # Obtener permisos del vehículo
+        if mis_vehiculos:
+            id_vehiculo = mis_vehiculos[0]['IdVehiculo']
+            try:
+                permisos_raw = db.session.execute(text("""
+                    SELECT * FROM v_permisos_vehiculo 
+                    WHERE IdVehiculo = :vid
+                    ORDER BY FechaVencimiento ASC
+                """), {'vid': id_vehiculo}).fetchall()
+                permisos_vehiculo = [dict(row._mapping) for row in permisos_raw]
+            except:
+                permisos_vehiculo = []
     
-    # Estadísticas de documentos
-    docs_vencidos = sum(1 for d in mis_documentos if hasattr(d, 'EstadoDocumento') and d.EstadoDocumento == 'vencido')
-    docs_por_vencer = sum(1 for d in mis_documentos if hasattr(d, 'EstadoDocumento') and d.EstadoDocumento == 'por_vencer')
+    # Estadísticas
+    docs_vencidos = sum(1 for d in mis_documentos if d.get('EstadoDocumento') == 'vencido')
+    docs_por_vencer = sum(1 for d in mis_documentos if d.get('EstadoDocumento') == 'por_vencer')
     total_activos = len(mis_equipos) + len(mis_vehiculos)
     
     return render_template("portal_empleado/dashboard.html",
         area_nombre=current_user.rol_label or "Empleado",
+        es_conductor=es_conductor,
         mis_equipos=mis_equipos,
         mis_vehiculos=mis_vehiculos,
         mis_documentos=mis_documentos,

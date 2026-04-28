@@ -1,4 +1,5 @@
 /* base.css — Tema claro con acento vino #9B2335 */
+/*static/css/base.css*/
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -229,16 +230,52 @@ tr:hover td      { background: #fafafa; }
 .btn-cancel:hover { background: var(--bg); border-color: var(--border2); }
 
 /* ── Modal ── */
-.modal {
+
+.overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.4);
-  z-index: 1000;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.6);
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(3px);
-  padding: 16px;
+  padding: 20px;
+}
+
+.overlay.open {
+  display: flex;
+}
+
+.modal {
+  position: relative;
+  z-index: 10001;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 540px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .modal.active {
@@ -273,6 +310,22 @@ tr:hover td      { background: #fafafa; }
   font-weight: 800;
   color: var(--text);
   margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .modal {
+    padding: 20px;
+    max-width: 100%;
+  }
 }
 
 .modal-close {

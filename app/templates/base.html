@@ -392,25 +392,42 @@
       }
     });
 
-    socket.on('ti_equipos_update', function () {
-      // Notificación en cualquier página
-      toast('info', '💻 Lista de equipos TI actualizada');
+socket.on('ti_equipos_update', function () {
+  // Si estás en la página de detalle de un equipo, recargar
+  if (window.location.pathname.match(/^\/ti\/equipos\/\d+$/)) {
+    console.log('Recargando página de detalle...');
+    toast('info', '💻 Equipo actualizado');
+    setTimeout(() => location.reload(), 2000);  // ← 2 segundos
+    return;
+  }
 
-      // Si está en /ti/equipos, actualizar la tabla también
-      if (window.location.pathname.includes('/ti/equipos')) {
-        fetch(window.location.href)
-          .then(r => r.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const nuevaTbody = doc.querySelector('.panel table tbody');
-            const actualTbody = document.querySelector('.panel table tbody');
-            if (nuevaTbody && actualTbody) {
-              actualTbody.innerHTML = nuevaTbody.innerHTML;
-            }
-          });
-      }
-    });
+  // Si estás en el portal del empleado, recargar también
+  if (window.location.pathname === '/portal' || 
+      window.location.pathname === '/activos/dashboard') {
+    console.log('Recargando portal del empleado...');
+    toast('info', '💻 Tus equipos fueron actualizados');
+    setTimeout(() => location.reload(), 2000);  // ← 2 segundos
+    return;
+  }
+
+  // Notificación en cualquier página
+  toast('info', '💻 Lista de equipos TI actualizada');
+
+  // Si está en /ti/equipos (lista), actualizar solo la tabla
+  if (window.location.pathname === '/ti/equipos') {
+    fetch(window.location.href)
+      .then(r => r.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const nuevaTbody = doc.querySelector('.panel table tbody');
+        const actualTbody = document.querySelector('.panel table tbody');
+        if (nuevaTbody && actualTbody) {
+          actualTbody.innerHTML = nuevaTbody.innerHTML;
+        }
+      });
+  }
+});
   </script>
 
   <style>

@@ -21,8 +21,8 @@
     </div>
   </div>
   
-  {# Alertas de documentos #}
-  {% if docs_vencidos > 0 or docs_por_vencer > 0 %}
+  {# Alertas de documentos - SOLO CONDUCTORES #}
+  {% if es_conductor and (docs_vencidos > 0 or docs_por_vencer > 0) %}
   <div style="display:flex;gap:8px">
     {% if docs_vencidos > 0 %}
     <div style="background:rgba(248,113,113,.2);padding:8px 16px;border-radius:10px;
@@ -47,6 +47,9 @@
   </div>
   {% endif %}
 </div>
+
+{# ── SECCIÓN SOLO PARA CONDUCTORES ── #}
+{% if es_conductor %}
 
 {# ── Vehículo asignado ── #}
 {% if mis_vehiculos %}
@@ -116,7 +119,7 @@
 </div>
 {% endif %}
 
-{# ── Mis Documentos Personales ── #}
+{# ── Mis Documentos Personales - SOLO CONDUCTORES ── #}
 <div class="panel" style="margin-bottom:20px">
   <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
     <span>📄 Mis Documentos Personales</span>
@@ -184,41 +187,88 @@
   {% endif %}
 </div>
 
-{# ── Equipos TI (si tiene) ── #}
+{% endif %}
+{# ← FIN DE LA SECCIÓN SOLO CONDUCTORES #}
+
+{# ── Mis activos asignados - VISIBLE PARA TODOS ── #}
+<div class="panel" style="margin-bottom:20px">
+  <div class="panel-title">📦 Mis activos asignados</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+    Equipos y herramientas bajo tu resguardo
+  </div>
+
+ {# ── Equipos TI ── #}
 {% if mis_equipos %}
-<div class="panel">
-  <div class="panel-title">💻 Mis Equipos TI ({{ mis_equipos|length }})</div>
-  <table>
+<div style="margin-bottom:20px">
+  <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);
+             display:flex;align-items:center;gap:8px">
+    💻 Equipos TI ({{ mis_equipos|length }})
+  </h4>
+  
+  <!-- TABLA SIMPLIFICADA SIN ESTILOS COMPLEJOS -->
+  <table style="width:100%;border-collapse:collapse">
     <thead>
-      <tr><th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th><th>Condición</th></tr>
+      <tr style="background:#f0f0f0">
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">NOMBRE</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">MARCA/MODELO</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">TIPO</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">N° SERIE</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">ESTADO</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">CONDICIÓN</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">VALOR</th>
+      </tr>
     </thead>
     <tbody>
       {% for e in mis_equipos %}
-      <tr>
-        <td><strong>{{ e.nombre }}</strong></td>
-        <td style="color:var(--muted);font-size:12px">{{ e.categoria }}</td>
-        <td style="font-family:monospace;font-size:11px;color:var(--muted)">{{ e.NumeroSerie or '—' }}</td>
-        <td>
-          <span class="badge {% if e.estado == 'asignado' %}{% elif e.estado == 'mantenimiento' %}badge-mantenimiento{% endif %}"
-                style="{% if e.estado == 'asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
-            {{ e.estado }}
-          </span>
-        </td>
-        <td>
-          {% set cond_color = {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)'} %}
-          <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">
-            {{ e.Condicion }}
-          </span>
-        </td>
+      <tr style="background:#fff">
+        <td style="padding:10px;border:1px solid #ddd"><strong>{{ e.Nombre or e['Nombre'] or 'SIN NOMBRE' }}</strong></td>
+        <td style="padding:10px;border:1px solid #ddd">{{ e.MarcaModelo or e['MarcaModelo'] or 'N/A' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ e.TipoEquipo or e['TipoEquipo'] or 'N/A' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ e.NumeroSerie or e['NumeroSerie'] or 'N/A' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ e.Estado or e['Estado'] or 'N/A' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ e.Condicion or e['Condicion'] or 'N/A' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">${{ e.Valor or e['Valor'] or 0 }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% else %}
+<p style="color:red;font-weight:bold;padding:20px;background:yellow">
+  ❌ NO HAY EQUIPOS - mis_equipos está vacío
+</p>
 {% endif %}
 
-{# ── Modal Subir Documento ── #}
+  {# ── Mensaje si no hay activos ── #}
+  {% if not mis_equipos and not es_conductor %}
+  <div style="text-align:center;padding:40px;color:var(--muted)">
+    <div style="font-size:48px;margin-bottom:16px">📦</div>
+    <div style="font-weight:600;font-size:16px;margin-bottom:8px;color:var(--text)">
+      Sin activos asignados
+    </div>
+    <div style="font-size:13px">
+      No tienes equipos o herramientas asignados actualmente
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Recordatorio ── #}
+  <div style="background:var(--surface2);padding:14px;border-radius:10px;margin-top:16px;
+              border-left:3px solid var(--accent)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">💡</span>
+      <div style="font-size:12px;color:var(--muted)">
+        Eres responsable del cuidado y buen uso de los activos asignados a tu nombre. 
+        Si detectas algún problema o daño, repórtalo inmediatamente a tu supervisor o al departamento correspondiente.
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Modal Subir Documento - SOLO CONDUCTORES ── #}
+{% if es_conductor %}
 {% include "portal_empleado/modales/_modal_subir_documento.html" %}
+{% endif %}
 
 {% endblock %}
 

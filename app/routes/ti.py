@@ -13,6 +13,7 @@ from ..utils.permisos import requiere_rol, requiere_permiso
 from ..utils.archivos import guardar_archivo
 from ..models.baja_activo import BajaActivo
 
+
 ti_bp = Blueprint("ti", __name__)
 
 ROLES_TI = ("ti", "admin")
@@ -246,13 +247,23 @@ def equipo_liberar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    e = Electronico.query.get_or_404(id)
-    e.IdUsuario = None
-    e.Estado    = "almacen"
-    db.session.commit()
-    _emit_actualizar()
-    flash("Equipo regresado al almacén.", "success")
-    return redirect(url_for("ti.equipo_detalle", id=id))
+    try:
+        # ← CAMBIO: Usar SQL directo en lugar de ORM
+        db.session.execute(db.text("""
+            UPDATE electronico 
+            SET IdUsuario = NULL, Estado = 'almacen'
+            WHERE IdElectronico = :id
+        """), {'id': id})
+        
+        db.session.commit()
+        _emit_actualizar()
+        flash("Equipo regresado al almacén.", "success")
+        
+    except Exception as ex:
+        db.session.rollback()
+        flash(f'Error al liberar: {str(ex)}', 'error')
+    
+    return redirect(url_for('ti.equipo_detalle', id=id))
 
 
 # ── Detalle equipo ────────────────────────────────────────────
@@ -263,7 +274,41 @@ def equipo_detalle(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    equipo         = Electronico.query.get_or_404(id)
+    # ← USAR SQL DIRECTO en lugar del ORM
+    equipo_raw = db.session.execute(db.text("""
+        SELECT e.*, u.Nombre as UsuarioNombre, u.ApellidoPaterno, u.Correo,
+               r.NombreRol
+        FROM electronico e
+        LEFT JOIN usuario u ON e.IdUsuario = u.IdUsuario
+        LEFT JOIN rol r ON u.IdRol = r.IdRol
+        WHERE e.IdElectronico = :id
+    """), {'id': id}).fetchone()
+    
+    if not equipo_raw:
+        flash('Equipo no encontrado.', 'error')
+        return redirect(url_for('ti.equipos'))
+    
+    # Convertir a diccionario para el template
+    equipo = dict(equipo_raw._mapping)
+    
+    # Agregar propiedades calculadas que usa el template
+    tipo_labels = {
+        'laptop': 'Laptop', 'desktop': 'Desktop', 'monitor': 'Monitor',
+        'celular': 'Celular', 'red': 'Equipo de red', 'otro': 'Otro'
+    }
+    equipo['tipo_label'] = tipo_labels.get(equipo.get('TipoEquipo'), 'Otro')
+    
+    # Agregar objeto usuario si existe
+    if equipo.get('IdUsuario'):
+        equipo['usuario'] = {
+            'Nombre': equipo.get('UsuarioNombre'),
+            'ApellidoPaterno': equipo.get('ApellidoPaterno'),
+            'Correo': equipo.get('Correo'),
+            'rol_obj': {'NombreRol': equipo.get('NombreRol')} if equipo.get('NombreRol') else None
+        }
+    else:
+        equipo['usuario'] = None
+    
     mantenimientos = VMantenimientoElectronico.query.filter_by(IdElectronico=id).all()
     usuarios       = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
     ubicaciones    = Ubicacion.query.all()
@@ -285,7 +330,6 @@ def equipo_detalle(id):
         today             = date.today(),
         proyectos_activos = proyectos_activos,
     )
-
 
 # ── Mantenimiento nuevo ───────────────────────────────────────
 @ti_bp.route("/equipos/<int:id>/mantenimiento/nuevo", methods=["POST"])

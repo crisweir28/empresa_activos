@@ -91,3 +91,13 @@ function completarMant(id) {
   document.getElementById('form-completar').action = `/ti/mantenimiento/${id}/completar`;
   abrirModal('modal-completar');
 }
+
+if (typeof io !== 'undefined') {
+  const socket = io();
+  
+  socket.on('ti_equipos_update', function() {
+    // ← RECARGAR LA PÁGINA AUTOMÁTICAMENTE
+    console.log('Evento SocketIO recibido: ti_equipos_update');
+    location.reload();
+  });
+}
