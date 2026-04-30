@@ -428,6 +428,40 @@ socket.on('ti_equipos_update', function () {
       });
   }
 });
+
+// ← NUEVO: Listener para actualizaciones de herramientas del almacén
+socket.on('almacen_herramientas_update', function() {
+  console.log('📦 Evento SocketIO recibido: almacen_herramientas_update');
+  
+  // Recargar dashboard de almacén
+  if (window.location.pathname === '/almacen') {
+    toast('info', '🔧 Inventario actualizado');
+    setTimeout(() => location.reload(), 2000);
+    return;
+  }
+  
+  // Recargar inventario de almacén
+  if (window.location.pathname === '/almacen/inventario') {
+    toast('info', '🔧 Inventario actualizado');
+    setTimeout(() => location.reload(), 2000);
+    return;
+  }
+  
+  // Recargar historial de almacén
+  if (window.location.pathname === '/almacen/historial') {
+    toast('info', '🔧 Historial actualizado');
+    setTimeout(() => location.reload(), 2000);
+    return;
+  }
+  
+  // Recargar portal empleado (para mostrar herramientas asignadas)
+  if (window.location.pathname === '/portal' || 
+      window.location.pathname === '/activos/dashboard') {
+    toast('info', '🔧 Tus herramientas fueron actualizadas');
+    setTimeout(() => location.reload(), 2000);
+    return;
+  }
+});
   </script>
 
   <style>

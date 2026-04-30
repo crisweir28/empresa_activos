@@ -234,13 +234,49 @@
   </table>
 </div>
 {% else %}
-<p style="color:red;font-weight:bold;padding:20px;background:yellow">
-  ❌ NO HAY EQUIPOS - mis_equipos está vacío
-</p>
 {% endif %}
 
+{# ← NUEVO: Herramientas ── #}
+{% if mis_herramientas %}
+<div style="margin-bottom:20px">
+  <h4 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--text);
+             display:flex;align-items:center;gap:8px">
+    🔧 Herramientas ({{ mis_herramientas|length }})
+  </h4>
+  
+  <table style="width:100%;border-collapse:collapse">
+    <thead>
+      <tr style="background:#f0f0f0">
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">NOMBRE</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">MARCA/MODELO</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">TIPO</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">N° SERIE</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">ESTADO</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">FECHA ASIGNACIÓN</th>
+        <th style="padding:10px;text-align:left;border:1px solid #ddd">COSTO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in mis_herramientas %}
+      <tr style="background:#fff">
+        <td style="padding:10px;border:1px solid #ddd"><strong>{{ h.Nombre }}</strong></td>
+        <td style="padding:10px;border:1px solid #ddd">{{ h.Marca or '—' }} {{ h.Modelo or '' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ h.TipoHerramienta or '—' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ h.NumeroSerie or '—' }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ h.Estado }}</td>
+        <td style="padding:10px;border:1px solid #ddd">{{ h.FechaAsignacion }}</td>
+        <td style="padding:10px;border:1px solid #ddd">${{ "%.1f"|format(h.Costo or 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+
+
   {# ── Mensaje si no hay activos ── #}
-  {% if not mis_equipos and not es_conductor %}
+  {% if not mis_equipos and not mis_herramientas and not es_conductor %}
   <div style="text-align:center;padding:40px;color:var(--muted)">
     <div style="font-size:48px;margin-bottom:16px">📦</div>
     <div style="font-weight:600;font-size:16px;margin-bottom:8px;color:var(--text)">

@@ -214,10 +214,90 @@
 <!-- ================================== Modales ================================== -->
 {% include "almacenista/modales/inventario/_modal_alta_herramienta.html" %}
 {% include "almacenista/modales/inventario/_modal_asignar_herramienta.html" %}
-
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/almacenista/inventario.js') }}"></script>
 <script src="{{ url_for('static', filename='js/almacenista/almacenista.js') }}"></script>
+
+<script>
+console.log('🔴 BLOQUE SCRIPTS EJECUTADO');
+
+// Filtrado de herramientas con indicador visual
+function filtrarHerramientas(filtro) {
+  console.log('🟢 filtrarHerramientas llamada con:', filtro);
+  const filas = document.querySelectorAll('#tabla-herramientas tbody tr');
+  const mensajeVacio = document.getElementById('mensaje-vacio');
+  const titulo = document.getElementById('titulo-inventario');
+  const contador = document.getElementById('contador-herramientas');
+  const cards = document.querySelectorAll('.stat-card');
+  
+  let visibles = 0;
+  
+  // Resetear todas las cards
+  cards.forEach((card) => {
+    card.style.transform = '';
+    card.style.boxShadow = '';
+    card.style.border = '1px solid var(--border)';
+  });
+  
+  const cardMap = {
+    'todos': 0,
+    'disponible': 1,
+    'asignado': 2,
+    'daniado': 3,
+    'baja': 4
+  };
+  
+  // Marcar card activa
+  if (cardMap[filtro] !== undefined) {
+    const activeCard = cards[cardMap[filtro]];
+    activeCard.style.transform = 'translateY(-2px) scale(1.02)';
+    activeCard.style.boxShadow = '0 8px 24px rgba(34, 211, 165, 0.25)';
+    activeCard.style.border = '2px solid var(--accent)';
+  }
+  
+  // Filtrar filas
+  filas.forEach(fila => {
+    const estado = fila.dataset.estado;
+    let mostrar = false;
+    
+    if (filtro === 'todos') {
+      mostrar = true;
+    } else if (filtro === 'daniado') {
+      mostrar = (estado === 'dañado' || estado === 'perdido');
+    } else {
+      mostrar = (estado === filtro);
+    }
+    
+    if (mostrar) {
+      fila.style.display = '';
+      visibles++;
+    } else {
+      fila.style.display = 'none';
+    }
+  });
+  
+  // Actualizar título y contador
+  const titulos = {
+    'todos': '📋 Inventario completo',
+    'disponible': '✅ Herramientas disponibles',
+    'asignado': '👤 Herramientas asignadas',
+    'daniado': '⚠️ Herramientas dañadas/perdidas',
+    'baja': '🗑️ Herramientas dadas de baja'
+  };
+  
+  titulo.textContent = titulos[filtro] || '📋 Inventario';
+  contador.textContent = visibles;
+  
+  // Mostrar/ocultar mensaje de vacío
+  if (visibles === 0) {
+    document.querySelector('#tabla-herramientas').style.display = 'none';
+    mensajeVacio.style.display = 'block';
+  } else {
+    document.querySelector('#tabla-herramientas').style.display = 'table';
+    mensajeVacio.style.display = 'none';
+  }
+}
+</script>
 {% endblock %}

@@ -117,10 +117,11 @@ function filtrarHerramientas(filtro) {
   
   let visibles = 0;
   
-  // Actualizar estado activo de las cards
-  cards.forEach((card, idx) => {
+  // ← NUEVO: Resetear todas las cards (incluyendo borde)
+  cards.forEach((card) => {
     card.style.transform = '';
     card.style.boxShadow = '';
+    card.style.border = '1px solid var(--border)'; // ← RESETEAR BORDE
   });
   
   const cardMap = {
@@ -131,10 +132,12 @@ function filtrarHerramientas(filtro) {
     'baja': 4
   };
   
+  // ← MEJORADO: Marcar card activa con borde de color
   if (cardMap[filtro] !== undefined) {
     const activeCard = cards[cardMap[filtro]];
-    activeCard.style.transform = 'scale(1.02)';
-    activeCard.style.boxShadow = '0 8px 24px rgba(124,92,252,0.15)';
+    activeCard.style.transform = 'translateY(-2px) scale(1.02)';
+    activeCard.style.boxShadow = '0 8px 24px rgba(34, 211, 165, 0.25)';
+    activeCard.style.border = '2px solid var(--accent)'; // ← BORDE DE COLOR
   }
   
   // Filtrar filas

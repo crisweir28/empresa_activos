@@ -2,23 +2,45 @@
   <div class="modal" onclick="event.stopPropagation()">
     <h2 id="asignar-titulo">👤 Asignar herramienta</h2>
     <form method="POST" id="form-asignar">
-      <div class="field"><label>Asignar a *</label>
-        <select name="usuario_id" required>
-          <option value="">— Seleccionar usuario —</option>
-          {% for u in usuarios %}
-          <option value="{{ u.IdUsuario }}">{{ u.Nombre }} {{ u.ApellidoPaterno }}</option>
+      
+      <div class="field">
+        <label for="usuario_id">Asignar a *</label>
+        <select name="usuario_id" id="usuario_id" required>
+          <option value="">-- Seleccionar usuario --</option>
+          {% for depto in departamentos %}
+            <optgroup label="📁 {{ depto.nombre }}">
+              {% for u in usuarios if u.IdDepartamento == depto.id %}
+                <option value="{{ u.IdUsuario }}">
+                  {{ u.Nombre }} {{ u.ApellidoPaterno }} - {{ u.Correo }}
+                </option>
+              {% endfor %}
+            </optgroup>
           {% endfor %}
+
+          {# Usuarios sin departamento #}
+          <optgroup label="⚠️ Sin departamento">
+            {% for u in usuarios if not u.IdDepartamento %}
+              <option value="{{ u.IdUsuario }}">
+                {{ u.Nombre }} {{ u.ApellidoPaterno }} - {{ u.Correo }}
+              </option>
+            {% endfor %}
+          </optgroup>
         </select>
       </div>
-      <div class="field"><label>Fecha de asignación</label>
+
+      <div class="field">
+        <label>Fecha de asignación</label>
         <input name="fecha_asignacion" type="date">
       </div>
-      <div class="field"><label>Observaciones</label>
+
+      <div class="field">
+        <label>Observaciones</label>
         <textarea name="observaciones" placeholder="Notas opcionales"></textarea>
       </div>
+
       <div class="modal-footer">
         <button type="button" class="btn-cancel"
-                onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
+          onclick="document.getElementById('modal-asignar').classList.remove('open')">Cancelar</button>
         <button type="submit" class="btn btn-primary">Asignar</button>
       </div>
     </form>

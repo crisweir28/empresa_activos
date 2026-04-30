@@ -100,6 +100,39 @@ def _portal_empleado():
             'Valor': row[9]
         })
     
+    # ← NUEVO: Obtener herramientas asignadas
+    herramientas_raw = db.session.execute(text("""
+        SELECT 
+            h.IdHerramienta,
+            h.Nombre,
+            h.Marca,
+            h.Modelo,
+            h.NumeroSerie,
+            h.Estado,
+            h.TipoHerramienta,
+            h.Costo,
+            a.FechaAsignacion
+        FROM herramienta h
+        JOIN asignacionherramienta a ON h.IdHerramienta = a.IdHerramienta
+        WHERE a.IdUsuario = :uid 
+          AND a.FechaDevolucion IS NULL
+    """), {'uid': uid}).fetchall()
+    
+    # Convertir a diccionarios
+    mis_herramientas = []
+    for row in herramientas_raw:
+        mis_herramientas.append({
+            'IdHerramienta': row[0],
+            'Nombre': row[1],
+            'Marca': row[2],
+            'Modelo': row[3],
+            'NumeroSerie': row[4],
+            'Estado': row[5],
+            'TipoHerramienta': row[6],
+            'Costo': row[7],
+            'FechaAsignacion': row[8]
+        })
+    
     # Obtener vehículos asignados
     mis_vehiculos = []
     if es_conductor:
@@ -145,15 +178,16 @@ def _portal_empleado():
             except:
                 permisos_vehiculo = []
     
-    # Estadísticas
+    # Estadísticas (incluye herramientas ahora)
     docs_vencidos = sum(1 for d in mis_documentos if d.get('EstadoDocumento') == 'vencido')
     docs_por_vencer = sum(1 for d in mis_documentos if d.get('EstadoDocumento') == 'por_vencer')
-    total_activos = len(mis_equipos) + len(mis_vehiculos)
+    total_activos = len(mis_equipos) + len(mis_vehiculos) + len(mis_herramientas)  # ← ACTUALIZADO
     
     return render_template("portal_empleado/dashboard.html",
         area_nombre=current_user.rol_label or "Empleado",
         es_conductor=es_conductor,
         mis_equipos=mis_equipos,
+        mis_herramientas=mis_herramientas,  # ← NUEVO
         mis_vehiculos=mis_vehiculos,
         mis_documentos=mis_documentos,
         permisos_vehiculo=permisos_vehiculo,
@@ -162,7 +196,7 @@ def _portal_empleado():
         docs_por_vencer=docs_por_vencer,
         hoy=date.today()
     )
-
+    
 @activos_bp.route("/dashboard")
 @login_required
 def dashboard():

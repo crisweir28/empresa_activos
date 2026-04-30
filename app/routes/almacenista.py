@@ -13,6 +13,7 @@ from ..views.almacen_vistas import VInventario, VHistorialAsignaciones
 from ..utils.permisos import requiere_permiso
 from ..utils.archivos import guardar_archivo
 from ..models.baja_activo import BajaActivo
+from ..extensions import socketio
 
 almacenista_bp = Blueprint("almacenista", __name__)
 
@@ -25,6 +26,13 @@ def _check_acceso():
         return False
     return True
 
+def _emit_actualizar():
+    """Emite evento SocketIO para actualizar inventario en tiempo real."""
+    try:
+        from flask_socketio import emit
+        emit('almacen_herramientas_update', {'action': 'refresh'}, broadcast=True, namespace='/')
+    except Exception as e:
+        print(f"❌ Error al emitir: {e}")
 
 # ── Dashboard ─────────────────────────────────────────────────
 # app/routes/almacenista.py - Actualizar la función dashboard()
@@ -182,6 +190,7 @@ def herramienta_asignar(id):
             }
         )
         db.session.execute(sqla_text("COMMIT"))
+        _emit_actualizar()  # ← NUEVO: Emitir evento SocketIO
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
         flash(
             "Herramienta asignada correctamente." if row and row.r == "OK" else f"No se pudo asignar: {row.r if row else 'error'}.",
@@ -214,6 +223,7 @@ def herramienta_devolver(id):
             }
         )
         db.session.execute(sqla_text("COMMIT"))
+        _emit_actualizar()  # ← NUEVO: Emitir evento SocketIO
         row = db.session.execute(sqla_text("SELECT @res AS r")).fetchone()
         flash(
             "Devolución registrada." if row and row.r == "OK" else "Error al registrar devolución.",
