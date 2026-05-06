@@ -9,6 +9,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -22,11 +23,11 @@
   } %}
   {% set _t = _temas.get(current_user.rol, _temas["ti"]) %}
   <style>
-    
-  :root {
+    :root {
     --accent: {{ _t.c1 }};
     --accent2: {{ _t.c2 }};
-  }
+    }
+
     .sb-group {
       overflow: hidden;
     }
@@ -91,6 +92,14 @@
       <div class="sb-group">
         <div class="sb-group-body" style="max-height:200px">
 
+          {# Mis Activos - para empleados que no son admin/administrativo/almacenista #}
+          {% if current_user.rol not in ('admin', 'administrativo', 'almacenista') %}
+          <a class="nav-link {% if request.endpoint == 'activos.dashboard' %}active{% endif %}"
+            href="{{ url_for('activos.dashboard') }}">
+            <span class="ic">📦</span> Mis Activos
+          </a>
+          {% endif %}
+
           {% if current_user.rol not in ('administrativo', 'almacenista', 'ti') and tiene_permiso('Activos') %}
           <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
             href="{{ url_for('activos.lista') }}">
@@ -147,7 +156,7 @@
             <span class="ic">📊</span> Dashboard
           </a>
           {% endif %}
-          
+
           {% if tiene_permiso('Mantenimiento', 'ver') %}
           <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
             href="{{ url_for('administrativo.mantenimiento_lista') }}">
@@ -205,6 +214,48 @@
         </div>
       </div>
       {% endif %}
+
+      {# ── Ticketing ── #}
+      {% if tiene_permiso('Ticketing') %}
+      <div class="sb-group">
+        <button class="sb-group-btn {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
+          onclick="toggleGroup(this)">
+          Ticketing <span class="sb-group-arrow">▾</span>
+        </button>
+        <div class="sb-group-body {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
+          style="max-height:250px">
+
+          {% if tiene_permiso('Ticketing', 'editar') %}
+          {% if tiene_permiso('Ticketing', 'eliminar') %}
+          {# Admin TI: ve dashboard completo #}
+          <a class="nav-link {% if request.endpoint == 'ticketing.dashboard_ti' %}active{% endif %}"
+            href="{{ url_for('ticketing.dashboard_ti') }}">
+            <span class="ic">📊</span> Dashboard
+          </a>
+          {% else %}
+          {# Técnico TI: ve solo sus asignados #}
+          <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets_asignados' %}active{% endif %}"
+            href="{{ url_for('ticketing.mis_tickets_asignados') }}">
+            <span class="ic">🎫</span> Mis Asignados
+          </a>
+          {% endif %}
+          {% else %}
+          {# Usuario normal: ve solo los que creó #}
+          <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets' %}active{% endif %}"
+            href="{{ url_for('ticketing.mis_tickets') }}">
+            <span class="ic">🎫</span> Mis Tickets
+          </a>
+          {% endif %}
+
+          <a class="nav-link {% if request.endpoint == 'ticketing.nuevo_ticket' %}active{% endif %}"
+            href="{{ url_for('ticketing.nuevo_ticket') }}">
+            <span class="ic">➕</span> Crear Ticket
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+
 
       {# ── Proyectos ── #}
       {% if tiene_permiso('Proyectos') %}
@@ -307,171 +358,214 @@
     {% block content %}{% endblock %}
   </main>
 
-  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script>
-    function toggleGroup(btn) {
-      const body = btn.nextElementSibling;
-      const isCollapsed = body.classList.contains('collapsed');
-      if (isCollapsed) {
-        body.classList.remove('collapsed');
-        btn.classList.remove('collapsed');
-      } else {
-        body.classList.add('collapsed');
-        btn.classList.add('collapsed');
+<script src="{{ url_for('static', filename='js/base.js') }}"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  function toggleGroup(btn) {
+    const body = btn.nextElementSibling;
+    const isCollapsed = body.classList.contains('collapsed');
+    if (isCollapsed) {
+      body.classList.remove('collapsed');
+      btn.classList.remove('collapsed');
+    } else {
+      body.classList.add('collapsed');
+      btn.classList.add('collapsed');
+    }
+  }
+
+  // ── Toast helper global con SweetAlert2 ──────────────────────
+  function toast(icon, title) {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: icon,
+      title: title,
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    });
+  }
+
+  function confirmarLogout(e) {
+    e.preventDefault();
+    Swal.fire({
+      title: '¿Cerrar sesión?',
+      text: 'Tu sesión actual será terminada.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#9B2335',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+    }).then(result => {
+      if (result.isConfirmed) {
+        window.location.href = '{{ url_for("auth.logout") }}';
       }
-    }
+    });
+  }
 
-    // ── Toast helper global con SweetAlert2 ──────────────────────
-    function toast(icon, title) {
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: icon,
-        title: title,
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-      });
-    }
+  function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    sidebar.classList.toggle('open');
+    backdrop.classList.toggle('open');
+  }
 
-    function confirmarLogout(e) {
-      e.preventDefault();
-      Swal.fire({
-        title: '¿Cerrar sesión?',
-        text: 'Tu sesión actual será terminada.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#9B2335',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Sí, salir',
-        cancelButtonText: 'Cancelar',
-        reverseButtons: true,
-      }).then(result => {
-        if (result.isConfirmed) {
-          window.location.href = '{{ url_for("auth.logout") }}';
-        }
-      });
-    }
+  // ── Socket.IO ─────────────────────────────────────────────────
+  const socket = io();
+  socket.emit('join', { usuario_id: {{ current_user.id }} });
 
-    function toggleSidebar() {
-      const sidebar = document.querySelector('.sidebar');
-      const backdrop = document.getElementById('sidebar-backdrop');
-      sidebar.classList.toggle('open');
-      backdrop.classList.toggle('open');
-    }
-
-    // ── Socket.IO ─────────────────────────────────────────────────
-    const socket = io();
-    socket.emit('join', { usuario_id: {{ current_user.id }} });
-
-    socket.on('permisos_actualizados', function (data) {
-      if (data.usuario_id === {{ current_user.id }}) {  // ✅ CORREGIDO
+  socket.on('permisos_actualizados', function (data) {
+    if (data.usuario_id === {{ current_user.id }}) {
       toast('info', '🔐 Tus permisos fueron actualizados');
       setTimeout(() => location.reload(), 2000);
     }
   });
 
-    socket.on('usuarios_actualizados', function (data) {
-      if (window.location.pathname.includes('/usuarios')) {
-        toast('info', '👥 Lista de usuarios actualizada');
-        setTimeout(() => location.reload(), 2000);
-      }
-    });
+  socket.on('usuarios_actualizados', function (data) {
+    if (window.location.pathname.includes('/usuarios')) {
+      toast('info', '👥 Lista de usuarios actualizada');
+      setTimeout(() => location.reload(), 2000);
+    }
+  });
 
-    socket.on('proyectos_actualizados', function (data) {
-      if (window.location.pathname.includes('/proyectos')) {
-        toast('info', '📋 Proyectos actualizados');
-        setTimeout(() => location.reload(), 2000);
-      }
-    });
+  socket.on('proyectos_actualizados', function (data) {
+    if (window.location.pathname.includes('/proyectos')) {
+      toast('info', '📋 Proyectos actualizados');
+      setTimeout(() => location.reload(), 2000);
+    }
+  });
 
-    socket.on('usuario_bloqueado', function (data) {
-      if (window.location.pathname.includes('/usuarios')) {
+  socket.on('usuario_bloqueado', function (data) {
+    if (window.location.pathname.includes('/usuarios')) {
+      location.reload();
+    }
+  });
+
+  socket.on('ti_equipos_update', function () {
+    // Si estás en la página de detalle de un equipo, recargar
+    if (window.location.pathname.match(/^\/ti\/equipos\/\d+$/)) {
+      console.log('Recargando página de detalle...');
+      toast('info', '💻 Equipo actualizado');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+
+    // Si estás en el portal del empleado, recargar también
+    if (window.location.pathname === '/portal' ||
+      window.location.pathname === '/activos/dashboard') {
+      console.log('Recargando portal del empleado...');
+      toast('info', '💻 Tus equipos fueron actualizados');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+
+    // Notificación en cualquier página
+    toast('info', '💻 Lista de equipos TI actualizada');
+
+    // Si está en /ti/equipos (lista), actualizar solo la tabla
+    if (window.location.pathname === '/ti/equipos') {
+      fetch(window.location.href)
+        .then(r => r.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const nuevaTbody = doc.querySelector('.panel table tbody');
+          const actualTbody = document.querySelector('.panel table tbody');
+          if (nuevaTbody && actualTbody) {
+            actualTbody.innerHTML = nuevaTbody.innerHTML;
+          }
+        });
+    }
+  });
+
+  // ← Listener para actualizaciones de herramientas del almacén
+  socket.on('almacen_herramientas_update', function () {
+    console.log('📦 Evento SocketIO recibido: almacen_herramientas_update');
+
+    // Recargar dashboard de almacén
+    if (window.location.pathname === '/almacen') {
+      toast('info', '🔧 Inventario actualizado');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+
+    // Recargar inventario de almacén
+    if (window.location.pathname === '/almacen/inventario') {
+      toast('info', '🔧 Inventario actualizado');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+
+    // Recargar historial de almacén
+    if (window.location.pathname === '/almacen/historial') {
+      toast('info', '🔧 Historial actualizado');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+
+    // Recargar portal empleado (para mostrar herramientas asignadas)
+    if (window.location.pathname === '/portal' ||
+      window.location.pathname === '/activos/dashboard') {
+      toast('info', '🔧 Tus herramientas fueron actualizadas');
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+  });
+
+  // ← Listener para actualizaciones de ticketing
+  socket.on('ticketing_update', function (data) {
+    console.log('🎫 Evento SocketIO recibido: ticketing_update', data);
+
+    // Notificación con opción de recargar manualmente
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'info',
+      title: '🎫 Hay actualizaciones en tickets',
+      timer: 10000,  // Se cierra automáticamente en 10 segundos
+      timerProgressBar: true,
+      customClass: { 
+        popup: 'swal-toast-custom',
+        confirmButton: 'swal-confirm-btn',
+        cancelButton: 'swal-cancel-btn'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Solo recarga si el usuario hace clic en "Ver ahora"
         location.reload();
       }
     });
+  });
+</script>
 
-socket.on('ti_equipos_update', function () {
-  // Si estás en la página de detalle de un equipo, recargar
-  if (window.location.pathname.match(/^\/ti\/equipos\/\d+$/)) {
-    console.log('Recargando página de detalle...');
-    toast('info', '💻 Equipo actualizado');
-    setTimeout(() => location.reload(), 2000);  // ← 2 segundos
-    return;
-  }
-
-  // Si estás en el portal del empleado, recargar también
-  if (window.location.pathname === '/portal' || 
-      window.location.pathname === '/activos/dashboard') {
-    console.log('Recargando portal del empleado...');
-    toast('info', '💻 Tus equipos fueron actualizados');
-    setTimeout(() => location.reload(), 2000);  // ← 2 segundos
-    return;
-  }
-
-  // Notificación en cualquier página
-  toast('info', '💻 Lista de equipos TI actualizada');
-
-  // Si está en /ti/equipos (lista), actualizar solo la tabla
-  if (window.location.pathname === '/ti/equipos') {
-    fetch(window.location.href)
-      .then(r => r.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const nuevaTbody = doc.querySelector('.panel table tbody');
-        const actualTbody = document.querySelector('.panel table tbody');
-        if (nuevaTbody && actualTbody) {
-          actualTbody.innerHTML = nuevaTbody.innerHTML;
-        }
-      });
-  }
-});
-
-// ← NUEVO: Listener para actualizaciones de herramientas del almacén
-socket.on('almacen_herramientas_update', function() {
-  console.log('📦 Evento SocketIO recibido: almacen_herramientas_update');
-  
-  // Recargar dashboard de almacén
-  if (window.location.pathname === '/almacen') {
-    toast('info', '🔧 Inventario actualizado');
-    setTimeout(() => location.reload(), 2000);
-    return;
+<style>
+  .swal-toast-custom {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
   }
   
-  // Recargar inventario de almacén
-  if (window.location.pathname === '/almacen/inventario') {
-    toast('info', '🔧 Inventario actualizado');
-    setTimeout(() => location.reload(), 2000);
-    return;
+  .swal-confirm-btn {
+    background-color: #9B2335 !important;
+    color: white !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
   }
   
-  // Recargar historial de almacén
-  if (window.location.pathname === '/almacen/historial') {
-    toast('info', '🔧 Historial actualizado');
-    setTimeout(() => location.reload(), 2000);
-    return;
+  .swal-cancel-btn {
+    background-color: #6b7280 !important;
+    color: white !important;
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
   }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-  // Recargar portal empleado (para mostrar herramientas asignadas)
-  if (window.location.pathname === '/portal' || 
-      window.location.pathname === '/activos/dashboard') {
-    toast('info', '🔧 Tus herramientas fueron actualizadas');
-    setTimeout(() => location.reload(), 2000);
-    return;
-  }
-});
-  </script>
-
-  <style>
-    .swal-toast-custom {
-      font-family: 'Inter', sans-serif !important;
-      font-size: 13px !important;
-    }
-  </style>
-
-  {% block scripts %}{% endblock %}
+{% block scripts %}{% endblock %}
 </body>
 
 </html>

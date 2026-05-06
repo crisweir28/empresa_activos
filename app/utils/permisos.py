@@ -86,10 +86,6 @@ def tiene_permiso(modulo_nombre: str, accion: str = "ver") -> bool:
 
         modulo = Modulo.query.filter_by(Nombre=modulo_nombre).first()
         
-        # DEBUG
-        print(f">>> Buscando módulo: '{modulo_nombre}'")
-        print(f">>> Módulo encontrado: {modulo}")
-        
         if not modulo:
             return False
 
@@ -98,11 +94,6 @@ def tiene_permiso(modulo_nombre: str, accion: str = "ver") -> bool:
             IdUsuario=current_user.id,
             IdModulo=modulo.IdModulo
         ).first()
-
-        # DEBUG
-        print(f">>> PermisoUsuario encontrado: {pu}")
-        if pu:
-            print(f">>> PuedeVer={pu.PuedeVer}, PuedeCrear={pu.PuedeCrear}, PuedeEditar={pu.PuedeEditar}, PuedeEliminar={pu.PuedeEliminar}")
 
         if pu:
             mapa = {

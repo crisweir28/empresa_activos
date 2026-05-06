@@ -26,6 +26,7 @@ def create_app(env="default"):
     from .routes.proyectos      import proyectos_bp
     from .routes.rh             import rh_bp
     from .routes.portal_empleado import portal_bp
+    from .routes.ticketing      import ticketing_bp 
     
 
     app.register_blueprint(auth_bp)
@@ -39,6 +40,7 @@ def create_app(env="default"):
     app.register_blueprint(proyectos_bp,      url_prefix="/proyectos")
     app.register_blueprint(rh_bp,             url_prefix="/rh")
     app.register_blueprint(portal_bp)
+    app.register_blueprint(ticketing_bp,      url_prefix="/ticketing")
 
     # ── Socket events ─────────────────────────────────────────────────────────
     from . import socket_events  # noqa

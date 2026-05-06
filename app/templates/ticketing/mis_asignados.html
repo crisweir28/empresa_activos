@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Mis Tickets Asignados{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-header">
+        <h1>🎫 Mis Tickets Asignados</h1>
+        <p>Tickets que están bajo tu responsabilidad</p>
+    </div>
+
+    <!-- Métricas -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0">{{ total_tickets }}</h3>
+                    <small class="text-muted">Total Asignados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-danger">{{ abiertos }}</h3>
+                    <small class="text-muted">Abiertos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-warning">{{ en_proceso }}</h3>
+                    <small class="text-muted">En Proceso</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="mb-0 text-success">{{ resueltos }}</h3>
+                    <small class="text-muted">Resueltos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if tickets %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">📋 Mis Tickets</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Usuario</th>
+                        <th>Título</th>
+                        <th>Categoría</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                        <th>Creado</th>
+                        <th>SLA</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}">
+                                <strong>{{ ticket.NumeroTicket }}</strong>
+                            </a>
+                        </td>
+                        <td>
+                            <small>{{ ticket.UsuarioCreador or 'N/A' }}</small>
+                        </td>
+                        <td>{{ ticket.Titulo }}</td>
+                        <td>
+                            <span class="badge" style="background-color: {{ ticket.CategoriaColor }}">
+                                {{ ticket.Categoria }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background-color: {{ ticket.PrioridadColor }}">
+                                {{ ticket.Prioridad }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background-color: {{ ticket.EstadoColor }}">
+                                {{ ticket.Estado }}
+                            </span>
+                        </td>
+                        <td>
+                            <small>{{ ticket.FechaCreacion|fecha_relativa }}</small>
+                        </td>
+                        <td>
+                            {% if ticket.SLA %}
+                            <small class="text-muted">{{ ticket.SLA }}</small>
+                            {% else %}
+                            <small class="text-muted">-</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}" 
+                               class="btn btn-sm btn-primary">
+                                👁️ Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No tienes tickets asignados actualmente.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
