@@ -1,56 +1,87 @@
 {% extends "base.html" %}
-{% block title %}Mis Tickets Asignados{% endblock %}
+
+{% block title %}Mis Tickets Asignados - ActivosApp{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ticketing/mis_asignados.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="panel">
-    <div class="panel-header">
-        <h1>🎫 Mis Tickets Asignados</h1>
-        <p>Tickets que están bajo tu responsabilidad</p>
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">🎫 Mis Tickets Asignados</h1>
+        <p class="page-subtitle mb-0">Tickets que están bajo tu responsabilidad</p>
     </div>
 
-    <!-- Métricas -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="mb-0">{{ total_tickets }}</h3>
-                    <small class="text-muted">Total Asignados</small>
-                </div>
+    <!-- Leyenda de colores -->
+    <div class="color-legend">
+        <div class="legend-title">📌 Leyenda de Estados</div>
+        <div class="legend-items">
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);"></div>
+                <span class="legend-label">Abierto</span>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="mb-0 text-danger">{{ abiertos }}</h3>
-                    <small class="text-muted">Abiertos</small>
-                </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);"></div>
+                <span class="legend-label">En Proceso / Escalado / Pendiente</span>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="mb-0 text-warning">{{ en_proceso }}</h3>
-                    <small class="text-muted">En Proceso</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3 class="mb-0 text-success">{{ resueltos }}</h3>
-                    <small class="text-muted">Resueltos</small>
-                </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);"></div>
+                <span class="legend-label">Resuelto / Sin Solución / Cerrado</span>
             </div>
         </div>
     </div>
 
-    {% if tickets %}
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">📋 Mis Tickets</h5>
+    <!-- Métricas / Filtros -->
+    <div class="filters-container">
+        <div class="filter-card-wrapper">
+            <div class="metric-card" data-filter="all">
+                <div class="metric-icon">🎫</div>
+                <div class="metric-value">{{ total_tickets }}</div>
+                <div class="metric-label">Total Asignados</div>
+            </div>
         </div>
+        <div class="filter-card-wrapper">
+            <div class="metric-card" data-filter="abierto">
+                <div class="metric-icon">📭</div>
+                <div class="metric-value">{{ abiertos }}</div>
+                <div class="metric-label">Abiertos</div>
+            </div>
+        </div>
+        <div class="filter-card-wrapper">
+            <div class="metric-card" data-filter="proceso">
+                <div class="metric-icon">⚙️</div>
+                <div class="metric-value">{{ en_proceso }}</div>
+                <div class="metric-label">En Proceso</div>
+            </div>
+        </div>
+        <div class="filter-card-wrapper">
+            <div class="metric-card" data-filter="resuelto">
+                <div class="metric-icon">✅</div>
+                <div class="metric-value">{{ resueltos }}</div>
+                <div class="metric-label">Resueltos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de tickets -->
+    <div class="tickets-section">
+        <div id="filterInfo" class="mb-3" style="display: none;">
+            <div class="filter-tag" id="filterTagElement">
+                <span>Filtro: <strong id="filterName"></strong></span>
+                <button onclick="clearFilter()">×</button>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <span>📋</span>
+            Mis Tickets
+        </div>
+
+        {% if tickets %}
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="tickets-table">
                 <thead>
                     <tr>
                         <th>Número</th>
@@ -64,47 +95,48 @@
                         <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="ticketsTable">
                     {% for ticket in tickets %}
-                    <tr>
+                    <tr class="ticket-row" data-estado="{{ ticket.IdEstado }}" data-estado-nombre="{{ ticket.Estado }}">
                         <td>
-                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}">
-                                <strong>{{ ticket.NumeroTicket }}</strong>
+                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}"
+                                class="ticket-number">
+                                {{ ticket.NumeroTicket }}
                             </a>
                         </td>
                         <td>
-                            <small>{{ ticket.UsuarioCreador or 'N/A' }}</small>
+                            <span class="ticket-user">
+                                {{ ticket.UsuarioCreador or 'N/A' }}
+                            </span>
                         </td>
-                        <td>{{ ticket.Titulo }}</td>
                         <td>
-                            <span class="badge" style="background-color: {{ ticket.CategoriaColor }}">
+                            <span class="ticket-title">{{ ticket.Titulo }}</span>
+                        </td>
+                        <td>
+                            <span class="badge-custom" style="background-color: {{ ticket.CategoriaColor }};">
                                 {{ ticket.Categoria }}
                             </span>
                         </td>
                         <td>
-                            <span class="badge" style="background-color: {{ ticket.PrioridadColor }}">
+                            <span class="badge-custom" style="background-color: {{ ticket.PrioridadColor }};">
                                 {{ ticket.Prioridad }}
                             </span>
                         </td>
                         <td>
-                            <span class="badge" style="background-color: {{ ticket.EstadoColor }}">
+                            <span class="badge-custom" style="background-color: {{ ticket.EstadoColor }};">
                                 {{ ticket.Estado }}
                             </span>
                         </td>
                         <td>
-                            <small>{{ ticket.FechaCreacion|fecha_relativa }}</small>
+                            <span class="ticket-user">{{ ticket.FechaCreacion|fecha_relativa }}</span>
                         </td>
                         <td>
-                            {% if ticket.SLA %}
-                            <small class="text-muted">{{ ticket.SLA }}</small>
-                            {% else %}
-                            <small class="text-muted">-</small>
-                            {% endif %}
+                            <span class="ticket-user">-</span>
                         </td>
                         <td>
-                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}" 
-                               class="btn btn-sm btn-primary">
-                                👁️ Ver
+                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}"
+                                class="btn-view">
+                                <i class="bi bi-eye"></i> Ver
                             </a>
                         </td>
                     </tr>
@@ -112,11 +144,97 @@
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">🎉</div>
+            <div class="empty-state-text">No tienes tickets asignados en este momento</div>
+        </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i> No tienes tickets asignados actualmente.
-    </div>
-    {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Sistema de filtros interactivos
+    let currentFilter = 'all';
+
+    // Mapa de estados
+    const estadosMap = {
+        'all': 'Todos',
+        'abierto': 'Abiertos',
+        'proceso': 'En Proceso',
+        'resuelto': 'Resueltos'
+    };
+
+    // Colores del tag de filtro
+    const filterColors = {
+        'all': 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+        'abierto': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        'proceso': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        'resuelto': 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+    };
+
+    const estadosIds = {
+        'abierto': [1],        // IdEstado = 1: Abierto
+        'proceso': [2, 3, 4],  // IdEstado = 2: En Proceso, 3: Escalado, 4: Pendiente
+        'resuelto': [5, 6, 7]  // IdEstado = 5: Resuelto, 6: Sin Solución, 7: Cerrado
+    };
+
+    // Agregar event listeners a las tarjetas
+    document.querySelectorAll('.metric-card').forEach(card => {
+        card.addEventListener('click', function () {
+            const filter = this.getAttribute('data-filter');
+            applyFilter(filter);
+        });
+    });
+
+    function applyFilter(filter) {
+        currentFilter = filter;
+
+        // Actualizar UI de las tarjetas
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.classList.remove('active');
+        });
+
+        const activeCard = document.querySelector(`[data-filter="${filter}"]`);
+        if (activeCard) {
+            activeCard.classList.add('active');
+        }
+
+        // Mostrar/ocultar info de filtro con color correspondiente
+        const filterInfo = document.getElementById('filterInfo');
+        const filterName = document.getElementById('filterName');
+        const filterTag = document.getElementById('filterTagElement');
+
+        if (filter === 'all') {
+            filterInfo.style.display = 'none';
+        } else {
+            filterInfo.style.display = 'block';
+            filterName.textContent = estadosMap[filter];
+            filterTag.style.background = filterColors[filter];
+        }
+
+        // Filtrar tickets
+        const rows = document.querySelectorAll('.ticket-row');
+
+        rows.forEach(row => {
+            const estadoId = parseInt(row.getAttribute('data-estado'));
+
+            if (filter === 'all') {
+                row.style.display = '';
+            } else {
+                const showRow = estadosIds[filter].includes(estadoId);
+                row.style.display = showRow ? '' : 'none';
+            }
+        });
+    }
+
+    function clearFilter() {
+        applyFilter('all');
+    }
+
+    // Activar filtro "todos" por defecto
+    document.querySelector('[data-filter="all"]').classList.add('active');
+</script>
 {% endblock %}
