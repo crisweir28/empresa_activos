@@ -82,7 +82,7 @@
   <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="toggleSidebar()"></div>
   <aside class="sidebar" style="display:flex;flex-direction:column;overflow:hidden">
     <div class="sb-logo" style="flex-shrink:0">
-      <div class="sb-logo-icon">🏢</div>
+      <div class="sb-logo-icon"><i class="bi bi-building-fill-gear"></i></div>
       <span class="sb-logo-text">ActivosApp</span>
     </div>
 
@@ -96,14 +96,14 @@
           {% if current_user.rol not in ('admin', 'administrativo', 'almacenista') %}
           <a class="nav-link {% if request.endpoint == 'activos.dashboard' %}active{% endif %}"
             href="{{ url_for('activos.dashboard') }}">
-            <span class="ic">📦</span> Mis Activos
+            <span class="ic"><i class="bi bi-box-seam-fill"></i></span> Mis Activos
           </a>
           {% endif %}
 
           {% if current_user.rol not in ('administrativo', 'almacenista', 'ti') and tiene_permiso('Activos') %}
           <a class="nav-link {% if request.blueprint == 'activos' and request.endpoint != 'activos.dashboard' %}active{% endif %}"
             href="{{ url_for('activos.lista') }}">
-            <span class="ic">📦</span>
+            <span class="ic"><i class="bi bi-grid-fill"></i></span>
             {% if current_user.rol == 'admin' %}Todos los activos{% else %}Mis activos{% endif %}
           </a>
           {% endif %}
@@ -125,15 +125,15 @@
           style="max-height:200px">
           <a class="nav-link {% if request.blueprint == 'departamentos' %}active{% endif %}"
             href="{{ url_for('departamentos.lista') }}">
-            <span class="ic">🏬</span> Departamentos
+            <span class="ic"><i class="bi bi-building"></i></span> Departamentos
           </a>
           <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
             href="{{ url_for('usuarios.lista') }}">
-            <span class="ic">👥</span> Usuarios
+            <span class="ic"><i class="bi bi-people-fill"></i></span> Usuarios
           </a>
           <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
             href="{{ url_for('permisos.index') }}">
-            <span class="ic">🔐</span> Roles & Permisos
+            <span class="ic"><i class="bi bi-shield-lock-fill"></i></span> Roles & Permisos
           </a>
         </div>
       </div>
@@ -153,21 +153,21 @@
           {% if tiene_permiso('Vehículos') %}
           <a class="nav-link {% if request.endpoint == 'administrativo.dashboard' %}active{% endif %}"
             href="{{ url_for('administrativo.dashboard') }}">
-            <span class="ic">📊</span> Dashboard
+            <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
           </a>
           {% endif %}
 
           {% if tiene_permiso('Mantenimiento', 'ver') %}
           <a class="nav-link {% if request.endpoint == 'administrativo.mantenimiento_lista' %}active{% endif %}"
             href="{{ url_for('administrativo.mantenimiento_lista') }}">
-            <span class="ic">🔧</span> Mantenimiento
+            <span class="ic"><i class="bi bi-wrench-adjustable"></i></span> Mantenimiento
           </a>
           {% endif %}
 
           {% if tiene_permiso('Vehículos', 'crear') or current_user.rol == 'admin' %}
           <a class="nav-link {% if request.endpoint == 'administrativo.personal' %}active{% endif %}"
             href="{{ url_for('administrativo.personal') }}">
-            <span class="ic">👤</span> Personal
+            <span class="ic"><i class="bi bi-person-vcard"></i></span> Personal
           </a>
           {% endif %}
 
@@ -186,11 +186,11 @@
           style="max-height:200px">
           <a class="nav-link {% if request.endpoint == 'almacenista.dashboard' %}active{% endif %}"
             href="{{ url_for('almacenista.dashboard') }}">
-            <span class="ic">📊</span> Dashboard
+            <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
           </a>
           <a class="nav-link {% if request.endpoint == 'almacenista.historial' %}active{% endif %}"
             href="{{ url_for('almacenista.historial') }}">
-            <span class="ic">📋</span> Historial
+            <span class="ic"><i class="bi bi-clock-history"></i></span> Historial
           </a>
         </div>
       </div>
@@ -205,11 +205,11 @@
         <div class="sb-group-body {% if request.blueprint != 'ti' %}collapsed{% endif %}" style="max-height:200px">
           <a class="nav-link {% if request.endpoint == 'ti.dashboard' %}active{% endif %}"
             href="{{ url_for('ti.dashboard') }}">
-            <span class="ic">📊</span> Dashboard
+            <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
           </a>
           <a class="nav-link {% if request.endpoint == 'ti.validacion_estados' %}active{% endif %}"
             href="{{ url_for('ti.validacion_estados') }}">
-            <span class="ic">✅</span> Validación estados
+            <span class="ic"><i class="bi bi-check-circle-fill"></i></span> Validación estados
           </a>
         </div>
       </div>
@@ -230,26 +230,26 @@
           {# Admin TI: ve dashboard completo #}
           <a class="nav-link {% if request.endpoint == 'ticketing.dashboard_ti' %}active{% endif %}"
             href="{{ url_for('ticketing.dashboard_ti') }}">
-            <span class="ic">📊</span> Dashboard
+            <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
           </a>
           {% else %}
           {# Técnico TI: ve solo sus asignados #}
           <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets_asignados' %}active{% endif %}"
             href="{{ url_for('ticketing.mis_tickets_asignados') }}">
-            <span class="ic">🎫</span> Mis Asignados
+            <span class="ic"><i class="bi bi-bookmark-fill"></i></span> Mis Asignados
           </a>
           {% endif %}
           {% else %}
           {# Usuario normal: ve solo los que creó #}
           <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets' %}active{% endif %}"
             href="{{ url_for('ticketing.mis_tickets') }}">
-            <span class="ic">🎫</span> Mis Tickets
+            <span class="ic"><i class="bi bi-ticket-perforated"></i></span> Mis Tickets
           </a>
           {% endif %}
 
           <a class="nav-link {% if request.endpoint == 'ticketing.nuevo_ticket' %}active{% endif %}"
             href="{{ url_for('ticketing.nuevo_ticket') }}">
-            <span class="ic">➕</span> Crear Ticket
+            <span class="ic"><i class="bi bi-plus-circle-fill"></i></span> Crear Ticket
           </a>
         </div>
       </div>
@@ -268,7 +268,7 @@
           style="max-height:200px">
           <a class="nav-link {% if request.blueprint == 'proyectos' %}active{% endif %}"
             href="{{ url_for('proyectos.lista') }}">
-            <span class="ic">📋</span> Proyectos
+            <span class="ic"><i class="bi bi-folder-fill"></i></span> Proyectos
           </a>
         </div>
       </div>
@@ -287,14 +287,14 @@
           {% if tiene_permiso('Usuarios', 'ver') %}
           <a class="nav-link {% if request.blueprint == 'usuarios' %}active{% endif %}"
             href="{{ url_for('usuarios.lista') }}">
-            <span class="ic">👥</span> Usuarios del área
+            <span class="ic"><i class="bi bi-people"></i></span> Usuarios del área
           </a>
           {% endif %}
 
           {% if tiene_permiso('Usuarios', 'ver') and tiene_permiso('Roles', 'ver') %}
           <a class="nav-link {% if request.blueprint == 'permisos' %}active{% endif %}"
             href="{{ url_for('permisos.index') }}">
-            <span class="ic">🔐</span> Permisos
+            <span class="ic"><i class="bi bi-shield-lock"></i></span> Permisos
           </a>
           {% endif %}
 
@@ -302,6 +302,7 @@
       </div>
       {% endif %}
 
+      {# ── Recursos Humanos ── #}
       {% if tiene_permiso('Recursos Humanos') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}" onclick="toggleGroup(this)">
@@ -309,17 +310,29 @@
         </button>
         <div class="sb-group-body {% if request.blueprint != 'rh' %}collapsed{% endif %}" style="max-height:300px">
           <a class="nav-link {% if request.endpoint == 'rh.personal' %}active{% endif %}"
-            href="{{ url_for('rh.personal') }}"><span class="ic">👥</span> Personal Corporativo</a>
+            href="{{ url_for('rh.personal') }}">
+            <span class="ic"><i class="bi bi-people-fill"></i></span> Personal Corporativo
+          </a>
           <a class="nav-link {% if request.endpoint == 'rh.activos_usuario' %}active{% endif %}"
-            href="{{ url_for('rh.activos_usuario') }}"><span class="ic">👤</span> Activos por Empleado</a>
+            href="{{ url_for('rh.activos_usuario') }}">
+            <span class="ic"><i class="bi bi-person-badge"></i></span> Activos por Empleado
+          </a>
           <a class="nav-link {% if request.endpoint == 'rh.activos_area' %}active{% endif %}"
-            href="{{ url_for('rh.activos_area') }}"><span class="ic">🏢</span> Activos por Área</a>
+            href="{{ url_for('rh.activos_area') }}">
+            <span class="ic"><i class="bi bi-building"></i></span> Activos por Área
+          </a>
           <a class="nav-link {% if request.endpoint == 'rh.bajas_lista' %}active{% endif %}"
-            href="{{ url_for('rh.bajas_lista') }}"><span class="ic">📋</span> Procesos de Baja</a>
+            href="{{ url_for('rh.bajas_lista') }}">
+            <span class="ic"><i class="bi bi-file-earmark-x"></i></span> Procesos de Baja
+          </a>
           <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
-            href="{{ url_for('rh.auditoria') }}"><span class="ic">🔍</span> Auditoría</a>
+            href="{{ url_for('rh.auditoria') }}">
+            <span class="ic"><i class="bi bi-search"></i></span> Auditoría
+          </a>
           <a class="nav-link {% if request.endpoint == 'rh.reporte_consolidado' %}active{% endif %}"
-            href="{{ url_for('rh.reporte_consolidado') }}"><span class="ic">📊</span> Reporte consolidado</a>
+            href="{{ url_for('rh.reporte_consolidado') }}">
+            <span class="ic"><i class="bi bi-bar-chart-fill"></i></span> Reporte consolidado
+          </a>
         </div>
       </div>
       {% endif %}

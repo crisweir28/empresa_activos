@@ -259,8 +259,12 @@
           <td>
             <div style="display:flex;align-items:center;gap:8px">
 
-              <div class="modulo-icon {{ 'admin' if grupo.area == 'Administrativo' else 'ti' if grupo.area == 'TI / Tecnología' else 'rh' if grupo.area == 'Recursos Humanos'
-               else 'almacen' if grupo.area == 'Almacén' else '' }}" data-modulo="{{ m.NombreModulo }}">
+              <div class="modulo-icon {{ 'admin' if grupo.area == 'Administrativo'
+                else 'ti' if grupo.area == 'TI / Tecnología'
+                else 'rh' if grupo.area == 'Recursos Humanos'
+                else 'almacen' if grupo.area == 'Almacén'
+                else '' }}" data-modulo="{{ m.NombreModulo or m.Nombre or 'SIN_NOMBRE' }}">
+                <i class="bi bi-grid"></i>
               </div>
               <div>
                 <strong>{{ m.NombreModulo }}</strong>
@@ -320,110 +324,248 @@
 
   function marcarCambio() {
     hayChanges = true;
+
     document.getElementById('sync-status').innerHTML =
       '● <span style="color:var(--yellow)">Cambios pendientes</span>';
   }
 
-  // Resetear al hacer submit para que no dispare beforeunload
-  document.getElementById('form-permisos').addEventListener('submit', () => {
-    hayChanges = false;
-  });
+  document.getElementById('form-permisos')
+    .addEventListener('submit', () => {
+      hayChanges = false;
+    });
 
-  // También cubrir el botón de restablecer al rol
   document.querySelectorAll('form').forEach(f => {
-    f.addEventListener('submit', () => { hayChanges = false; });
+    f.addEventListener('submit', () => {
+      hayChanges = false;
+    });
   });
 
   window.addEventListener('beforeunload', e => {
-    if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
+    if (hayChanges) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
   });
 
-  // ══════════════════════════════════════════════════════════════
-  // DETECCIÓN INTELIGENTE DE ICONOS POR PALABRAS CLAVE
-  // ══════════════════════════════════════════════════════════════
+  // =========================================================
+  // ICONOS DINÁMICOS
+  // =========================================================
 
   function obtenerIcono(nombreModulo) {
+  const texto = nombreModulo
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
-    const texto = nombreModulo.toLowerCase();
+  console.log('Módulo:', nombreModulo, '→ Texto normalizado:', texto); // ← AGREGAR ESTA LÍNEA
 
-    // DASHBOARD / GENERAL
-
-    if (texto.includes('vista general') || texto.includes('dashboard'))
+    // ═══════════════════════════════════════════════════════
+    // MÓDULOS GENERALES
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('vista general') || texto.includes('metrica')) {
       return 'bi-speedometer2';
+    }
 
-    if (texto.includes('métrica') || texto.includes('metrica'))
-      return 'bi-graph-up-arrow';
+    if (texto.includes('dashboard') || texto.includes('panel')) {
+      return 'bi-bar-chart-fill';
+    }
 
-    // USUARIOS / ROLES
+    // ═══════════════════════════════════════════════════════
+    // USUARIOS Y PERMISOS
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('cuenta') && texto.includes('rol')) {
+      return 'bi-person-badge-fill';
+    }
 
-    if (texto.includes('usuario'))
+    if (texto.includes('usuario') || texto.includes('cuenta')) {
       return 'bi-people-fill';
+    }
 
-    if (texto.includes('cuenta'))
-      return 'bi-person-circle';
-
-    if (texto.includes('permiso'))
+    if (texto.includes('permiso')) {
       return 'bi-shield-lock-fill';
+    }
 
-    if (texto.includes('rol'))
-      return 'bi-person-gear';
+    if (texto.includes('rol')) {
+      return 'bi-award-fill';
+    }
 
-    // VEHÍCULOS
-
-    if (
-      texto.includes('vehicular') ||
-      texto.includes('vehículo') ||
-      texto.includes('flota')
-    )
-      return 'bi-car-front-fill';
-
-    if (texto.includes('mantenimiento'))
-      return 'bi-tools';
-
-    // TI
-
-    if (
-      texto.includes('tecnológico') ||
-      texto.includes('tecnologico')
-    )
-      return 'bi-pc-display';
-
-    if (texto.includes('equipo'))
-      return 'bi-laptop';
-
-    // EMPLEADOS
-
-    if (texto.includes('empleado'))
-      return 'bi-person-workspace';
-
-    if (texto.includes('corporativo'))
+    // ═══════════════════════════════════════════════════════
+    // CORPORATIVO Y EMPLEADOS
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('corporativo') || texto.includes('panel de activos')) {
       return 'bi-building-fill';
+    }
 
-    // ALMACÉN
+    if (texto.includes('empleado') || texto.includes('personal')) {
+      return 'bi-person-fill';
+    }
 
-    if (texto.includes('inventario'))
+    // ═══════════════════════════════════════════════════════
+    // VEHÍCULOS Y ADMINISTRATIVO
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('vehicular') || texto.includes('vehiculo') || texto.includes('flota')) {
+      return 'bi-car-front-fill';
+    }
+
+    if (texto.includes('conductor')) {
+      return 'bi-person-vcard-fill';
+    }
+
+    if (texto.includes('mantenimiento')) {
+      return 'bi-wrench-adjustable';
+    }
+
+    if (texto.includes('permiso') && texto.includes('circula')) {
+      return 'bi-file-earmark-text-fill';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // TI / TECNOLOGÍA
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('equipo') || texto.includes('tecnologico')) {
+      return 'bi-pc-display-horizontal';
+    }
+
+    if (texto.includes('computadora') || texto.includes('laptop')) {
+      return 'bi-laptop-fill';
+    }
+
+    if (texto.includes('validacion') || texto.includes('estatus')) {
+      return 'bi-check-circle-fill';
+    }
+
+    if (texto.includes('ticketing') || texto.includes('ticket')) {
+      return 'bi-ticket-perforated-fill';
+    }
+
+    if (texto.includes('soporte')) {
+      return 'bi-headset';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // RECURSOS HUMANOS
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('rh') || texto.includes('recursos humanos')) {
+      return 'bi-people-fill';
+    }
+
+    if (texto.includes('vacacion')) {
+      return 'bi-calendar-heart-fill';
+    }
+
+    if (texto.includes('nomina')) {
+      return 'bi-cash-stack';
+    }
+
+    if (texto.includes('contrato')) {
+      return 'bi-file-earmark-ruled-fill';
+    }
+
+    if (texto.includes('documento')) {
+      return 'bi-file-earmark-text-fill';
+    }
+
+    if (texto.includes('capacitacion')) {
+      return 'bi-book-fill';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ALMACÉN E INVENTARIO
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('almacen')) {
       return 'bi-box-seam-fill';
+    }
 
-    // DEFAULT
-    return 'bi-circle-square';
+    if (texto.includes('inventario')) {
+      return 'bi-clipboard-data-fill';
+    }
+
+    if (texto.includes('producto') || texto.includes('herramienta')) {
+      return 'bi-box-fill';
+    }
+
+    if (texto.includes('entrada')) {
+      return 'bi-box-arrow-in-down-right';
+    }
+
+    if (texto.includes('salida')) {
+      return 'bi-box-arrow-up-right';
+    }
+
+    if (texto.includes('stock')) {
+      return 'bi-graph-up';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PROYECTOS
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('proyecto')) {
+      return 'bi-folder-fill';
+    }
+
+    if (texto.includes('tarea')) {
+      return 'bi-check2-square';
+    }
+
+    if (texto.includes('actividad')) {
+      return 'bi-list-check';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // GENERAL / OTROS
+    // ═══════════════════════════════════════════════════════
+    if (texto.includes('reporte')) {
+      return 'bi-file-earmark-bar-graph-fill';
+    }
+
+    if (texto.includes('estadistica')) {
+      return 'bi-graph-up-arrow';
+    }
+
+    if (texto.includes('crear') || texto.includes('nuevo')) {
+      return 'bi-plus-circle-fill';
+    }
+
+    if (texto.includes('mis ')) {
+      return 'bi-bookmark-fill';
+    }
+
+    if (texto.includes('asignado')) {
+      return 'bi-person-check-fill';
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // DEFAULT (si no coincide con nada)
+    // ═══════════════════════════════════════════════════════
+    return 'bi-grid-3x3-gap-fill';
   }
 
+// =========================================================
+// APLICAR ICONOS
+// =========================================================
 
-  // ════════════════════════════════════════
-  // APLICAR ICONOS
-  // ════════════════════════════════════════
-
-  document.addEventListener('DOMContentLoaded', function () {
-
-    document.querySelectorAll('.modulo-icon').forEach(elem => {
-
-      const nombreModulo = elem.getAttribute('data-modulo');
-
-      const icono = obtenerIcono(nombreModulo);
-
-      elem.innerHTML = `<i class="bi ${icono}"></i>`;
-
-    });
+document.addEventListener('DOMContentLoaded', function () {
+  console.log('🎨 Aplicando iconos...');
+  
+  document.querySelectorAll('.modulo-icon').forEach(elem => {
+    const nombreModulo = elem.dataset.modulo;
+    const icono = obtenerIcono(nombreModulo);
+    
+    console.log('✅ Aplicando icono:', icono, 'a módulo:', nombreModulo); // ← AGREGAR ESTA LÍNEA
+    
+    // SOLO cambia la clase del <i>
+    const iconElement = elem.querySelector('i');
+    
+    if (iconElement) {
+      iconElement.className = `bi ${icono}`;
+      console.log('✓ Icono aplicado correctamente'); // ← AGREGAR ESTA LÍNEA
+    } else {
+      console.error('❌ No se encontró el elemento <i> dentro de .modulo-icon'); // ← AGREGAR ESTA LÍNEA
+    }
   });
+  
+  console.log('🎉 Iconos aplicados completamente');
+});
+
 </script>
 {% endblock %}
