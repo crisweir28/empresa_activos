@@ -4,50 +4,186 @@
 
 {% block extra_head %}
 <style>
-  .permisos-table { width: 100%; border-collapse: collapse; }
+  .permisos-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
   .permisos-table th {
-    padding: 10px 18px; font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .08em;
-    color: var(--muted); background: var(--bg);
+    padding: 10px 18px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
   }
-  .permisos-table th:first-child { text-align: left; }
-  .permisos-table th:not(:first-child) { text-align: center; width: 90px; }
-  .permisos-table td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
-  .permisos-table tr:last-child td { border-bottom: none; }
-  .permisos-table tr:hover td { background: rgba(255,255,255,.02); }
 
-  .modulo-info { display: flex; align-items: center; gap: 10px; }
-  .modulo-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(124,92,252,.12); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-  .modulo-name { font-size: 13px; font-weight: 600; }
-  .modulo-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .permisos-table th:first-child {
+    text-align: left;
+  }
 
-.switch-container { position: relative; display: inline-block; width: 36px; height: 20px; }
-.switch-container input { opacity: 0; width: 0; height: 0; }
-.switch-slider { position: absolute; inset: 0; cursor: pointer; background: #e2e8f0; border-radius: 20px; transition: .2s; border: 1.5px solid #cbd5e1; }
-.switch-slider:before { content: ''; position: absolute; height: 13px; width: 13px; left: 2px; bottom: 2px; background: #94a3b8; border-radius: 50%; transition: .2s; }
-input:checked + .switch-slider { background: var(--accent); border-color: var(--accent); }
-input:checked + .switch-slider:before { transform: translateX(15px); background: white; }
+  .permisos-table th:not(:first-child) {
+    text-align: center;
+    width: 90px;
+  }
 
-  .rol-ref { font-size: 9px; color: var(--muted); }
-  .personalizado-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 4px; }
+  .permisos-table td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .04);
+    vertical-align: middle;
+  }
+
+  .permisos-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .permisos-table tr:hover td {
+    background: rgba(255, 255, 255, .02);
+  }
+
+  .modulo-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .modulo-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+    transition: .2s ease;
+    background: rgba(124, 92, 252, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(124, 92, 252, 0.15);
+  }
+
+  .modulo-icon i {
+    line-height: 1;
+  }
+
+  .modulo-icon.admin {
+    background: rgba(217, 119, 6, .12);
+    color: #d97706;
+    border-color: rgba(217, 119, 6, .20);
+  }
+
+  .modulo-icon.ti {
+    background: rgba(37, 99, 235, .12);
+    color: #2563eb;
+    border-color: rgba(37, 99, 235, .20);
+  }
+
+  .modulo-icon.rh {
+    background: rgba(124, 58, 237, .12);
+    color: #7c3aed;
+    border-color: rgba(124, 58, 237, .20);
+  }
+
+  tr:hover .modulo-icon {
+    transform: scale(1.05);
+    filter: brightness(1.08);
+  }
+
+  .modulo-icon.almacen {
+    background: rgba(22, 163, 74, .12);
+    color: #16a34a;
+    border-color: rgba(22, 163, 74, .20);
+  }
+
+
+  .modulo-name {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .modulo-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .switch-container {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+  }
+
+  .switch-container input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .switch-slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: #e2e8f0;
+    border-radius: 20px;
+    transition: .2s;
+    border: 1.5px solid #cbd5e1;
+  }
+
+  .switch-slider:before {
+    content: '';
+    position: absolute;
+    height: 13px;
+    width: 13px;
+    left: 2px;
+    bottom: 2px;
+    background: #94a3b8;
+    border-radius: 50%;
+    transition: .2s;
+  }
+
+  input:checked+.switch-slider {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  input:checked+.switch-slider:before {
+    transform: translateX(15px);
+    background: white;
+  }
+
+  .rol-ref {
+    font-size: 9px;
+    color: var(--muted);
+  }
+
+  .personalizado-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+    margin-left: 4px;
+  }
 
   table thead {
-  background: var(--bg);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
 
-table th {
-  padding: 12px 18px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--muted);
-  border-bottom: 2px solid var(--border);  /* ← Cambiar de 1px a 2px */
-}
+  table th {
+    padding: 12px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+  }
 </style>
 {% endblock %}
 
@@ -68,8 +204,8 @@ table th {
     Permisos de {{ usuario.Usuario }}
     <div style="display:flex;gap:8px">
       {% if tiene_personalizados %}
-      <form method="POST" action="{{ url_for('permisos.usuario_permisos_reset', usuario_id=usuario.IdUsuario) }}" 
-            onsubmit="return confirm('¿Restablecer permisos desde el rol?')" style="display:inline">
+      <form method="POST" action="{{ url_for('permisos.usuario_permisos_reset', usuario_id=usuario.IdUsuario) }}"
+        onsubmit="return confirm('¿Restablecer permisos desde el rol?')" style="display:inline">
         <button type="submit" class="btn-sm">🔄 Restablecer al rol</button>
       </form>
       {% endif %}
@@ -77,9 +213,10 @@ table th {
       <button type="submit" form="form-permisos" class="btn btn-primary">💾 Guardar permisos</button>
     </div>
   </div>
- 
-  <form method="POST" action="{{ url_for('permisos.usuario_permisos_guardar', usuario_id=usuario.IdUsuario) }}" id="form-permisos">
-    
+
+  <form method="POST" action="{{ url_for('permisos.usuario_permisos_guardar', usuario_id=usuario.IdUsuario) }}"
+    id="form-permisos">
+
     {% for grupo in modulos_agrupados %}
     <!-- Separador de área -->
     <div style="background:linear-gradient(135deg, rgba(124,92,252,0.08) 0%, rgba(124,92,252,0.03) 100%);
@@ -88,18 +225,18 @@ table th {
             margin:32px 0 16px;
             border-radius:10px;
             box-shadow:0 2px 8px rgba(0,0,0,0.04)">
-  <strong style="font-size:15px;color:var(--text);letter-spacing:0.03em">
-    {% if grupo.area == 'Generales' %}📊 MÓDULOS GENERALES
-    {% elif grupo.area == 'Administrativo' %}🚗 ADMINISTRATIVO
-    {% elif grupo.area == 'TI / Tecnología' %}💻 TI / TECNOLOGÍA
-    {% elif grupo.area == 'Recursos Humanos' %}👥 RECURSOS HUMANOS
-    {% elif grupo.area == 'Almacén' %}📦 ALMACÉN
-    {% elif grupo.area == 'Personal Corporativo' %}🌐 PERSONAL CORPORATIVO
-    {% else %}🔧 {{ grupo.area|upper }}
-    {% endif %}
-  </strong>
-</div>
- 
+      <strong style="font-size:15px;color:var(--text);letter-spacing:0.03em">
+        {% if grupo.area == 'Generales' %}📊 MÓDULOS GENERALES
+        {% elif grupo.area == 'Administrativo' %}🚗 ADMINISTRATIVO
+        {% elif grupo.area == 'TI / Tecnología' %}💻 TI / TECNOLOGÍA
+        {% elif grupo.area == 'Recursos Humanos' %}👥 RECURSOS HUMANOS
+        {% elif grupo.area == 'Almacén' %}📦 ALMACÉN
+        {% elif grupo.area == 'Personal Corporativo' %}🌐 PERSONAL CORPORATIVO
+        {% else %}🔧 {{ grupo.area|upper }}
+        {% endif %}
+      </strong>
+    </div>
+
     <!-- Tabla de módulos del área -->
     <table style="margin-bottom:24px">
       <thead>
@@ -116,31 +253,40 @@ table th {
         {% set perm_usuario = permisos_map.get(m.IdModulo, {}) %}
         {% set perm_rol = permisos_rol.get(m.IdModulo, {}) %}
         {% set es_personalizado = perm_usuario.get('EsPersonalizado', False) %}
-        <tr {% if es_personalizado %}style="background:rgba(251,191,36,0.05)"{% endif %}>
+        <tr {% if es_personalizado %}style="background:rgba(251,191,36,0.05)" {% endif %}>
+
+          <!-- ICONO DEL MÓDULO -->
           <td>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:20px">{{ m.Icono or '📄' }}</span>
+
+              <div class="modulo-icon {{ 'admin' if grupo.area == 'Administrativo' else 'ti' if grupo.area == 'TI / Tecnología' else 'rh' if grupo.area == 'Recursos Humanos'
+               else 'almacen' if grupo.area == 'Almacén' else '' }}" data-modulo="{{ m.NombreModulo }}">
+              </div>
               <div>
                 <strong>{{ m.NombreModulo }}</strong>
                 {% if es_personalizado %}
                 <span style="color:var(--yellow);font-size:11px;margin-left:6px">●</span>
                 {% endif %}
-                <br><span style="font-size:11px;color:var(--muted)">{{ m.Descripcion or '' }}</span>
+                <br>
+                <span style="font-size:11px;color:var(--muted)">
+                  {{ m.Descripcion or '' }}
+                </span>
               </div>
             </div>
           </td>
-          
+
           {% for accion in ['ver', 'crear', 'editar', 'eliminar'] %}
           {% set checked_usuario = perm_usuario.get('Puede' + accion|capitalize, False) %}
           {% set checked_rol = perm_rol.get('Puede' + accion|capitalize, False) %}
           <td style="text-align:center">
             <label class="switch-container" style="margin:0;justify-content:center">
-              <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}" 
-                     {% if checked_usuario %}checked{% endif %}>
+              <input type="checkbox" name="mod_{{ m.IdModulo }}_{{ accion }}" {% if checked_usuario %}checked{% endif %}
+                onchange="marcarCambio()">
               <span class="switch-slider"></span>
             </label>
             <div style="font-size:10px;color:var(--muted);margin-top:4px">
-              rol: {% if checked_rol %}<span style="color:var(--green)">✓</span>{% else %}<span style="color:var(--muted)">✗</span>{% endif %}
+              rol: {% if checked_rol %}<span style="color:var(--green)">✓</span>{% else %}<span
+                style="color:var(--muted)">✗</span>{% endif %}
             </div>
           </td>
           {% endfor %}
@@ -149,47 +295,135 @@ table th {
       </tbody>
     </table>
     {% endfor %}
- 
+
     <div style="font-size:11px;color:var(--muted);margin-top:16px;padding:12px;background:var(--bg);border-radius:8px">
-      <span style="color:var(--yellow)">●</span> = permiso personalizado distinto al rol · 
+      <span style="color:var(--yellow)">●</span> = permiso personalizado distinto al rol ·
       <strong>rol: ✓/✗</strong> = referencia del rol base
     </div>
- 
+
   </form>
 </div>
 
-  <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
-    <span style="font-size:11px;color:var(--muted)" id="sync-status">● Sincronizado</span>
-    <span style="font-size:11px;color:var(--muted)">
-      <span class="personalizado-dot"></span> = permiso personalizado distinto al rol
-      &nbsp;·&nbsp; "rol: ✓/✗" = referencia del rol base
-    </span>
-  </div>
+<div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+  <span style="font-size:11px;color:var(--muted)" id="sync-status">● Sincronizado</span>
+  <span style="font-size:11px;color:var(--muted)">
+    <span class="personalizado-dot"></span> = permiso personalizado distinto al rol
+    &nbsp;·&nbsp; "rol: ✓/✗" = referencia del rol base
+  </span>
+</div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-let hayChanges = false;
+  let hayChanges = false;
 
-function marcarCambio() {
-  hayChanges = true;
-  document.getElementById('sync-status').innerHTML =
-    '● <span style="color:var(--yellow)">Cambios pendientes</span>';
-}
+  function marcarCambio() {
+    hayChanges = true;
+    document.getElementById('sync-status').innerHTML =
+      '● <span style="color:var(--yellow)">Cambios pendientes</span>';
+  }
 
-// Resetear al hacer submit para que no dispare beforeunload
-document.getElementById('form-permisos').addEventListener('submit', () => {
-  hayChanges = false;
-});
+  // Resetear al hacer submit para que no dispare beforeunload
+  document.getElementById('form-permisos').addEventListener('submit', () => {
+    hayChanges = false;
+  });
 
-// También cubrir el botón de restablecer al rol
-document.querySelectorAll('form').forEach(f => {
-  f.addEventListener('submit', () => { hayChanges = false; });
-});
+  // También cubrir el botón de restablecer al rol
+  document.querySelectorAll('form').forEach(f => {
+    f.addEventListener('submit', () => { hayChanges = false; });
+  });
 
-window.addEventListener('beforeunload', e => {
-  if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
-});
+  window.addEventListener('beforeunload', e => {
+    if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // ══════════════════════════════════════════════════════════════
+  // DETECCIÓN INTELIGENTE DE ICONOS POR PALABRAS CLAVE
+  // ══════════════════════════════════════════════════════════════
+
+  function obtenerIcono(nombreModulo) {
+
+    const texto = nombreModulo.toLowerCase();
+
+    // DASHBOARD / GENERAL
+
+    if (texto.includes('vista general') || texto.includes('dashboard'))
+      return 'bi-speedometer2';
+
+    if (texto.includes('métrica') || texto.includes('metrica'))
+      return 'bi-graph-up-arrow';
+
+    // USUARIOS / ROLES
+
+    if (texto.includes('usuario'))
+      return 'bi-people-fill';
+
+    if (texto.includes('cuenta'))
+      return 'bi-person-circle';
+
+    if (texto.includes('permiso'))
+      return 'bi-shield-lock-fill';
+
+    if (texto.includes('rol'))
+      return 'bi-person-gear';
+
+    // VEHÍCULOS
+
+    if (
+      texto.includes('vehicular') ||
+      texto.includes('vehículo') ||
+      texto.includes('flota')
+    )
+      return 'bi-car-front-fill';
+
+    if (texto.includes('mantenimiento'))
+      return 'bi-tools';
+
+    // TI
+
+    if (
+      texto.includes('tecnológico') ||
+      texto.includes('tecnologico')
+    )
+      return 'bi-pc-display';
+
+    if (texto.includes('equipo'))
+      return 'bi-laptop';
+
+    // EMPLEADOS
+
+    if (texto.includes('empleado'))
+      return 'bi-person-workspace';
+
+    if (texto.includes('corporativo'))
+      return 'bi-building-fill';
+
+    // ALMACÉN
+
+    if (texto.includes('inventario'))
+      return 'bi-box-seam-fill';
+
+    // DEFAULT
+    return 'bi-circle-square';
+  }
+
+
+  // ════════════════════════════════════════
+  // APLICAR ICONOS
+  // ════════════════════════════════════════
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.modulo-icon').forEach(elem => {
+
+      const nombreModulo = elem.getAttribute('data-modulo');
+
+      const icono = obtenerIcono(nombreModulo);
+
+      elem.innerHTML = `<i class="bi ${icono}"></i>`;
+
+    });
+  });
 </script>
 {% endblock %}
