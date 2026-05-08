@@ -189,13 +189,26 @@ def dashboard_ti():
     """Dashboard para el área de TI con todos los tickets"""
     try:
         # ═══════════════════════════════════════════════════════
-        # MÉTRICAS
+        # MÉTRICAS CON QUERY DIRECTA (sin vista)
         # ═══════════════════════════════════════════════════════
-        metricas = db.session.execute(text('SELECT * FROM v_tickets_metricas')).fetchone()
+        metricas_raw = db.session.execute(text("""
+            SELECT 
+                COUNT(*) as TotalTickets,
+                SUM(CASE WHEN e.Nombre = 'Abierto' THEN 1 ELSE 0 END) as TotalAbiertos,
+                SUM(CASE WHEN e.Nombre IN ('En Proceso', 'Escalado', 'Pendiente') THEN 1 ELSE 0 END) as TotalEnProceso,
+                SUM(CASE WHEN e.Nombre IN ('Resuelto', 'Cerrado') AND DATE(t.FechaCierre) = CURDATE() THEN 1 ELSE 0 END) as CerradosHoy,
+                SUM(CASE WHEN e.Nombre IN ('Resuelto', 'Cerrado') THEN 1 ELSE 0 END) as TotalCerrados,
+                SUM(CASE WHEN p.Nombre = 'Urgente' AND e.Nombre NOT IN ('Resuelto', 'Cerrado', 'Sin Solución') THEN 1 ELSE 0 END) as TotalUrgentes,
+                SUM(CASE WHEN t.IdAsignadoA IS NULL AND e.Nombre NOT IN ('Resuelto', 'Cerrado', 'Sin Solución') THEN 1 ELSE 0 END) as SinAsignar
+            FROM Tickets t
+            INNER JOIN EstadosTicket e ON t.IdEstado = e.IdEstado
+            INNER JOIN PrioridadesTicket p ON t.IdPrioridad = p.IdPrioridad
+            WHERE e.Nombre NOT IN ('Resuelto', 'Cerrado', 'Sin Solución')
+        """)).fetchone()
         
         metricas_dict = {}
-        if metricas:
-            metricas_dict = dict(metricas._mapping)
+        if metricas_raw:
+            metricas_dict = dict(metricas_raw._mapping)
         else:
             metricas_dict = {
                 'TotalTickets': 0,
@@ -203,47 +216,49 @@ def dashboard_ti():
                 'TotalEnProceso': 0,
                 'CerradosHoy': 0,
                 'TotalCerrados': 0,
-                'TotalUrgentes': 0
+                'TotalUrgentes': 0,
+                'SinAsignar': 0
             }
+        
         # ═══════════════════════════════════════════════════════
-# TICKETS ACTIVOS (SIN apellidos)
-# ═══════════════════════════════════════════════════════
+        # TICKETS ACTIVOS (SIN apellidos)
+        # ═══════════════════════════════════════════════════════
         tickets_result = db.session.execute(text("""
-        SELECT 
-        t.IdTicket,
-        t.NumeroTicket,
-        t.Titulo,
-        COALESCE(u.nombre, 'Usuario Desconocido') as UsuarioCreador,
-        COALESCE(u.email, 'sin-email@empresa.com') as EmailCreador,
-        c.Nombre as Categoria,
-        c.Color as CategoriaColor,
-        p.Nombre as Prioridad,
-        p.Color as PrioridadColor,
-        p.Nivel as PrioridadNivel,
-        e.Nombre as Estado,
-        e.Color as EstadoColor,
-        COALESCE(asig.nombre, '') as AsignadoA,
-        t.FechaCreacion,
-        CASE 
-            WHEN t.FechaPrimeraRespuesta IS NOT NULL 
-                AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaPrimeraRespuesta) <= p.TiempoRespuestaHoras 
-                THEN 1
-            WHEN t.FechaPrimeraRespuesta IS NULL 
-                AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, NOW()) > p.TiempoRespuestaHoras 
-                THEN 0
-            ELSE NULL
-        END as SLARespuestaCumplido,
-        t.IdAsignadoA
-    FROM Tickets t
-    INNER JOIN CategoriasTicket c ON t.IdCategoria = c.IdCategoria
-    INNER JOIN PrioridadesTicket p ON t.IdPrioridad = p.IdPrioridad
-    INNER JOIN EstadosTicket e ON t.IdEstado = e.IdEstado
-    LEFT JOIN usuarios u ON t.IdUsuarioCreador = u.id
-    LEFT JOIN usuarios asig ON t.IdAsignadoA = asig.id
-    WHERE e.Nombre IN ('Abierto', 'En Proceso', 'Escalado', 'Pendiente')
-    ORDER BY p.Nivel DESC, t.FechaCreacion ASC 
-    LIMIT 100
-""")).fetchall()
+            SELECT 
+                t.IdTicket,
+                t.NumeroTicket,
+                t.Titulo,
+                COALESCE(u.nombre, 'Usuario Desconocido') as UsuarioCreador,
+                COALESCE(u.email, 'sin-email@empresa.com') as EmailCreador,
+                c.Nombre as Categoria,
+                c.Color as CategoriaColor,
+                p.Nombre as Prioridad,
+                p.Color as PrioridadColor,
+                p.Nivel as PrioridadNivel,
+                e.Nombre as Estado,
+                e.Color as EstadoColor,
+                COALESCE(asig.nombre, '') as AsignadoA,
+                t.FechaCreacion,
+                CASE 
+                    WHEN t.FechaPrimeraRespuesta IS NOT NULL 
+                        AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaPrimeraRespuesta) <= p.TiempoRespuestaHoras 
+                        THEN 1
+                    WHEN t.FechaPrimeraRespuesta IS NULL 
+                        AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, NOW()) > p.TiempoRespuestaHoras 
+                        THEN 0
+                    ELSE NULL
+                END as SLARespuestaCumplido,
+                t.IdAsignadoA
+            FROM Tickets t
+            INNER JOIN CategoriasTicket c ON t.IdCategoria = c.IdCategoria
+            INNER JOIN PrioridadesTicket p ON t.IdPrioridad = p.IdPrioridad
+            INNER JOIN EstadosTicket e ON t.IdEstado = e.IdEstado
+            LEFT JOIN usuarios u ON t.IdUsuarioCreador = u.id
+            LEFT JOIN usuarios asig ON t.IdAsignadoA = asig.id
+            WHERE e.Nombre IN ('Abierto', 'En Proceso', 'Escalado', 'Pendiente')
+            ORDER BY p.Nivel DESC, t.FechaCreacion ASC 
+            LIMIT 100
+        """)).fetchall()
         
         current_app.logger.info(f'🔍 Resultados de query: {len(tickets_result)} tickets')
         
@@ -255,9 +270,6 @@ def dashboard_ti():
                 tickets.append(ticket_dict)
         
         current_app.logger.info(f'✅ Tickets convertidos: {len(tickets)}')
-        
-        if tickets:
-            current_app.logger.info(f'🎫 Primer ticket: {tickets[0]}')
         
         return render_template(
             'ticketing/dashboard_ti.html',
@@ -271,7 +283,6 @@ def dashboard_ti():
         current_app.logger.error(traceback.format_exc())
         flash('Error al cargar el dashboard de ticketing', 'danger')
         return redirect(url_for('activos.dashboard'))
-    
     
 @ticketing_bp.route('/mis-tickets')
 @login_required

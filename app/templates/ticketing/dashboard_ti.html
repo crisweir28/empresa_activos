@@ -10,8 +10,8 @@
 <div class="container-fluid py-4">
 
     <!-- Header -->
-    <div class="page-header">
-        <h1 class="page-title">🎫 Dashboard de Ticketing</h1>
+    <div class="page-header_ticket">
+        <h1 class="page-title_ticket">🎫 Dashboard de Ticketing</h1>
         <p class="page-subtitle mb-0">Gestión de tickets de soporte - Área TI</p>
     </div>
 
@@ -51,16 +51,6 @@
             </div>
         </div>
 
-        <!-- Cerrados Hoy -->
-        <div class="filter-card-wrapper">
-            <div class="metric-card" data-filter="cerrado">
-                <div class="metric-icon">✅</div>
-                <div class="metric-value">{{ metricas.CerradosHoy or 0 }}</div>
-                <div class="metric-label">Cerrados Hoy</div>
-                <div class="metric-subtitle">Total: {{ metricas.TotalCerrados or 0 }}</div>
-            </div>
-        </div>
-
         <!-- Urgentes -->
         <div class="filter-card-wrapper">
             <div class="metric-card" data-filter="urgente">
@@ -75,7 +65,7 @@
         <div class="filter-card-wrapper">
             <div class="metric-card" data-filter="sin_asignar">
                 <div class="metric-icon">👤</div>
-                <div class="metric-value">{{ metricas.TotalAbiertos or 0 }}</div>
+                <div class="metric-value">{{ metricas.SinAsignar or 0 }}</div>
                 <div class="metric-label">Sin Asignar</div>
                 <div class="metric-subtitle">Pendientes de técnico</div>
             </div>
@@ -211,7 +201,7 @@
             Estadísticas de Ticketing
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin:20px 0">
+        <div style="display:grid;grid-template-columns:repeat(0.5,1fr);gap:20px;margin:20px 0">
 
             <!-- Gráfica 1: Tickets por Departamento -->
             <div class="panel">

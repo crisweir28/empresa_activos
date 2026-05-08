@@ -46,7 +46,6 @@ const estadosMap = {
     'all': 'Todos',
     'abierto': 'Abiertos',
     'proceso': 'En Proceso',
-    'cerrado': 'Cerrados',
     'urgente': 'Urgentes',
     'sin_asignar': 'Sin Asignar'
 };
@@ -56,7 +55,6 @@ const filterColors = {
     'all': 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
     'abierto': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
     'proceso': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-    'cerrado': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
     'urgente': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
     'sin_asignar': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
 };
@@ -126,8 +124,6 @@ function applyFilter(filter) {
             showRow = estado === 'abierto';
         } else if (filter === 'proceso') {
             showRow = estado === 'en proceso' || estado === 'escalado' || estado === 'pendiente';
-        } else if (filter === 'cerrado') {
-            showRow = estado === 'resuelto' || estado === 'cerrado' || estado === 'sin solución';
         } else if (filter === 'urgente') {
             showRow = prioridad === 'Urgente';
         } else if (filter === 'sin_asignar') {

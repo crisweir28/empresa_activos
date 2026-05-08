@@ -1,19 +1,27 @@
 /* app/static/css/ticketing/dashboard_ti.css */
 
 /* Header */
-.page-header {
+.page-header_ticket {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
     border-radius: 12px;
     padding: 32px;
     margin-bottom: 32px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgb(236, 235, 235);
 }
 
-.page-title {
+.page-title_ticket {
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 8px;
+   
+}
+
+.page-title_ticket {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
 }
 
 .page-subtitle {
@@ -23,7 +31,7 @@
 
 /* Layout de filtros - FORZAR diseño horizontal */
 .filters-container {
-    display: flex !important;
+    display: block ruby !important;
     gap: 12px !important;
     flex-wrap: wrap !important;
     justify-content: flex-start !important;
@@ -31,7 +39,7 @@
 }
 
 .filter-card-wrapper {
-    width: 280px !important;
+    width: 258px !important;
     flex-shrink: 0 !important;
 }
 
@@ -94,16 +102,6 @@
 
 .metric-card[data-filter="proceso"].active .metric-value {
     color: #f59e0b !important;
-}
-
-/* Borde VERDE para "Cerrados" */
-.metric-card[data-filter="cerrado"].active {
-    border-color: #10b981 !important;
-    background: white !important;
-}
-
-.metric-card[data-filter="cerrado"].active .metric-value {
-    color: #10b981 !important;
 }
 
 .metric-value {
