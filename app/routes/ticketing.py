@@ -182,53 +182,82 @@ def index():
         # Usuario normal
         return redirect(url_for('ticketing.mis_tickets'))
 
-
 @ticketing_bp.route('/dashboard')
 @login_required
 @requiere_permiso('Ticketing', 'ver')
 def dashboard_ti():
     """Dashboard para el área de TI con todos los tickets"""
     try:
-        # Obtener filtros
-        filtro_estado = request.args.get('estado', '')
-        filtro_prioridad = request.args.get('prioridad', '')
-        sin_asignar = request.args.get('sin_asignar', '')
-        
-        # Construir query con filtros
-        query = "SELECT * FROM v_tickets_abiertos WHERE 1=1"
-        params = {}
-        
-        if filtro_estado:
-            query += " AND Estado = :estado"
-            params['estado'] = filtro_estado
-        
-        if filtro_prioridad:
-            query += " AND Prioridad = :prioridad"
-            params['prioridad'] = filtro_prioridad
-        
-        if sin_asignar:
-            query += " AND IdAsignadoA IS NULL"
-        
-        query += " ORDER BY PrioridadNivel DESC, FechaCreacion ASC LIMIT 100"
-        
-        # Obtener métricas
+        # ═══════════════════════════════════════════════════════
+        # MÉTRICAS
+        # ═══════════════════════════════════════════════════════
         metricas = db.session.execute(text('SELECT * FROM v_tickets_metricas')).fetchone()
         
-        # Obtener tickets
-        tickets_result = db.session.execute(text(query), params).fetchall()
+        metricas_dict = {}
+        if metricas:
+            metricas_dict = dict(metricas._mapping)
+        else:
+            metricas_dict = {
+                'TotalTickets': 0,
+                'TotalAbiertos': 0,
+                'TotalEnProceso': 0,
+                'CerradosHoy': 0,
+                'TotalCerrados': 0,
+                'TotalUrgentes': 0
+            }
+        # ═══════════════════════════════════════════════════════
+# TICKETS ACTIVOS (SIN apellidos)
+# ═══════════════════════════════════════════════════════
+        tickets_result = db.session.execute(text("""
+        SELECT 
+        t.IdTicket,
+        t.NumeroTicket,
+        t.Titulo,
+        COALESCE(u.nombre, 'Usuario Desconocido') as UsuarioCreador,
+        COALESCE(u.email, 'sin-email@empresa.com') as EmailCreador,
+        c.Nombre as Categoria,
+        c.Color as CategoriaColor,
+        p.Nombre as Prioridad,
+        p.Color as PrioridadColor,
+        p.Nivel as PrioridadNivel,
+        e.Nombre as Estado,
+        e.Color as EstadoColor,
+        COALESCE(asig.nombre, '') as AsignadoA,
+        t.FechaCreacion,
+        CASE 
+            WHEN t.FechaPrimeraRespuesta IS NOT NULL 
+                AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaPrimeraRespuesta) <= p.TiempoRespuestaHoras 
+                THEN 1
+            WHEN t.FechaPrimeraRespuesta IS NULL 
+                AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, NOW()) > p.TiempoRespuestaHoras 
+                THEN 0
+            ELSE NULL
+        END as SLARespuestaCumplido,
+        t.IdAsignadoA
+    FROM Tickets t
+    INNER JOIN CategoriasTicket c ON t.IdCategoria = c.IdCategoria
+    INNER JOIN PrioridadesTicket p ON t.IdPrioridad = p.IdPrioridad
+    INNER JOIN EstadosTicket e ON t.IdEstado = e.IdEstado
+    LEFT JOIN usuarios u ON t.IdUsuarioCreador = u.id
+    LEFT JOIN usuarios asig ON t.IdAsignadoA = asig.id
+    WHERE e.Nombre IN ('Abierto', 'En Proceso', 'Escalado', 'Pendiente')
+    ORDER BY p.Nivel DESC, t.FechaCreacion ASC 
+    LIMIT 100
+""")).fetchall()
+        
+        current_app.logger.info(f'🔍 Resultados de query: {len(tickets_result)} tickets')
         
         # Convertir a diccionarios
         tickets = []
         if tickets_result:
-            columnas = tickets_result[0]._mapping.keys()
             for row in tickets_result:
-                tickets.append(dict(zip(columnas, row)))
+                ticket_dict = dict(row._mapping)
+                tickets.append(ticket_dict)
         
-        # Convertir métricas a diccionario
-        metricas_dict = {}
-        if metricas:
-            columnas_metricas = metricas._mapping.keys()
-            metricas_dict = dict(zip(columnas_metricas, metricas))
+        current_app.logger.info(f'✅ Tickets convertidos: {len(tickets)}')
+        
+        if tickets:
+            current_app.logger.info(f'🎫 Primer ticket: {tickets[0]}')
         
         return render_template(
             'ticketing/dashboard_ti.html',
@@ -237,11 +266,13 @@ def dashboard_ti():
         )
         
     except Exception as e:
-        current_app.logger.error(f'Error en dashboard_ti: {str(e)}')
+        current_app.logger.error(f'❌ Error en dashboard_ti: {str(e)}')
+        import traceback
+        current_app.logger.error(traceback.format_exc())
         flash('Error al cargar el dashboard de ticketing', 'danger')
         return redirect(url_for('activos.dashboard'))
-
-
+    
+    
 @ticketing_bp.route('/mis-tickets')
 @login_required
 def mis_tickets():
@@ -719,7 +750,7 @@ def cambiar_estado(id_ticket):
     
 @ticketing_bp.route('/mis-asignados')
 @login_required
-@requiere_permiso('Ticketing', 'editar')
+@requiere_permiso('Ticketing', 'ver')  # ← SOLO NECESITA VER
 def mis_tickets_asignados():
     """Ver tickets asignados al técnico actual (solo para técnicos, no admins)"""
     try:
@@ -780,3 +811,115 @@ def mis_tickets_asignados():
         current_app.logger.error(f'Error en mis_tickets_asignados: {str(e)}')
         flash('Error al cargar los tickets', 'danger')
         return redirect(url_for('ticketing.index'))
+    
+
+@ticketing_bp.route('/dashboard/estadisticas')
+@login_required
+@requiere_permiso('Ticketing', 'ver')
+def dashboard_estadisticas():
+    """
+    Retorna estadísticas en formato JSON para las gráficas del dashboard TI
+    """
+    try:
+        # ═══════════════════════════════════════════════════════
+        # 1. TICKETS POR DEPARTAMENTO
+        # ═══════════════════════════════════════════════════════
+        tickets_por_depto_raw = db.session.execute(text("""
+    SELECT 
+        d.nombre as NombreDepartamento,
+        COUNT(t.IdTicket) as total
+    FROM Tickets t
+    INNER JOIN usuario u ON t.IdUsuarioCreador = u.IdUsuario
+    INNER JOIN departamentos d ON u.IdDepartamento = d.id
+    GROUP BY d.nombre
+    ORDER BY total DESC
+    LIMIT 10
+""")).fetchall()
+        
+        departamentos = [row[0] for row in tickets_por_depto_raw]
+        cantidades_depto = [row[1] for row in tickets_por_depto_raw]
+        
+        # ═══════════════════════════════════════════════════════
+        # 2. TICKETS POR MES (últimos 6 meses)
+        # ═══════════════════════════════════════════════════════
+        tickets_por_mes_raw = db.session.execute(text("""
+            SELECT 
+                DATE_FORMAT(FechaCreacion, '%Y-%m') as mes,
+                COUNT(IdTicket) as total
+            FROM Tickets
+            WHERE FechaCreacion >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(FechaCreacion, '%Y-%m')
+            ORDER BY mes ASC
+        """)).fetchall()
+        
+        meses = [row[0] for row in tickets_por_mes_raw]
+        cantidades_mes = [row[1] for row in tickets_por_mes_raw]
+        
+        # ═══════════════════════════════════════════════════════
+        # 3. TIPOS DE PROBLEMA
+        # ═══════════════════════════════════════════════════════
+        tipos_problema_raw = db.session.execute(text("""
+            SELECT 
+                c.Nombre,
+                COUNT(t.IdTicket) as total
+            FROM Tickets t
+            INNER JOIN CategoriasTicket c ON t.IdCategoria = c.IdCategoria
+            GROUP BY c.Nombre
+            ORDER BY total DESC
+            LIMIT 8
+        """)).fetchall()
+        
+        categorias = [row[0] for row in tipos_problema_raw]
+        cantidades_cat = [row[1] for row in tipos_problema_raw]
+        
+        # ═══════════════════════════════════════════════════════
+        # 4. TIEMPO PROMEDIO DE RESOLUCIÓN POR DEPARTAMENTO
+        # ═══════════════════════════════════════════════════════
+        tiempo_resolucion_raw = db.session.execute(text("""
+    SELECT 
+        d.nombre as NombreDepartamento,
+        ROUND(AVG(TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaCierre)), 1) as horas_promedio
+    FROM Tickets t
+    INNER JOIN usuario u ON t.IdUsuarioCreador = u.IdUsuario
+    INNER JOIN departamentos d ON u.IdDepartamento = d.id
+    WHERE t.FechaCierre IS NOT NULL
+    GROUP BY d.nombre
+    ORDER BY horas_promedio ASC
+    LIMIT 10
+""")).fetchall()
+        
+        deptos_tiempo = [row[0] for row in tiempo_resolucion_raw]
+        horas_promedio = [float(row[1]) if row[1] else 0 for row in tiempo_resolucion_raw]
+        
+        # ═══════════════════════════════════════════════════════
+        # RETORNAR JSON
+        # ═══════════════════════════════════════════════════════
+        return jsonify({
+            'tickets_por_departamento': {
+                'labels': departamentos,
+                'data': cantidades_depto
+            },
+            'tickets_por_mes': {
+                'labels': meses,
+                'data': cantidades_mes
+            },
+            'tipos_problema': {
+                'labels': categorias,
+                'data': cantidades_cat
+            },
+            'tiempo_resolucion': {
+                'labels': deptos_tiempo,
+                'data': horas_promedio
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f'Error en dashboard_estadisticas: {str(e)}')
+        return jsonify({
+            'tickets_por_departamento': {'labels': [], 'data': []},
+            'tickets_por_mes': {'labels': [], 'data': []},
+            'tipos_problema': {'labels': [], 'data': []},
+            'tiempo_resolucion': {'labels': [], 'data': []}
+        }), 500
+        
+        

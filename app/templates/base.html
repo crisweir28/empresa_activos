@@ -216,45 +216,35 @@
       {% endif %}
 
       {# ── Ticketing ── #}
-      {% if tiene_permiso('Ticketing') %}
-      <div class="sb-group">
-        <button class="sb-group-btn {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-          Ticketing <span class="sb-group-arrow">▾</span>
-        </button>
-        <div class="sb-group-body {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
-          style="max-height:250px">
+{% if tiene_permiso('Ticketing') %}
+<div class="sb-group">
+  <button class="sb-group-btn {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
+    onclick="toggleGroup(this)">
+    Ticketing <span class="sb-group-arrow">▾</span>
+  </button>
+  <div class="sb-group-body {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
+    style="max-height:250px">
 
-          {% if tiene_permiso('Ticketing', 'editar') %}
-          {% if tiene_permiso('Ticketing', 'eliminar') %}
-          {# Admin TI: ve dashboard completo #}
-          <a class="nav-link {% if request.endpoint == 'ticketing.dashboard_ti' %}active{% endif %}"
-            href="{{ url_for('ticketing.dashboard_ti') }}">
-            <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
-          </a>
-          {% else %}
-          {# Técnico TI: ve solo sus asignados #}
-          <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets_asignados' %}active{% endif %}"
-            href="{{ url_for('ticketing.mis_tickets_asignados') }}">
-            <span class="ic"><i class="bi bi-bookmark-fill"></i></span> Mis Asignados
-          </a>
-          {% endif %}
-          {% else %}
-          {# Usuario normal: ve solo los que creó #}
-          <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets' %}active{% endif %}"
-            href="{{ url_for('ticketing.mis_tickets') }}">
-            <span class="ic"><i class="bi bi-ticket-perforated"></i></span> Mis Tickets
-          </a>
-          {% endif %}
+    {# Dashboard: todos lo ven #}
+    <a class="nav-link {% if request.endpoint == 'ticketing.dashboard_ti' %}active{% endif %}"
+      href="{{ url_for('ticketing.dashboard_ti') }}">
+      <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
+    </a>
 
-          <a class="nav-link {% if request.endpoint == 'ticketing.nuevo_ticket' %}active{% endif %}"
-            href="{{ url_for('ticketing.nuevo_ticket') }}">
-            <span class="ic"><i class="bi bi-plus-circle-fill"></i></span> Crear Ticket
-          </a>
-        </div>
-      </div>
-      {% endif %}
+    {# Mis Asignados: todos lo ven #}
+    <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets_asignados' %}active{% endif %}"
+      href="{{ url_for('ticketing.mis_tickets_asignados') }}">
+      <span class="ic"><i class="bi bi-bookmark-fill"></i></span> Mis Asignados
+    </a>
 
+    {# Crear Ticket: todos lo ven #}
+    <a class="nav-link {% if request.endpoint == 'ticketing.nuevo_ticket' %}active{% endif %}"
+      href="{{ url_for('ticketing.nuevo_ticket') }}">
+      <span class="ic"><i class="bi bi-plus-circle-fill"></i></span> Crear Ticket
+    </a>
+  </div>
+</div>
+{% endif %}
 
 
       {# ── Proyectos ── #}

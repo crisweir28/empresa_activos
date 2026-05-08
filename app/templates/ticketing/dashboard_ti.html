@@ -8,7 +8,7 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    
+
     <!-- Header -->
     <div class="page-header">
         <h1 class="page-title">🎫 Dashboard de Ticketing</h1>
@@ -17,6 +17,7 @@
 
     <!-- Métricas / Filtros -->
     <div class="filters-container">
+        <!-- Total Tickets -->
         <div class="filter-card-wrapper">
             <div class="metric-card" data-filter="all">
                 <div class="metric-icon">📊</div>
@@ -25,6 +26,8 @@
                 <div class="metric-subtitle">+12% este mes</div>
             </div>
         </div>
+
+        <!-- Abiertos -->
         <div class="filter-card-wrapper">
             <div class="metric-card" data-filter="abierto">
                 <div class="metric-icon">🔴</div>
@@ -37,6 +40,8 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- En Proceso -->
         <div class="filter-card-wrapper">
             <div class="metric-card" data-filter="proceso">
                 <div class="metric-icon">⚙️</div>
@@ -45,6 +50,8 @@
                 <div class="metric-subtitle">Siendo atendidos</div>
             </div>
         </div>
+
+        <!-- Cerrados Hoy -->
         <div class="filter-card-wrapper">
             <div class="metric-card" data-filter="cerrado">
                 <div class="metric-icon">✅</div>
@@ -53,20 +60,40 @@
                 <div class="metric-subtitle">Total: {{ metricas.TotalCerrados or 0 }}</div>
             </div>
         </div>
-    </div>
 
-    <!-- Filtros adicionales (Urgentes, Sin Asignar) -->
-    <div class="additional-filters">
-        <button class="filter-btn" data-filter="urgente">
-            🔥 Urgentes
-        </button>
-        <button class="filter-btn" data-filter="sin_asignar">
-            👤 Sin Asignar
-        </button>
+        <!-- Urgentes -->
+        <div class="filter-card-wrapper">
+            <div class="metric-card" data-filter="urgente">
+                <div class="metric-icon">🔥</div>
+                <div class="metric-value">{{ metricas.TotalUrgentes or 0 }}</div>
+                <div class="metric-label">Urgentes</div>
+                <div class="metric-subtitle">Requieren atención</div>
+            </div>
+        </div>
+
+        <!-- Sin Asignar -->
+        <div class="filter-card-wrapper">
+            <div class="metric-card" data-filter="sin_asignar">
+                <div class="metric-icon">👤</div>
+                <div class="metric-value">{{ metricas.TotalAbiertos or 0 }}</div>
+                <div class="metric-label">Sin Asignar</div>
+                <div class="metric-subtitle">Pendientes de técnico</div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="filter-card-wrapper">
+            <div class="metric-card estadisticas-card" onclick="toggleEstadisticas()" style="cursor: pointer;">
+                <div class="metric-icon">📊</div>
+                <div class="metric-value" style="color: #7c3aed;">4</div>
+                <div class="metric-label">Estadísticas</div>
+                <div class="metric-subtitle" style="color: #7c3aed;">Ver gráficas</div>
+            </div>
+        </div>
     </div>
 
     <!-- Tabla de tickets -->
-    <div class="tickets-section">
+    <div class="tickets-section" style="display: block;">
         <div id="filterInfo" class="mb-3" style="display: none;">
             <div class="filter-tag" id="filterTagElement">
                 <span>Filtro: <strong id="filterName"></strong></span>
@@ -98,13 +125,11 @@
                 </thead>
                 <tbody id="ticketsTable">
                     {% for ticket in tickets %}
-                    <tr class="ticket-row" 
-                        data-estado="{{ ticket.Estado }}" 
-                        data-prioridad="{{ ticket.Prioridad }}"
+                    <tr class="ticket-row" data-estado="{{ ticket.Estado }}" data-prioridad="{{ ticket.Prioridad }}"
                         data-asignado="{{ 'si' if ticket.AsignadoA else 'no' }}">
                         <td>
-                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}" 
-                               class="ticket-number">
+                            <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}"
+                                class="ticket-number">
                                 {{ ticket.NumeroTicket }}
                             </a>
                         </td>
@@ -153,14 +178,13 @@
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}" 
-                                   class="btn-view" 
-                                   title="Ver detalle">
+                                <a href="{{ url_for('ticketing.detalle_ticket', id_ticket=ticket.IdTicket) }}"
+                                    class="btn-view" title="Ver detalle">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <button class="btn-assign" 
-                                        onclick="abrirModalAsignar({{ ticket.IdTicket }}, '{{ ticket.NumeroTicket }}')"
-                                        title="Asignar">
+                                <button class="btn-assign"
+                                    onclick="abrirModalAsignar({{ ticket.IdTicket }}, '{{ ticket.NumeroTicket }}')"
+                                    title="Asignar">
                                     <i class="bi bi-person-plus"></i>
                                 </button>
                             </div>
@@ -177,6 +201,45 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SECCIÓN DE GRÁFICAS -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="estadisticas-section" id="estadisticasSection" style="margin-top: 40px; display: none;">
+        <div class="section-title" style="margin-bottom: 20px;">
+            <span>📊</span>
+            Estadísticas de Ticketing
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin:20px 0">
+
+            <!-- Gráfica 1: Tickets por Departamento -->
+            <div class="panel">
+                <div class="panel-title">📊 Tickets por Departamento</div>
+                <div id="chart-departamentos" style="min-height:320px"></div>
+            </div>
+
+            <!-- Gráfica 2: Tendencia Mensual -->
+            <div class="panel">
+                <div class="panel-title">📈 Tendencia de Tickets (últimos 6 meses)</div>
+                <div id="chart-tendencia" style="min-height:320px"></div>
+            </div>
+
+            <!-- Gráfica 3: Tipos de Problema -->
+            <div class="panel">
+                <div class="panel-title">🎯 Tipos de Problema Más Comunes</div>
+                <div id="chart-categorias" style="min-height:320px"></div>
+            </div>
+
+            <!-- Gráfica 4: Tiempo de Resolución -->
+            <div class="panel">
+                <div class="panel-title">⏱️ Tiempo Promedio de Resolución (horas)</div>
+                <div id="chart-tiempo" style="min-height:320px"></div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
 <!-- Modal: Asignar técnico -->
@@ -189,7 +252,7 @@
         <form method="POST" id="formAsignar">
             <div class="modal-body">
                 <p class="text-muted" id="ticketInfo"></p>
-                
+
                 <div class="form-group">
                     <label>Asignar a:</label>
                     <select class="form-control" name="id_tecnico" required>
@@ -219,162 +282,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-let tecnicos = [];
-let currentFilter = 'all';
-
-// Cargar técnicos al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Cargando técnicos...');
-    fetch('/ticketing/api/tecnicos')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Técnicos cargados:', data);
-            tecnicos = data;
-        })
-        .catch(error => console.error('Error cargando técnicos:', error));
-    
-    // Event listeners para tarjetas de filtro
-    document.querySelectorAll('.metric-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const filter = this.getAttribute('data-filter');
-            applyFilter(filter);
-        });
-    });
-    
-    // Event listeners para botones de filtro adicionales
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const filter = this.getAttribute('data-filter');
-            applyFilter(filter);
-        });
-    });
-    
-    // Activar filtro "todos" por defecto
-    document.querySelector('[data-filter="all"]').classList.add('active');
-});
-
-// Mapa de estados
-const estadosMap = {
-    'all': 'Todos',
-    'abierto': 'Abiertos',
-    'proceso': 'En Proceso',
-    'cerrado': 'Cerrados',
-    'urgente': 'Urgentes',
-    'sin_asignar': 'Sin Asignar'
-};
-
-// Colores del tag de filtro
-const filterColors = {
-    'all': 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-    'abierto': 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-    'proceso': 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-    'cerrado': 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    'urgente': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-    'sin_asignar': 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
-};
-
-function applyFilter(filter) {
-    currentFilter = filter;
-    
-    // Actualizar UI de las tarjetas
-    document.querySelectorAll('.metric-card').forEach(card => {
-        card.classList.remove('active');
-    });
-    
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    const activeCard = document.querySelector(`.metric-card[data-filter="${filter}"]`);
-    const activeBtn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
-    
-    if (activeCard) {
-        activeCard.classList.add('active');
-    }
-    if (activeBtn) {
-        activeBtn.classList.add('active');
-    }
-    
-    // Mostrar/ocultar info de filtro con color correspondiente
-    const filterInfo = document.getElementById('filterInfo');
-    const filterName = document.getElementById('filterName');
-    const filterTag = document.getElementById('filterTagElement');
-    
-    if (filter === 'all') {
-        filterInfo.style.display = 'none';
-    } else {
-        filterInfo.style.display = 'block';
-        filterName.textContent = estadosMap[filter];
-        filterTag.style.background = filterColors[filter];
-    }
-    
-    // Filtrar tickets
-    const rows = document.querySelectorAll('.ticket-row');
-    
-    rows.forEach(row => {
-        const estado = row.getAttribute('data-estado').toLowerCase();
-        const prioridad = row.getAttribute('data-prioridad');
-        const asignado = row.getAttribute('data-asignado');
-        
-        let showRow = false;
-        
-        if (filter === 'all') {
-            showRow = true;
-        } else if (filter === 'abierto') {
-            showRow = estado === 'abierto';
-        } else if (filter === 'proceso') {
-            showRow = estado === 'en proceso' || estado === 'escalado' || estado === 'pendiente';
-        } else if (filter === 'cerrado') {
-            showRow = estado === 'resuelto' || estado === 'cerrado' || estado === 'sin solución';
-        } else if (filter === 'urgente') {
-            showRow = prioridad === 'Urgente';
-        } else if (filter === 'sin_asignar') {
-            showRow = asignado === 'no';
-        }
-        
-        row.style.display = showRow ? '' : 'none';
-    });
-}
-
-function clearFilter() {
-    applyFilter('all');
-}
-
-function abrirModalAsignar(idTicket, numeroTicket) {
-    console.log('Abriendo modal. Técnicos disponibles:', tecnicos);
-    
-    document.getElementById('ticketInfo').textContent = 'Ticket: ' + numeroTicket;
-    document.getElementById('formAsignar').action = '/ticketing/ticket/' + idTicket + '/asignar';
-    
-    // Llenar select de técnicos
-    const selectTecnico = document.querySelector('select[name="id_tecnico"]');
-    selectTecnico.innerHTML = '<option value="">-- Selecciona un técnico --</option>';
-    
-    tecnicos.forEach(tecnico => {
-        const option = document.createElement('option');
-        option.value = tecnico.id;
-        option.textContent = `${tecnico.nombre} (${tecnico.email})`;
-        selectTecnico.appendChild(option);
-    });
-    
-    // Abrir modal
-    const modal = document.getElementById('modalAsignar');
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function cerrarModalAsignar() {
-    const modal = document.getElementById('modalAsignar');
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-// Cerrar modal al hacer clic fuera
-document.getElementById('modalAsignar').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModalAsignar();
-    }
-});
-</script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="{{ url_for('static', filename='js/ticketing/dashboard_ti.js') }}"></script>
 {% endblock %}

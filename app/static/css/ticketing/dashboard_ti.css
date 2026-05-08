@@ -609,3 +609,46 @@
         margin: 10px;
     }
 }
+
+/* Borde NARANJA para "Urgentes" */
+.metric-card[data-filter="urgente"].active {
+    border-color: #f97316 !important;
+    background: white !important;
+}
+
+.metric-card[data-filter="urgente"].active .metric-value {
+    color: #f97316 !important;
+}
+
+/* Borde GRIS para "Sin Asignar" */
+.metric-card[data-filter="sin_asignar"].active {
+    border-color: #6b7280 !important;
+    background: white !important;
+}
+
+.metric-card[data-filter="sin_asignar"].active .metric-value {
+    color: #6b7280 !important;
+}
+
+/* Borde MORADO para "Estadísticas" cuando está activa */
+.metric-card.estadisticas-card.active {
+    border: 3px solid #7c3aed !important;
+    background: white !important;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3) !important;
+}
+
+.metric-card.estadisticas-card.active .metric-value {
+    color: #7c3aed !important;
+}
+
+.metric-card.estadisticas-card.active .metric-label {
+    color: #6b7280 !important;
+}
+
+.metric-card.estadisticas-card.active .metric-subtitle {
+    color: #7c3aed !important;
+}
+
+.metric-card.estadisticas-card.active .metric-icon {
+    opacity: 0.4 !important;
+}
