@@ -23,11 +23,18 @@
   } %}
   {% set _t = _temas.get(current_user.rol, _temas["ti"]) %}
   <style>
+    /* ═══════════════════════════════════════════════════════
+       Variables de tema dinámicas
+       ═══════════════════════════════════════════════════════ */
     :root {
-    --accent: {{ _t.c1 }};
-    --accent2: {{ _t.c2 }};
+      --accent: {{ _t.c1 }};
+      --accent2: {{ _t.c2 }};
+      --sw-collapsed: 70px;
     }
 
+    /* ═══════════════════════════════════════════════════════
+       Grupos colapsables del sidebar
+       ═══════════════════════════════════════════════════════ */
     .sb-group {
       overflow: hidden;
     }
@@ -47,15 +54,22 @@
       border: none;
       background: transparent;
       width: 100%;
+      position: relative;
     }
 
     .sb-group-btn:hover {
       color: var(--text);
     }
 
+    /* Icono del grupo (oculto por defecto) */
+    .sb-group-btn .group-icon {
+      display: none;
+      font-size: 18px;
+    }
+
     .sb-group-arrow {
       font-size: 9px;
-      transition: transform .2s;
+      transition: transform .2s ease;
       display: inline-block;
     }
 
@@ -65,13 +79,216 @@
 
     .sb-group-body {
       overflow: hidden;
-      transition: max-height .25s ease;
+      transition: max-height .3s ease; /* ✅ Aumentado de .25s a .3s para más suavidad */
     }
 
     .sb-group-body.collapsed {
       max-height: 0 !important;
     }
+
+    /* ═══════════════════════════════════════════════════════
+       SIDEBAR COLAPSABLE - Modo compacto con solo iconos
+       ═══════════════════════════════════════════════════════ */
+    
+    /* Sidebar colapsado - ✅ Transición más rápida */
+    .sidebar.collapsed {
+      width: var(--sw-collapsed) !important;
+      transition: width 0.25s ease-out; /* ✅ Reducido de 0.3s a 0.25s */
+    }
+
+    /* Sidebar expandido - ✅ Transición más rápida */
+    .sidebar {
+      transition: width 0.50s ease-out; /* ✅ Reducido de 0.3s a 0.25s */
+    }
+ 
+    /* Main ajustado - ✅ Sincronizado con el sidebar */
+    .main.sidebar-collapsed {
+      margin-left: var(--sw-collapsed) !important;
+      max-width: calc(100vw - var(--sw-collapsed)) !important;
+      transition: margin-left 0.25s ease-out,
+                  max-width 0.25s ease-out; /* ✅ Reducido de 0.3s a 0.25s */
+    }
+
+    .main {
+      transition: margin-left 0.25s ease-out,
+                  max-width 0.25s ease-out; /* ✅ Reducido de 0.3s a 0.25s */
+    }
+
+    /* Logo clickeable - efecto hover */
+    .sb-logo {
+      cursor: pointer;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      position: relative;
+    }
+
+    .sb-logo:hover {
+      opacity: 0.85;
+    }
+
+    .sb-logo:active {
+      transform: scale(0.98);
+    }
+ 
+    /* Logo - solo icono cuando está colapsado */
+    .sidebar.collapsed .sb-logo {
+      justify-content: center;
+      padding: 20px 10px 18px;
+    }
+ 
+    .sidebar.collapsed .sb-logo-text {
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+      transition: opacity 0.2s ease, width 0.2s ease;
+    }
+ 
+    .sidebar.collapsed .sb-logo-icon {
+      margin: 0;
+      transition: margin 0.2s ease;
+    }
+ 
+    /* Navegación compacta */
+    .sidebar.collapsed nav {
+      padding: 12px 5px 8px;
+    }
+ 
+    /* ✅ Mostrar ICONOS en lugar de texto en grupos colapsados */
+    .sidebar.collapsed .sb-group-btn {
+      padding: 8px 10px;
+      justify-content: center;
+    }
+
+    /* Ocultar texto del grupo */
+    .sidebar.collapsed .sb-group-btn .group-text {
+      display: none;
+    }
+
+    /* Mostrar icono del grupo */
+    .sidebar.collapsed .sb-group-btn .group-icon {
+      display: block;
+      margin: 0;
+    }
+ 
+    .sidebar.collapsed .sb-group-arrow {
+      display: none;
+    }
+ 
+    /* Grupos siempre colapsados */
+    .sidebar.collapsed .sb-group-body {
+      max-height: 0 !important;
+      overflow: hidden;
+    }
+ 
+    /* Links - solo iconos */
+    .sidebar.collapsed .nav-link {
+      justify-content: center;
+      padding: 10px;
+      position: relative;
+    }
+ 
+    .sidebar.collapsed .nav-link span:not(.ic) {
+      display: none;
+    }
+ 
+    .sidebar.collapsed .nav-link .ic {
+      margin: 0;
+      font-size: 18px;
+    }
+ 
+    /* Tooltips al hover */
+    .sidebar.collapsed .nav-link::after {
+      content: attr(data-title);
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--text);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      margin-left: 10px;
+      z-index: 1000;
+      transition: opacity 0.2s ease;
+      box-shadow: var(--shadow-md);
+    }
+ 
+    .sidebar.collapsed .nav-link:hover::after {
+      opacity: 1;
+    }
+
+    /* Tooltip para botones de grupo también */
+    .sidebar.collapsed .sb-group-btn::after {
+      content: attr(data-title);
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--text);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      margin-left: 10px;
+      z-index: 1000;
+      transition: opacity 0.2s ease;
+      box-shadow: var(--shadow-md);
+    }
+
+    .sidebar.collapsed .sb-group-btn:hover::after {
+      opacity: 1;
+    }
+ 
+    /* Footer compacto */
+    .sidebar.collapsed .sb-footer {
+      padding: 12px 5px;
+    }
+ 
+    .sidebar.collapsed .user-chip {
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 5px;
+      gap: 6px;
+    }
+ 
+    .sidebar.collapsed .u-name,
+    .sidebar.collapsed .u-rol {
+      display: none;
+    }
+ 
+    .sidebar.collapsed .avatar,
+    .sidebar.collapsed .logout {
+      margin: 0;
+    }
+ 
+    .sidebar.collapsed .logout {
+      font-size: 18px;
+    }
+ 
+    /* Responsive - móvil */
+    @media (max-width: 768px) {
+      .sidebar.collapsed {
+        transform: translateX(-100%);
+        width: 240px !important;
+      }
+      
+      .main.sidebar-collapsed {
+        margin-left: 0 !important;
+        max-width: 100vw !important;
+      }
+
+      .sb-logo {
+        cursor: default;
+      }
+    }
   </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 
@@ -117,8 +334,11 @@
       <div class="sb-group">
         <button
           class="sb-group-btn {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-          Administración <span class="sb-group-arrow">▾</span>
+          onclick="toggleGroup(this)"
+          data-title="Administración">
+          <i class="bi bi-gear-fill group-icon"></i>
+          <span class="group-text">Administración</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
         <div
           class="sb-group-body {% if request.blueprint not in ('permisos','usuarios','departamentos') %}collapsed{% endif %}"
@@ -144,8 +364,11 @@
       {% if tiene_permiso('Vehículos') or tiene_permiso('Mantenimiento') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-          Vehículos <span class="sb-group-arrow">▾</span>
+          onclick="toggleGroup(this)"
+          data-title="Vehículos">
+          <i class="bi bi-truck group-icon"></i>
+          <span class="group-text">Vehículos</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
         <div class="sb-group-body {% if request.blueprint != 'administrativo' %}collapsed{% endif %}"
           style="max-height:200px">
@@ -179,8 +402,11 @@
       {% if tiene_permiso('Almacén') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-          Almacén <span class="sb-group-arrow">▾</span>
+          onclick="toggleGroup(this)"
+          data-title="Almacén">
+          <i class="bi bi-box-seam group-icon"></i>
+          <span class="group-text">Almacén</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
         <div class="sb-group-body {% if request.blueprint != 'almacenista' %}collapsed{% endif %}"
           style="max-height:200px">
@@ -196,63 +422,60 @@
       </div>
       {% endif %}
 
-      {# ── Equipos TI ── #}
-      {% if tiene_permiso('Equipos TI') %}
+      {# ── Ticketing ── #}
+      {% if tiene_permiso('Ticketing') %}
       <div class="sb-group">
-        <button class="sb-group-btn {% if request.blueprint != 'ti' %}collapsed{% endif %}" onclick="toggleGroup(this)">
-          Equipos TI <span class="sb-group-arrow">▾</span>
+        <button class="sb-group-btn {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
+          onclick="toggleGroup(this)"
+          data-title="Ticketing">
+          <i class="bi bi-ticket-perforated group-icon"></i>
+          <span class="group-text">Ticketing</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
-        <div class="sb-group-body {% if request.blueprint != 'ti' %}collapsed{% endif %}" style="max-height:200px">
-          <a class="nav-link {% if request.endpoint == 'ti.dashboard' %}active{% endif %}"
-            href="{{ url_for('ti.dashboard') }}">
+        <div class="sb-group-body {% if request.blueprint != 'ticketing' %}collapsed{% endif %}" style="max-height:300px">
+          
+          <!-- Solo Admin TI ve Dashboard -->
+          {% if tiene_permiso('Ticketing', 'eliminar') %}
+          <a class="nav-link {% if request.endpoint == 'ticketing.dashboard_ti' %}active{% endif %}"
+            href="{{ url_for('ticketing.dashboard_ti') }}">
             <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
           </a>
-          <a class="nav-link {% if request.endpoint == 'ti.validacion_estados' %}active{% endif %}"
-            href="{{ url_for('ti.validacion_estados') }}">
-            <span class="ic"><i class="bi bi-check-circle-fill"></i></span> Validación estados
+          {% endif %}
+
+          <!-- Técnicos TI ven Mis Asignados -->
+          {% if tiene_permiso('Ticketing', 'editar') and not tiene_permiso('Ticketing', 'eliminar') %}
+          <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets_asignados' %}active{% endif %}"
+            href="{{ url_for('ticketing.mis_tickets_asignados') }}">
+            <span class="ic"><i class="bi bi-clipboard-check"></i></span> Mis Asignados
           </a>
+          {% endif %}
+
+          <!-- TODOS pueden crear tickets -->
+          <a class="nav-link {% if request.endpoint == 'ticketing.nuevo_ticket' %}active{% endif %}"
+            href="{{ url_for('ticketing.nuevo_ticket') }}">
+            <span class="ic"><i class="bi bi-plus-circle"></i></span> Crear Ticket
+          </a>
+
+          <!-- TODOS ven sus propios tickets -->
+          <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets' %}active{% endif %}"
+            href="{{ url_for('ticketing.mis_tickets') }}">
+            <span class="ic"><i class="bi bi-ticket-perforated"></i></span> Mis Tickets
+          </a>
+          
         </div>
       </div>
       {% endif %}
-
-      {# ── Ticketing ── #}
-{% if tiene_permiso('Ticketing') %}
-<div class="sb-group">
-  <button class="sb-group-btn {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
-    onclick="toggleGroup(this)">
-    Ticketing <span class="sb-group-arrow">▾</span>
-  </button>
-  <div class="sb-group-body {% if request.blueprint != 'ticketing' %}collapsed{% endif %}"
-    style="max-height:250px">
-
-    {# Dashboard: todos lo ven #}
-    <a class="nav-link {% if request.endpoint == 'ticketing.dashboard_ti' %}active{% endif %}"
-      href="{{ url_for('ticketing.dashboard_ti') }}">
-      <span class="ic"><i class="bi bi-speedometer2"></i></span> Dashboard
-    </a>
-
-    {# Mis Asignados: todos lo ven #}
-    <a class="nav-link {% if request.endpoint == 'ticketing.mis_tickets_asignados' %}active{% endif %}"
-      href="{{ url_for('ticketing.mis_tickets_asignados') }}">
-      <span class="ic"><i class="bi bi-bookmark-fill"></i></span> Mis Asignados
-    </a>
-
-    {# Crear Ticket: todos lo ven #}
-    <a class="nav-link {% if request.endpoint == 'ticketing.nuevo_ticket' %}active{% endif %}"
-      href="{{ url_for('ticketing.nuevo_ticket') }}">
-      <span class="ic"><i class="bi bi-plus-circle-fill"></i></span> Crear Ticket
-    </a>
-  </div>
-</div>
-{% endif %}
 
 
       {# ── Proyectos ── #}
       {% if tiene_permiso('Proyectos') %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-          Proyectos <span class="sb-group-arrow">▾</span>
+          onclick="toggleGroup(this)"
+          data-title="Proyectos">
+          <i class="bi bi-folder-fill group-icon"></i>
+          <span class="group-text">Proyectos</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
         <div class="sb-group-body {% if request.blueprint != 'proyectos' %}collapsed{% endif %}"
           style="max-height:200px">
@@ -268,8 +491,11 @@
       {% if current_user.IdRol != 1 and current_user.es_administrador_area %}
       <div class="sb-group">
         <button class="sb-group-btn {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
-          onclick="toggleGroup(this)">
-          Mi Área <span class="sb-group-arrow">▾</span>
+          onclick="toggleGroup(this)"
+          data-title="Mi Área">
+          <i class="bi bi-building group-icon"></i>
+          <span class="group-text">Mi Área</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
         <div class="sb-group-body {% if request.blueprint not in ('usuarios','permisos') %}collapsed{% endif %}"
           style="max-height:200px">
@@ -295,8 +521,12 @@
       {# ── Recursos Humanos ── #}
       {% if tiene_permiso('Recursos Humanos') %}
       <div class="sb-group">
-        <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}" onclick="toggleGroup(this)">
-          Recursos Humanos <span class="sb-group-arrow">▾</span>
+        <button class="sb-group-btn {% if request.blueprint != 'rh' %}collapsed{% endif %}"
+          onclick="toggleGroup(this)"
+          data-title="Recursos Humanos">
+          <i class="bi bi-people-fill group-icon"></i>
+          <span class="group-text">Recursos Humanos</span>
+          <span class="sb-group-arrow">▾</span>
         </button>
         <div class="sb-group-body {% if request.blueprint != 'rh' %}collapsed{% endif %}" style="max-height:300px">
           <a class="nav-link {% if request.endpoint == 'rh.personal' %}active{% endif %}"
@@ -361,214 +591,278 @@
     {% block content %}{% endblock %}
   </main>
 
-<script src="{{ url_for('static', filename='js/base.js') }}"></script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script>
-  function toggleGroup(btn) {
-    const body = btn.nextElementSibling;
-    const isCollapsed = body.classList.contains('collapsed');
-    if (isCollapsed) {
-      body.classList.remove('collapsed');
-      btn.classList.remove('collapsed');
-    } else {
-      body.classList.add('collapsed');
-      btn.classList.add('collapsed');
-    }
-  }
-
-  // ── Toast helper global con SweetAlert2 ──────────────────────
-  function toast(icon, title) {
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: icon,
-      title: title,
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-    });
-  }
-
-  function confirmarLogout(e) {
-    e.preventDefault();
-    Swal.fire({
-      title: '¿Cerrar sesión?',
-      text: 'Tu sesión actual será terminada.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#9B2335',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Sí, salir',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-    }).then(result => {
-      if (result.isConfirmed) {
-        window.location.href = '{{ url_for("auth.logout") }}';
+  <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    function toggleGroup(btn) {
+      const body = btn.nextElementSibling;
+      const isCollapsed = body.classList.contains('collapsed');
+      if (isCollapsed) {
+        body.classList.remove('collapsed');
+        btn.classList.remove('collapsed');
+      } else {
+        body.classList.add('collapsed');
+        btn.classList.add('collapsed');
       }
-    });
-  }
+    }
 
-  function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const backdrop = document.getElementById('sidebar-backdrop');
-    sidebar.classList.toggle('open');
-    backdrop.classList.toggle('open');
-  }
+    // ── Toast helper global con SweetAlert2 ──────────────────────
+    function toast(icon, title) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: icon,
+        title: title,
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    }
 
-  // ── Socket.IO ─────────────────────────────────────────────────
-  const socket = io();
-  socket.emit('join', { usuario_id: {{ current_user.id }} });
+    function confirmarLogout(e) {
+      e.preventDefault();
+      Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: 'Tu sesión actual será terminada.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#9B2335',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.location.href = '{{ url_for("auth.logout") }}';
+        }
+      });
+    }
 
-  socket.on('permisos_actualizados', function (data) {
-    if (data.usuario_id === {{ current_user.id }}) {
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      sidebar.classList.toggle('open');
+      backdrop.classList.toggle('open');
+    }
+
+    // ── Socket.IO ─────────────────────────────────────────────────
+    const socket = io();
+    socket.emit('join', { usuario_id: {{ current_user.id }} });
+
+    socket.on('permisos_actualizados', function (data) {
+      if (data.usuario_id === {{ current_user.id }}) {
       toast('info', '🔐 Tus permisos fueron actualizados');
       setTimeout(() => location.reload(), 2000);
     }
   });
 
-  socket.on('usuarios_actualizados', function (data) {
-    if (window.location.pathname.includes('/usuarios')) {
-      toast('info', '👥 Lista de usuarios actualizada');
-      setTimeout(() => location.reload(), 2000);
-    }
-  });
-
-  socket.on('proyectos_actualizados', function (data) {
-    if (window.location.pathname.includes('/proyectos')) {
-      toast('info', '📋 Proyectos actualizados');
-      setTimeout(() => location.reload(), 2000);
-    }
-  });
-
-  socket.on('usuario_bloqueado', function (data) {
-    if (window.location.pathname.includes('/usuarios')) {
-      location.reload();
-    }
-  });
-
-  socket.on('ti_equipos_update', function () {
-    // Si estás en la página de detalle de un equipo, recargar
-    if (window.location.pathname.match(/^\/ti\/equipos\/\d+$/)) {
-      console.log('Recargando página de detalle...');
-      toast('info', '💻 Equipo actualizado');
-      setTimeout(() => location.reload(), 2000);
-      return;
-    }
-
-    // Si estás en el portal del empleado, recargar también
-    if (window.location.pathname === '/portal' ||
-      window.location.pathname === '/activos/dashboard') {
-      console.log('Recargando portal del empleado...');
-      toast('info', '💻 Tus equipos fueron actualizados');
-      setTimeout(() => location.reload(), 2000);
-      return;
-    }
-
-    // Notificación en cualquier página
-    toast('info', '💻 Lista de equipos TI actualizada');
-
-    // Si está en /ti/equipos (lista), actualizar solo la tabla
-    if (window.location.pathname === '/ti/equipos') {
-      fetch(window.location.href)
-        .then(r => r.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const nuevaTbody = doc.querySelector('.panel table tbody');
-          const actualTbody = document.querySelector('.panel table tbody');
-          if (nuevaTbody && actualTbody) {
-            actualTbody.innerHTML = nuevaTbody.innerHTML;
-          }
-        });
-    }
-  });
-
-  // ← Listener para actualizaciones de herramientas del almacén
-  socket.on('almacen_herramientas_update', function () {
-    console.log('📦 Evento SocketIO recibido: almacen_herramientas_update');
-
-    // Recargar dashboard de almacén
-    if (window.location.pathname === '/almacen') {
-      toast('info', '🔧 Inventario actualizado');
-      setTimeout(() => location.reload(), 2000);
-      return;
-    }
-
-    // Recargar inventario de almacén
-    if (window.location.pathname === '/almacen/inventario') {
-      toast('info', '🔧 Inventario actualizado');
-      setTimeout(() => location.reload(), 2000);
-      return;
-    }
-
-    // Recargar historial de almacén
-    if (window.location.pathname === '/almacen/historial') {
-      toast('info', '🔧 Historial actualizado');
-      setTimeout(() => location.reload(), 2000);
-      return;
-    }
-
-    // Recargar portal empleado (para mostrar herramientas asignadas)
-    if (window.location.pathname === '/portal' ||
-      window.location.pathname === '/activos/dashboard') {
-      toast('info', '🔧 Tus herramientas fueron actualizadas');
-      setTimeout(() => location.reload(), 2000);
-      return;
-    }
-  });
-
-  // ← Listener para actualizaciones de ticketing
-  socket.on('ticketing_update', function (data) {
-    console.log('🎫 Evento SocketIO recibido: ticketing_update', data);
-
-    // Notificación con opción de recargar manualmente
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'info',
-      title: '🎫 Hay actualizaciones en tickets',
-      timer: 10000,  // Se cierra automáticamente en 10 segundos
-      timerProgressBar: true,
-      customClass: { 
-        popup: 'swal-toast-custom',
-        confirmButton: 'swal-confirm-btn',
-        cancelButton: 'swal-cancel-btn'
+    socket.on('usuarios_actualizados', function (data) {
+      if (window.location.pathname.includes('/usuarios')) {
+        toast('info', '👥 Lista de usuarios actualizada');
+        setTimeout(() => location.reload(), 2000);
       }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Solo recarga si el usuario hace clic en "Ver ahora"
+    });
+
+    socket.on('proyectos_actualizados', function (data) {
+      if (window.location.pathname.includes('/proyectos')) {
+        toast('info', '📋 Proyectos actualizados');
+        setTimeout(() => location.reload(), 2000);
+      }
+    });
+
+    socket.on('usuario_bloqueado', function (data) {
+      if (window.location.pathname.includes('/usuarios')) {
         location.reload();
       }
     });
-  });
-</script>
 
-<style>
-  .swal-toast-custom {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 13px !important;
-  }
-  
-  .swal-confirm-btn {
-    background-color: #9B2335 !important;
-    color: white !important;
-    font-size: 12px !important;
-    padding: 6px 12px !important;
-    border-radius: 6px !important;
-  }
-  
-  .swal-cancel-btn {
-    background-color: #6b7280 !important;
-    color: white !important;
-    font-size: 12px !important;
-    padding: 6px 12px !important;
-    border-radius: 6px !important;
-  }
-</style>
+    socket.on('ti_equipos_update', function () {
+      // Si estás en la página de detalle de un equipo, recargar
+      if (window.location.pathname.match(/^\/ti\/equipos\/\d+$/)) {
+        console.log('Recargando página de detalle...');
+        toast('info', '💻 Equipo actualizado');
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
-{% block scripts %}{% endblock %}
+      // Si estás en el portal del empleado, recargar también
+      if (window.location.pathname === '/portal' ||
+        window.location.pathname === '/activos/dashboard') {
+        console.log('Recargando portal del empleado...');
+        toast('info', '💻 Tus equipos fueron actualizados');
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
+
+      // Notificación en cualquier página
+      toast('info', '💻 Lista de equipos TI actualizada');
+
+      // Si está en /ti/equipos (lista), actualizar solo la tabla
+      if (window.location.pathname === '/ti/equipos') {
+        fetch(window.location.href)
+          .then(r => r.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const nuevaTbody = doc.querySelector('.panel table tbody');
+            const actualTbody = document.querySelector('.panel table tbody');
+            if (nuevaTbody && actualTbody) {
+              actualTbody.innerHTML = nuevaTbody.innerHTML;
+            }
+          });
+      }
+    });
+
+    socket.on('almacen_herramientas_update', function () {
+      console.log('📦 Evento SocketIO recibido: almacen_herramientas_update');
+
+      if (window.location.pathname === '/almacen') {
+        toast('info', '🔧 Inventario actualizado');
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
+
+      if (window.location.pathname === '/almacen/inventario') {
+        toast('info', '🔧 Inventario actualizado');
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
+
+      if (window.location.pathname === '/almacen/historial') {
+        toast('info', '🔧 Historial actualizado');
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
+
+      if (window.location.pathname === '/portal' ||
+        window.location.pathname === '/activos/dashboard') {
+        toast('info', '🔧 Tus herramientas fueron actualizadas');
+        setTimeout(() => location.reload(), 2000);
+        return;
+      }
+    });
+
+    socket.on('ticketing_update', function (data) {
+      console.log('🎫 Evento SocketIO recibido: ticketing_update', data);
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: '🎫 Hay actualizaciones en tickets',
+        timer: 10000,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'swal-toast-custom',
+          confirmButton: 'swal-confirm-btn',
+          cancelButton: 'swal-cancel-btn'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          location.reload();
+        }
+      });
+    });
+
+    // ═══════════════════════════════════════════════════════
+    // Sidebar colapsable (modo compacto con solo iconos)
+    // ═══════════════════════════════════════════════════════
+    function toggleSidebarCollapse() {
+      const sidebar = document.querySelector('.sidebar');
+      const main = document.querySelector('.main');
+      
+      sidebar.classList.toggle('collapsed');
+      main.classList.toggle('sidebar-collapsed');
+      
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem('sidebarCollapsed', isCollapsed);
+    }
+ 
+    document.addEventListener('DOMContentLoaded', function() {
+      const logo = document.querySelector('.sb-logo');
+      
+      if (logo) {
+        logo.setAttribute('title', 'Clic para minimizar/expandir menú');
+        
+        logo.addEventListener('click', function(e) {
+          e.preventDefault();
+          toggleSidebarCollapse();
+        });
+      }
+      
+      // Restaurar estado guardado al cargar
+      const savedState = localStorage.getItem('sidebarCollapsed');
+      if (savedState === 'true') {
+        const sidebar = document.querySelector('.sidebar');
+        const main = document.querySelector('.main');
+        sidebar.classList.add('collapsed');
+        main.classList.add('sidebar-collapsed');
+      }
+      
+      // Agregar data-title a los links para tooltips
+      document.querySelectorAll('.nav-link').forEach(link => {
+        const text = link.textContent.trim();
+        link.setAttribute('data-title', text);
+      });
+
+      // Agregar data-title a los botones de grupo
+      document.querySelectorAll('.sb-group-btn').forEach(btn => {
+        if (!btn.hasAttribute('data-title')) {
+          const groupText = btn.querySelector('.group-text');
+          if (groupText) {
+            btn.setAttribute('data-title', groupText.textContent.trim());
+          }
+        }
+      });
+
+      // ✅ NUEVO: Al hacer clic en un icono de grupo cuando está colapsado, expandir el sidebar
+      document.querySelectorAll('.sb-group-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          const sidebar = document.querySelector('.sidebar');
+          
+          // Si el sidebar está colapsado, expandirlo PRIMERO
+          if (sidebar.classList.contains('collapsed')) {
+            e.stopPropagation(); // Evitar que se ejecute el toggleGroup
+            toggleSidebarCollapse(); // Expandir el sidebar
+            
+            // Después de expandir, expandir el grupo automáticamente
+            setTimeout(() => {
+              const body = this.nextElementSibling;
+              body.classList.remove('collapsed');
+              this.classList.remove('collapsed');
+            }, 500); // Pequeño delay para que se vea la animación
+          }
+          // Si el sidebar NO está colapsado, dejar que toggleGroup funcione normal
+        });
+      });
+    });
+  </script>
+
+  <style>
+    .swal-toast-custom {
+      font-family: 'Inter', sans-serif !important;
+      font-size: 13px !important;
+    }
+
+    .swal-confirm-btn {
+      background-color: #9B2335 !important;
+      color: white !important;
+      font-size: 12px !important;
+      padding: 6px 12px !important;
+      border-radius: 6px !important;
+    }
+
+    .swal-cancel-btn {
+      background-color: #6b7280 !important;
+      color: white !important;
+      font-size: 12px !important;
+      padding: 6px 12px !important;
+      border-radius: 6px !important;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  {% block scripts %}{% endblock %}
 </body>
 
 </html>

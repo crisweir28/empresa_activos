@@ -168,25 +168,25 @@ class HistorialTicket(db.Model):
 def index():
     """
     Redirige según el rol del usuario:
-    - Admin TI (con permiso eliminar): Dashboard completo
-    - Técnico TI (con permiso editar): Mis asignados
+    - Admin TI (puede eliminar): Dashboard completo
+    - Técnico TI (puede editar): Mis asignados
     - Usuario normal: Mis tickets
     """
     if tiene_permiso('Ticketing', 'eliminar'):
-        # Admin TI
+        # Admin TI - ve TODO
         return redirect(url_for('ticketing.dashboard_ti'))
     elif tiene_permiso('Ticketing', 'editar'):
-        # Técnico TI
+        # Técnico TI - ve solo sus asignados
         return redirect(url_for('ticketing.mis_tickets_asignados'))
     else:
-        # Usuario normal
+        # Usuario normal - ve solo sus tickets
         return redirect(url_for('ticketing.mis_tickets'))
 
 @ticketing_bp.route('/dashboard')
 @login_required
-@requiere_permiso('Ticketing', 'ver')
+@requiere_permiso('Ticketing', 'eliminar')  # ← CAMBIO: Solo admin TI
 def dashboard_ti():
-    """Dashboard para el área de TI con todos los tickets"""
+    """Dashboard para el área de TI con todos los tickets - SOLO ADMIN TI"""
     try:
         # ═══════════════════════════════════════════════════════
         # MÉTRICAS CON QUERY DIRECTA (sin vista)
@@ -759,17 +759,19 @@ def cambiar_estado(id_ticket):
         flash('Error al cambiar el estado', 'danger')
         return redirect(url_for('ticketing.detalle_ticket', id_ticket=id_ticket))
     
+
 @ticketing_bp.route('/mis-asignados')
 @login_required
-@requiere_permiso('Ticketing', 'ver')  # ← SOLO NECESITA VER
+@requiere_permiso('Ticketing', 'editar')  # ← Técnicos TI pueden editar
 def mis_tickets_asignados():
-    """Ver tickets asignados al técnico actual (solo para técnicos, no admins)"""
+    """Ver tickets asignados al técnico actual (solo para técnicos TI)"""
     try:
-        # Verificar si es admin TI (tiene permiso de eliminar) o técnico normal
+        # Verificar si es admin TI (tiene permiso de eliminar)
         es_admin_ti = tiene_permiso('Ticketing', 'eliminar')
         
         if es_admin_ti:
-            # Admin TI ve todos los tickets en el dashboard
+            # Admin TI debe usar el dashboard completo
+            flash('Como administrador TI, usa el Dashboard completo', 'info')
             return redirect(url_for('ticketing.dashboard_ti'))
         
         # Técnico normal: ver solo tickets asignados a él
@@ -840,8 +842,8 @@ def dashboard_estadisticas():
         d.nombre as NombreDepartamento,
         COUNT(t.IdTicket) as total
     FROM Tickets t
-    INNER JOIN usuario u ON t.IdUsuarioCreador = u.IdUsuario
-    INNER JOIN departamentos d ON u.IdDepartamento = d.id
+    INNER JOIN usuarios u ON t.IdUsuarioCreador = u.id
+    INNER JOIN departamentos d ON u.departamento_id = d.id
     GROUP BY d.nombre
     ORDER BY total DESC
     LIMIT 10
@@ -891,8 +893,8 @@ def dashboard_estadisticas():
         d.nombre as NombreDepartamento,
         ROUND(AVG(TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaCierre)), 1) as horas_promedio
     FROM Tickets t
-    INNER JOIN usuario u ON t.IdUsuarioCreador = u.IdUsuario
-    INNER JOIN departamentos d ON u.IdDepartamento = d.id
+    INNER JOIN usuarios u ON t.IdUsuarioCreador = u.id
+    INNER JOIN departamentos d ON u.departamento_id = d.id
     WHERE t.FechaCierre IS NOT NULL
     GROUP BY d.nombre
     ORDER BY horas_promedio ASC

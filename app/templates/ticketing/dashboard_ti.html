@@ -97,7 +97,8 @@
         </div>
 
         {% if tickets %}
-        <div class="table-responsive">
+        <!-- ✅ WRAPPER CON SCROLL HORIZONTAL -->
+        <div class="table-wrapper">
             <table class="tickets-table">
                 <thead>
                     <tr>
@@ -109,7 +110,6 @@
                         <th>Estado</th>
                         <th>Asignado</th>
                         <th>Creado</th>
-                        <th>SLA</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -156,15 +156,6 @@
                         </td>
                         <td>
                             <span class="ticket-date">{{ ticket.FechaCreacion|fecha_relativa }}</span>
-                        </td>
-                        <td>
-                            {% if ticket.SLARespuestaCumplido == 1 %}
-                            <span class="sla-badge sla-ok">✓ OK</span>
-                            {% elif ticket.SLARespuestaCumplido == 0 %}
-                            <span class="sla-badge sla-vencido">✗ Vencido</span>
-                            {% else %}
-                            <span class="sla-badge sla-na">-</span>
-                            {% endif %}
                         </td>
                         <td>
                             <div class="action-buttons">

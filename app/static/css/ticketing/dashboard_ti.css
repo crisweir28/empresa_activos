@@ -1,4 +1,4 @@
-/* app/static/css/ticketing/dashboard_ti.css */
+/* app/static/css/ticketing/dashboard_ti.css - CON SCROLL HORIZONTAL */
 
 /* Header */
 .page-header_ticket {
@@ -12,13 +12,6 @@
 
 .page-title_ticket {
     font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-   
-}
-
-.page-title_ticket {
-    font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 8px;
     color: white;
@@ -180,7 +173,9 @@
     box-shadow: 0 4px 12px rgba(155, 35, 53, 0.15) !important;
 }
 
-/* Tabla de tickets */
+/* ═══════════════════════════════════════════════════════
+   TABLA CON SCROLL HORIZONTAL
+   ═══════════════════════════════════════════════════════ */
 .tickets-section {
     background: white;
     border-radius: 12px;
@@ -199,8 +194,53 @@
     gap: 8px;
 }
 
+/* ✅ WRAPPER CON SCROLL HORIZONTAL Y VERTICAL */
+.table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;           /* ✅ Scroll vertical también */
+    max-height: 600px;          /* ✅ Altura máxima - ajusta según prefieras */
+    margin: 0 -24px;
+    padding: 0 24px;
+    /* Estilo del scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+}
+
+/* Scrollbar horizontal */
+.table-wrapper::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;                 /* ✅ También para vertical */
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ✅ Headers fijos al hacer scroll vertical */
+.tickets-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tickets-table thead th {
+    background: #f9fafb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Sombra sutil para separación */
+}
+
 .tickets-table {
     width: 100%;
+    min-width: 1200px; /* ✅ Ancho mínimo para evitar que se comprima */
     border-collapse: separate;
     border-spacing: 0 8px;
 }
@@ -215,6 +255,7 @@
     padding: 12px 16px;
     border: none;
     text-align: left;
+    white-space: nowrap; /* ✅ Evita que los headers se rompan */
 }
 
 .tickets-table thead th:first-child {
@@ -241,6 +282,7 @@
     border-top: 1px solid #f3f4f6;
     border-bottom: 1px solid #f3f4f6;
     vertical-align: middle;
+    white-space: nowrap; /* ✅ Evita que el contenido se rompa */
 }
 
 .tickets-table tbody td:first-child {
@@ -266,6 +308,7 @@
 
 .user-info {
     font-size: 0.85rem;
+    min-width: 180px; /* ✅ Ancho mínimo para info de usuario */
 }
 
 .user-name {
@@ -283,7 +326,7 @@
     font-weight: 500;
     font-size: 0.95rem;
     display: block;
-    max-width: 250px;
+    max-width: 300px; /* ✅ Ancho máximo más generoso */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -606,6 +649,12 @@
     .modal {
         margin: 10px;
     }
+    
+    /* ✅ En móvil, la tabla usa scroll horizontal */
+    .table-wrapper {
+        margin: 0 -16px;
+        padding: 0 16px;
+    }
 }
 
 /* Borde NARANJA para "Urgentes" */
@@ -649,4 +698,22 @@
 
 .metric-card.estadisticas-card.active .metric-icon {
     opacity: 0.4 !important;
+}
+
+.panel {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+}
+
+.panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
