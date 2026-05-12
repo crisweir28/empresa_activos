@@ -224,41 +224,41 @@ def dashboard_ti():
         # TICKETS ACTIVOS (SIN apellidos)
         # ═══════════════════════════════════════════════════════
         tickets_result = db.session.execute(text("""
-            SELECT 
-                t.IdTicket,
-                t.NumeroTicket,
-                t.Titulo,
-                COALESCE(u.nombre, 'Usuario Desconocido') as UsuarioCreador,
-                COALESCE(u.email, 'sin-email@empresa.com') as EmailCreador,
-                c.Nombre as Categoria,
-                c.Color as CategoriaColor,
-                p.Nombre as Prioridad,
-                p.Color as PrioridadColor,
-                p.Nivel as PrioridadNivel,
-                e.Nombre as Estado,
-                e.Color as EstadoColor,
-                COALESCE(asig.nombre, '') as AsignadoA,
-                t.FechaCreacion,
-                CASE 
-                    WHEN t.FechaPrimeraRespuesta IS NOT NULL 
-                        AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaPrimeraRespuesta) <= p.TiempoRespuestaHoras 
-                        THEN 1
-                    WHEN t.FechaPrimeraRespuesta IS NULL 
-                        AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, NOW()) > p.TiempoRespuestaHoras 
-                        THEN 0
-                    ELSE NULL
-                END as SLARespuestaCumplido,
-                t.IdAsignadoA
-            FROM Tickets t
-            INNER JOIN CategoriasTicket c ON t.IdCategoria = c.IdCategoria
-            INNER JOIN PrioridadesTicket p ON t.IdPrioridad = p.IdPrioridad
-            INNER JOIN EstadosTicket e ON t.IdEstado = e.IdEstado
-            LEFT JOIN usuarios u ON t.IdUsuarioCreador = u.id
-            LEFT JOIN usuarios asig ON t.IdAsignadoA = asig.id
-            WHERE e.Nombre IN ('Abierto', 'En Proceso', 'Escalado', 'Pendiente')
-            ORDER BY p.Nivel DESC, t.FechaCreacion ASC 
-            LIMIT 100
-        """)).fetchall()
+    SELECT 
+        t.IdTicket,
+        t.NumeroTicket,
+        t.Titulo,
+        COALESCE(CONCAT(u.Nombre, ' ', u.ApellidoPaterno), 'Usuario Desconocido') as UsuarioCreador,
+        COALESCE(u.Correo, 'sin-email@empresa.com') as EmailCreador,
+        c.Nombre as Categoria,
+        c.Color as CategoriaColor,
+        p.Nombre as Prioridad,
+        p.Color as PrioridadColor,
+        p.Nivel as PrioridadNivel,
+        e.Nombre as Estado,
+        e.Color as EstadoColor,
+        COALESCE(CONCAT(asig.Nombre, ' ', asig.ApellidoPaterno), '') as AsignadoA,
+        t.FechaCreacion,
+        CASE 
+            WHEN t.FechaPrimeraRespuesta IS NOT NULL 
+                AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, t.FechaPrimeraRespuesta) <= p.TiempoRespuestaHoras 
+                THEN 1
+            WHEN t.FechaPrimeraRespuesta IS NULL 
+                AND TIMESTAMPDIFF(HOUR, t.FechaCreacion, NOW()) > p.TiempoRespuestaHoras 
+                THEN 0
+            ELSE NULL
+        END as SLARespuestaCumplido,
+        t.IdAsignadoA
+    FROM Tickets t
+    INNER JOIN CategoriasTicket c ON t.IdCategoria = c.IdCategoria
+    INNER JOIN PrioridadesTicket p ON t.IdPrioridad = p.IdPrioridad
+    INNER JOIN EstadosTicket e ON t.IdEstado = e.IdEstado
+    LEFT JOIN Usuario u ON t.IdUsuarioCreador = u.IdUsuario
+    LEFT JOIN Usuario asig ON t.IdAsignadoA = asig.IdUsuario
+    WHERE e.Nombre IN ('Abierto', 'En Proceso', 'Escalado', 'Pendiente')
+    ORDER BY p.Nivel DESC, t.FechaCreacion ASC 
+    LIMIT 100
+""")).fetchall()
         
         current_app.logger.info(f'🔍 Resultados de query: {len(tickets_result)} tickets')
         
@@ -585,10 +585,10 @@ def asignar_ticket(id_ticket):
 def api_tecnicos():
     """Obtener lista de técnicos del área TI"""
     try:
-        # Obtener solo usuarios del área TI (IdRol = 5)
+        # ✅ CORREGIDO
         tecnicos_raw = db.session.execute(text("""
-            SELECT IdUsuario, Nombre, Correo
-            FROM usuario
+            SELECT IdUsuario, CONCAT(Nombre, ' ', ApellidoPaterno), Correo
+            FROM Usuario
             WHERE IdRol = 5 AND Estatus = 1
             ORDER BY Nombre
         """)).fetchall()
