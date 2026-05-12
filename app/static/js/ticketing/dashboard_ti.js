@@ -2,6 +2,7 @@
 let tecnicos = [];
 let currentFilter = 'all';
 let graficasCargadas = false;
+let ticketsDataTable = null;
 
 // Cargar técnicos al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
@@ -407,3 +408,160 @@ function toggleEstadisticas() {
         applyFilter(currentFilter);
     }
 }
+
+// ═══════════════════════════════════════════════════════
+// DATATABLES - Inicialización con columna CREADO oculta
+// ═══════════════════════════════════════════════════════
+
+function inicializarDataTables() {
+  console.log('📊 Inicializando DataTables...');
+  
+  // Verificar que jQuery y DataTables estén cargados
+  if (typeof $ === 'undefined' || typeof $.fn.DataTable === 'undefined') {
+    console.error('❌ jQuery o DataTables no están cargados');
+    return;
+  }
+ 
+  // Verificar que la tabla exista
+  const tabla = document.getElementById('ticketsTable');
+  if (!tabla) {
+    console.warn('⚠️ Tabla de tickets no encontrada');
+    return;
+  }
+ 
+  // ✅ Ordenar filas por data-fecha ANTES de inicializar DataTables
+  const tbody = tabla.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  
+  rows.sort((a, b) => {
+    const fechaA = new Date(a.getAttribute('data-fecha'));
+    const fechaB = new Date(b.getAttribute('data-fecha'));
+    return fechaB - fechaA; // Descendente (más reciente primero)
+  });
+  
+  // Reordenar filas en el DOM
+  rows.forEach(row => tbody.appendChild(row));
+  
+  console.log('✅ Tickets ordenados por fecha (más recientes primero)');
+ 
+  // Inicializar DataTable
+  ticketsDataTable = $('#ticketsTable').DataTable({
+    // Configuración básica
+    paging: true,
+    pageLength: 10,
+    lengthChange: true,
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+    searching: true,
+    ordering: true,
+    info: true,
+    autoWidth: false,
+    
+    // Configuración de columnas
+    columnDefs: [
+      { orderable: false, targets: [7] }  // ✅ Ahora Acciones es columna 7 (índice 7)
+    ],
+    
+    // ✅ SIN orden inicial de DataTables (ya está ordenado por data-fecha)
+    order: [],
+    
+    // Idioma en español
+    language: {
+      search: "Buscar:",
+      lengthMenu: "Mostrar _MENU_ registros",
+      info: "Mostrando _START_ a _END_ de _TOTAL_ tickets",
+      infoEmpty: "No hay tickets disponibles",
+      infoFiltered: "(filtrado de _MAX_ tickets totales)",
+      paginate: {
+        first: "Primero",
+        last: "Último",
+        next: "Siguiente",
+        previous: "Anterior"
+      },
+      zeroRecords: "No se encontraron tickets",
+      emptyTable: "No hay tickets en el sistema"
+    },
+    
+    // Deshabilitar el buscador por defecto de DataTables
+    dom: 'lrtip' // Sin 'f' = sin filtro por defecto
+  });
+ 
+  console.log('✅ DataTables inicializado correctamente');
+  
+  // Configurar eventos de los filtros personalizados
+  configurarFiltros();
+}
+ 
+// Función para configurar los filtros personalizados
+function configurarFiltros() {
+  // Búsqueda general
+  const searchInput = document.getElementById('searchGeneral');
+  if (searchInput) {
+    searchInput.addEventListener('keyup', function() {
+      ticketsDataTable.search(this.value).draw();
+    });
+  }
+ 
+  // Filtro por Categoría
+  const filterCategoria = document.getElementById('filterCategoria');
+  if (filterCategoria) {
+    filterCategoria.addEventListener('change', function() {
+      const val = this.value;
+      ticketsDataTable.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
+    });
+  }
+ 
+  // Filtro por Prioridad
+  const filterPrioridad = document.getElementById('filterPrioridad');
+  if (filterPrioridad) {
+    filterPrioridad.addEventListener('change', function() {
+      const val = this.value;
+      ticketsDataTable.column(4).search(val ? '^' + val + '$' : '', true, false).draw();
+    });
+  }
+ 
+  // Filtro por Estado
+  const filterEstado = document.getElementById('filterEstado');
+  if (filterEstado) {
+    filterEstado.addEventListener('change', function() {
+      const val = this.value;
+      ticketsDataTable.column(5).search(val ? '^' + val + '$' : '', true, false).draw();
+    });
+  }
+ 
+  // Botón limpiar filtros
+  const clearButton = document.getElementById('clearFilters');
+  if (clearButton) {
+    clearButton.addEventListener('click', function() {
+      // Limpiar inputs
+      if (searchInput) searchInput.value = '';
+      if (filterCategoria) filterCategoria.value = '';
+      if (filterPrioridad) filterPrioridad.value = '';
+      if (filterEstado) filterEstado.value = '';
+      
+      // Limpiar filtros de DataTables
+      ticketsDataTable.search('').columns().search('').draw();
+    });
+ 
+    // Efecto hover
+    clearButton.addEventListener('mouseenter', function() {
+      this.style.opacity = '0.85';
+    });
+    clearButton.addEventListener('mouseleave', function() {
+      this.style.opacity = '1';
+    });
+  }
+}
+ 
+// Función para recargar los datos de la tabla (útil para Socket.IO)
+function recargarTablaTickets() {
+  if (ticketsDataTable) {
+    ticketsDataTable.ajax.reload(null, false); // false = mantener página actual
+  }
+}
+ 
+document.addEventListener('DOMContentLoaded', function() {
+  // Esperar un poco para asegurar que jQuery y DataTables se cargaron
+  setTimeout(() => {
+    inicializarDataTables();
+  }, 100);
+});
