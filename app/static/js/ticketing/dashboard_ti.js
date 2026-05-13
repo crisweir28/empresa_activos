@@ -450,7 +450,7 @@ function inicializarDataTables() {
     paging: true,
     pageLength: 10,
     lengthChange: true,
-    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+    lengthMenu: [5, 10, 15, 20, 25, 50, 100], // ✅ CORREGIDO: Array simple
     searching: true,
     ordering: true,
     info: true,
@@ -458,7 +458,7 @@ function inicializarDataTables() {
     
     // Configuración de columnas
     columnDefs: [
-      { orderable: false, targets: [7] }  // ✅ Ahora Acciones es columna 7 (índice 7)
+      { orderable: false, targets: [7] }  // Acciones no ordenable
     ],
     
     // ✅ SIN orden inicial de DataTables (ya está ordenado por data-fecha)
@@ -466,8 +466,7 @@ function inicializarDataTables() {
     
     // Idioma en español
     language: {
-      search: "Buscar:",
-      lengthMenu: "Mostrar _MENU_ registros",
+      lengthMenu: "Mostrar _MENU_ tickets",
       info: "Mostrando _START_ a _END_ de _TOTAL_ tickets",
       infoEmpty: "No hay tickets disponibles",
       infoFiltered: "(filtrado de _MAX_ tickets totales)",
@@ -477,8 +476,8 @@ function inicializarDataTables() {
         next: "Siguiente",
         previous: "Anterior"
       },
-      zeroRecords: "No se encontraron tickets",
-      emptyTable: "No hay tickets en el sistema"
+      emptyTable: "No hay tickets que coincidan con tu búsqueda",
+      zeroRecords: "No se encontraron resultados"
     },
     
     // Deshabilitar el buscador por defecto de DataTables

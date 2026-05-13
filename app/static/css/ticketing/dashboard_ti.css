@@ -1,7 +1,7 @@
-/* app/static/css/ticketing/dashboard_ti.css - VERSIÓN FINAL CON TODOS LOS FIXES */
+/* app/static/css/ticketing/dashboard_ti.css - VERSIÓN OPTIMIZADA */
 
 /* ═══════════════════════════════════════════════════════
-   VARIABLES Y CONFIGURACIÓN BASE
+   VARIABLES CSS
    ═══════════════════════════════════════════════════════ */
 
 :root {
@@ -12,17 +12,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   CONTENEDOR PRINCIPAL
+   LAYOUT PRINCIPAL
    ═══════════════════════════════════════════════════════ */
 
 .container-fluid {
-  max-width: 100%; /* ✅ Usa todo el ancho disponible */
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   padding: 24px;
 }
 
-/* Main cuando sidebar está colapsado */
 .main.sidebar-collapsed {
   margin-left: 70px !important;
   max-width: calc(100vw - 70px) !important;
@@ -55,7 +54,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   MÉTRICAS - Grid responsive
+   MÉTRICAS
    ═══════════════════════════════════════════════════════ */
 
 .filters-container-metrics {
@@ -72,7 +71,7 @@
 .metric-card {
   flex: 1;
   background: white;
-  border: 2px solid #e5e7eb; /* ✅ SOLO borde gris, sin amarillos */
+  border: 2px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
   text-align: center;
@@ -95,58 +94,25 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Estados activos - bordes de colores */
-.metric-card[data-filter="all"].active {
-  border-color: #6366f1 !important;
-}
+/* Estados activos con colores específicos */
+.metric-card[data-filter="all"].active { border-color: #6366f1 !important; }
+.metric-card[data-filter="all"].active .metric-value { color: #6366f1 !important; }
 
-.metric-card[data-filter="all"].active .metric-value {
-  color: #6366f1 !important;
-}
+.metric-card[data-filter="abierto"].active { border-color: #ef4444 !important; }
+.metric-card[data-filter="abierto"].active .metric-value { color: #ef4444 !important; }
 
-.metric-card[data-filter="abierto"].active {
-  border-color: #ef4444 !important;
-}
+.metric-card[data-filter="proceso"].active { border-color: #f59e0b !important; }
+.metric-card[data-filter="proceso"].active .metric-value { color: #f59e0b !important; }
 
-.metric-card[data-filter="abierto"].active .metric-value {
-  color: #ef4444 !important;
-}
+.metric-card[data-filter="urgente"].active { border-color: #f97316 !important; }
+.metric-card[data-filter="urgente"].active .metric-value { color: #f97316 !important; }
 
-.metric-card[data-filter="proceso"].active {
-  border-color: #f59e0b !important;
-}
+.metric-card[data-filter="sin_asignar"].active { border-color: #6b7280 !important; }
+.metric-card[data-filter="sin_asignar"].active .metric-value { color: #6b7280 !important; }
 
-.metric-card[data-filter="proceso"].active .metric-value {
-  color: #f59e0b !important;
-}
-
-.metric-card[data-filter="urgente"].active {
-  border-color: #f97316 !important;
-}
-
-.metric-card[data-filter="urgente"].active .metric-value {
-  color: #f97316 !important;
-}
-
-.metric-card[data-filter="sin_asignar"].active {
-  border-color: #6b7280 !important;
-}
-
-.metric-card[data-filter="sin_asignar"].active .metric-value {
-  color: #6b7280 !important;
-}
-
-.metric-card.estadisticas-card.active {
-  border-color: #7c3aed !important;
-}
-
-.metric-card.estadisticas-card.active .metric-value {
-  color: #7c3aed !important;
-}
-
-.metric-card.estadisticas-card.active .metric-subtitle {
-  color: #7c3aed !important;
-}
+.metric-card.estadisticas-card.active { border-color: #7c3aed !important; }
+.metric-card.estadisticas-card.active .metric-value { color: #7c3aed !important; }
+.metric-card.estadisticas-card.active .metric-subtitle { color: #7c3aed !important; }
 
 .metric-icon {
   font-size: 32px;
@@ -450,12 +416,12 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   DATATABLES - Estilos personalizados
+   DATATABLES
    ═══════════════════════════════════════════════════════ */
 
 .dataTables_wrapper .dataTables_length,
 .dataTables_wrapper .dataTables_filter {
-  display: none !important;
+  display: block !important;
 }
 
 .dataTables_wrapper .dataTables_info {
@@ -522,21 +488,9 @@ table.dataTable thead th.sorting_desc:after {
   opacity: 0.5;
 }
 
-table.dataTable thead th.sorting:after {
-  content: '⇅';
-}
-
-table.dataTable thead th.sorting_asc:after {
-  content: '↑';
-  opacity: 1;
-  color: var(--accent);
-}
-
-table.dataTable thead th.sorting_desc:after {
-  content: '↓';
-  opacity: 1;
-  color: var(--accent);
-}
+table.dataTable thead th.sorting:after { content: '⇅'; }
+table.dataTable thead th.sorting_asc:after { content: '↑'; opacity: 1; color: var(--accent); }
+table.dataTable thead th.sorting_desc:after { content: '↓'; opacity: 1; color: var(--accent); }
 
 .dataTables_empty {
   padding: 40px 20px !important;
@@ -578,14 +532,8 @@ table.dataTable thead th.sorting_desc:after {
 }
 
 @keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-header {
@@ -707,7 +655,7 @@ table.dataTable thead th.sorting_desc:after {
 }
 
 /* ═══════════════════════════════════════════════════════
-   ESTADÍSTICAS
+   OTROS ELEMENTOS
    ═══════════════════════════════════════════════════════ */
 
 .panel {
@@ -746,55 +694,21 @@ table.dataTable thead th.sorting_desc:after {
 }
 
 /* ═══════════════════════════════════════════════════════
-   RESPONSIVE - LAPTOPS (1024px - 1439px)
+   RESPONSIVE - LAPTOPS PEQUEÑOS (1024px - 1279px)
    ═══════════════════════════════════════════════════════ */
 
-@media (min-width: 1024px) and (max-width: 1439px) {
-  /* Métricas: 6 columnas en 1 fila */
-  .filters-container-metrics {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
-    margin-bottom: 24px;
-  }
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .filters-container-metrics { gap: 8px; }
+  .metric-card { padding: 12px 8px; }
+  .metric-value { font-size: 26px; }
+  .metric-icon { font-size: 22px; }
+  .metric-label { font-size: 8px; }
+  .metric-subtitle { font-size: 7px; }
   
-  .metric-card {
-    padding: 14px 10px;
-  }
+  .page-header_ticket { padding: 24px; margin-bottom: 20px; }
+  .page-title_ticket { font-size: 28px; margin-bottom: 6px; }
+  .page-subtitle { font-size: 13px; }
   
-  .metric-value {
-    font-size: 28px;
-  }
-  
-  .metric-icon {
-    font-size: 24px;
-    margin-bottom: 4px;
-  }
-  
-  .metric-label {
-    font-size: 9px;
-    margin: 4px 0 2px;
-  }
-  
-  .metric-subtitle {
-    font-size: 8px;
-  }
-  
-  /* Header más compacto */
-  .page-header_ticket {
-    margin-bottom: 20px;
-    padding: 24px;
-  }
-  
-  .page-title_ticket {
-    font-size: 28px;
-    margin-bottom: 6px;
-  }
-  
-  .page-subtitle {
-    font-size: 13px;
-  }
-  
-  /* Filtros más compactos */
   .filters-container {
     padding: 16px;
     gap: 12px;
@@ -802,72 +716,47 @@ table.dataTable thead th.sorting_desc:after {
     grid-template-columns: 2fr 1fr 1fr auto;
   }
   
-  .filters-container > div:nth-child(4) {
-    grid-column: 1 / 2;
-  }
-  
-  .filters-container > button {
-    grid-column: 4 / 5;
-    grid-row: 1 / 2;
-  }
-  
-  .filters-container label {
-    font-size: 10px;
-    margin-bottom: 4px;
-  }
-  
+  .filters-container > div:nth-child(4) { grid-column: 1 / 2; }
+  .filters-container > button { grid-column: 4 / 5; grid-row: 1 / 2; }
+  .filters-container label { font-size: 10px; margin-bottom: 4px; }
   .filters-container input,
-  .filters-container select {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
+  .filters-container select { padding: 8px 10px; font-size: 13px; }
+  .filters-container button { padding: 8px 16px; font-size: 13px; }
   
-  .filters-container button {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
-  
-  /* Tabla más compacta */
-  .tickets-table {
-    min-width: 100%;
-  }
-  
+  .tickets-table { min-width: 100%; }
   .tickets-table th,
-  .tickets-table td {
-    padding: 10px 11px;
-    font-size: 12px;
+  .tickets-table td { padding: 9px 10px; font-size: 11px; }
+  .tickets-table th { font-size: 10px; }
+  
+  .ticket-number { font-size: 12px; }
+  .user-name { font-size: 12px; }
+  .user-email { font-size: 10px; }
+  .ticket-title { font-size: 11px; max-width: 220px; }
+  .badge-custom { padding: 2px 7px; font-size: 9px; }
+  
+  .action-buttons { gap: 4px; }
+  .action-buttons .btn-view,
+  .action-buttons .btn-assign {
+    padding: 4px 5px !important;
+    font-size: 11px !important;
+    min-width: 26px !important;
+    height: 26px !important;
   }
   
-  .tickets-table th {
-    font-size: 10px;
-  }
-  
-  .ticket-number {
-    font-size: 12px;
-  }
-  
-  .user-name {
-    font-size: 12px;
-  }
-  
-  .user-email {
-    font-size: 10px;
-  }
-  
-  .ticket-title {
-    font-size: 11px;
-    max-width: 220px;
-  }
-  
-  .badge-custom {
-    padding: 3px 8px;
-    font-size: 10px;
-  }
-  
-  /* ✅ BOTONES MÁS PEQUEÑOS */
-  .action-buttons {
-    gap: 4px;
-  }
+  .assigned-user,
+  .unassigned-user { font-size: 11px; }
+  .container-fluid { padding: 20px; }
+  .table-wrapper { max-height: 550px; }
+}
+
+/* LAPTOPS ESTÁNDAR (1280px - 1439px) */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .filters-container-metrics { gap: 10px; }
+  .metric-card { padding: 14px 10px; }
+  .metric-value { font-size: 28px; }
+  .metric-icon { font-size: 24px; margin-bottom: 4px; }
+  .metric-label { font-size: 9px; margin: 4px 0 2px; }
+  .metric-subtitle { font-size: 8px; }
   
   .action-buttons .btn-view,
   .action-buttons .btn-assign {
@@ -877,68 +766,9 @@ table.dataTable thead th.sorting_desc:after {
     height: 28px !important;
   }
   
-  .action-buttons i {
-    font-size: 12px;
-  }
-  
-  .assigned-user,
-  .unassigned-user {
-    font-size: 11px;
-  }
-  
-  .container-fluid {
-    padding: 20px;
-  }
-  
-  .table-wrapper {
-    max-height: 550px;
-  }
-}
-
-/* LAPTOPS PEQUEÑOS (1024px - 1279px) - Aún más compacto */
-@media (min-width: 1024px) and (max-width: 1279px) {
-  .filters-container-metrics {
-    gap: 8px;
-  }
-  
-  .metric-card {
-    padding: 12px 8px;
-  }
-  
-  .metric-value {
-    font-size: 26px;
-  }
-  
-  .metric-icon {
-    font-size: 22px;
-  }
-  
-  .metric-label {
-    font-size: 8px;
-  }
-  
-  .metric-subtitle {
-    font-size: 7px;
-  }
-  
-  .action-buttons .btn-view,
-  .action-buttons .btn-assign {
-    padding: 4px 5px !important;
-    font-size: 11px !important;
-    min-width: 26px !important;
-    height: 26px !important;
-  }
-  
   .tickets-table th,
-  .tickets-table td {
-    padding: 9px 10px;
-    font-size: 11px;
-  }
-  
-  .badge-custom {
-    padding: 2px 7px;
-    font-size: 9px;
-  }
+  .tickets-table td { padding: 10px 11px; font-size: 12px; }
+  .badge-custom { padding: 3px 8px; font-size: 10px; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -946,78 +776,29 @@ table.dataTable thead th.sorting_desc:after {
    ═══════════════════════════════════════════════════════ */
 
 @media (min-width: 1440px) {
-  .filters-container-metrics {
-    grid-template-columns: repeat(6, 1fr);
-    gap: 20px;
-  }
+  .metric-card { padding: 24px 20px; }
+  .metric-value { font-size: 38px; }
+  .metric-icon { font-size: 32px; }
   
-  .metric-card {
-    padding: 24px 20px;
-  }
+  .page-title_ticket { font-size: 36px; }
+  .page-subtitle { font-size: 16px; }
   
-  .metric-value {
-    font-size: 38px;
-  }
-  
-  .metric-icon {
-    font-size: 32px;
-  }
-  
-  .page-title_ticket {
-    font-size: 36px;
-  }
-  
-  .page-subtitle {
-    font-size: 16px;
-  }
-  
-  .filters-container {
-    grid-template-columns: 2fr 1fr 1fr 1fr auto;
-    gap: 20px;
-    padding: 24px;
-  }
-  
-  .tickets-table {
-    min-width: 100%;
-  }
+  .filters-container { gap: 20px; padding: 24px; }
   
   .tickets-table th,
-  .tickets-table td {
-    padding: 16px 20px;
-    font-size: 14px;
-  }
+  .tickets-table td { padding: 16px 20px; font-size: 14px; }
+  .tickets-table th { font-size: 12px; }
+  .badge-custom { padding: 6px 14px; font-size: 12px; }
   
-  .tickets-table th {
-    font-size: 12px;
-  }
-  
-  .badge-custom {
-    padding: 6px 14px;
-    font-size: 12px;
-  }
-  
-  .table-wrapper {
-    max-height: 700px;
-  }
+  .table-wrapper { max-height: 700px; }
 }
 
 /* MONITORES 4K (≥1920px) */
 @media (min-width: 1920px) {
-  .filters-container-metrics {
-    gap: 24px;
-  }
-  
-  .metric-card {
-    padding: 28px 24px;
-  }
-  
-  .metric-value {
-    font-size: 42px;
-  }
-  
-  .metric-icon {
-    font-size: 36px;
-  }
+  .filters-container-metrics { gap: 24px; }
+  .metric-card { padding: 28px 24px; }
+  .metric-value { font-size: 42px; }
+  .metric-icon { font-size: 36px; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1030,34 +811,19 @@ table.dataTable thead th.sorting_desc:after {
     gap: 16px;
   }
   
-  .metric-card {
-    padding: 20px;
-  }
-  
-  .metric-value {
-    font-size: 32px;
-  }
+  .metric-card { padding: 20px; }
+  .metric-value { font-size: 32px; }
   
   .filters-container {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
   
-  .filters-container > div:first-child {
-    grid-column: 1 / -1;
-  }
+  .filters-container > div:first-child { grid-column: 1 / -1; }
+  .filters-container > button { grid-column: 1 / -1; }
   
-  .filters-container > button {
-    grid-column: 1 / -1;
-  }
-  
-  .tickets-table {
-    min-width: 1000px;
-  }
-  
-  .table-wrapper {
-    max-height: 500px;
-  }
+  .tickets-table { min-width: 1000px; }
+  .table-wrapper { max-height: 500px; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1070,33 +836,14 @@ table.dataTable thead th.sorting_desc:after {
     gap: 12px;
   }
   
-  .metric-card {
-    padding: 16px 12px;
-  }
+  .metric-card { padding: 16px 12px; }
+  .metric-value { font-size: 28px; }
+  .metric-icon { font-size: 24px; }
+  .metric-label { font-size: 10px; }
+  .metric-subtitle { font-size: 10px; }
   
-  .metric-value {
-    font-size: 28px;
-  }
-  
-  .metric-icon {
-    font-size: 24px;
-  }
-  
-  .metric-label {
-    font-size: 10px;
-  }
-  
-  .metric-subtitle {
-    font-size: 10px;
-  }
-  
-  .page-title_ticket {
-    font-size: 24px;
-  }
-  
-  .page-subtitle {
-    font-size: 13px;
-  }
+  .page-title_ticket { font-size: 24px; }
+  .page-subtitle { font-size: 13px; }
   
   .filters-container {
     grid-template-columns: 1fr;
@@ -1104,31 +851,18 @@ table.dataTable thead th.sorting_desc:after {
     padding: 16px;
   }
   
-  .filters-container label {
-    font-size: 10px;
-  }
-  
+  .filters-container label { font-size: 10px; }
   .filters-container input,
   .filters-container select,
   .filters-container button {
     font-size: 13px;
     padding: 8px 10px;
   }
-  
-  .filters-container button {
-    width: 100%;
-  }
+  .filters-container button { width: 100%; }
   
   .tickets-table th,
-  .tickets-table td {
-    padding: 12px 14px;
-    font-size: 12px;
-  }
-  
-  .badge-custom {
-    padding: 4px 10px;
-    font-size: 11px;
-  }
+  .tickets-table td { padding: 12px 14px; font-size: 12px; }
+  .badge-custom { padding: 4px 10px; font-size: 11px; }
   
   .action-buttons {
     flex-direction: column;
@@ -1141,14 +875,8 @@ table.dataTable thead th.sorting_desc:after {
     font-size: 13px;
   }
   
-  .modal {
-    margin: 10px;
-  }
-  
-  .table-wrapper {
-    margin: 0 -16px;
-    padding: 0 16px;
-  }
+  .modal { margin: 10px; }
+  .table-wrapper { margin: 0 -16px; padding: 0 16px; }
   
   .dataTables_wrapper .dataTables_info {
     font-size: 12px;

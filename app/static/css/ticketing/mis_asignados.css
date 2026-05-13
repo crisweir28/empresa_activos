@@ -1,362 +1,424 @@
-/* app/static/css/ticketing/mis_asignados.css */
+/* app/static/css/ticketing/mis_asignados.css - VERSIÓN OPTIMIZADA */
 
-/* Estilos para Mis Asignados */
+/* ═══════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════ */
+
 .page-header {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-    color: white;
-    border-radius: 12px;
-    padding: 32px;
-    margin-bottom: 32px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .page-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 8px;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .page-subtitle {
-    opacity: 0.9;
-    font-size: 1rem;
+  opacity: 0.9;
+  font-size: 1rem;
 }
 
-/* Layout de filtros - FORZAR diseño horizontal */
+/* ═══════════════════════════════════════════════════════
+   MÉTRICAS
+   ═══════════════════════════════════════════════════════ */
+
 .filters-container {
-    display: flex !important;
-    gap: 12px !important;
-    flex-wrap: wrap !important;
-    justify-content: flex-start !important;
-    margin-bottom: 24px !important;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-bottom: 24px;
 }
 
 .filter-card-wrapper {
-    width: 280px !important;
-    flex-shrink: 0 !important;
+  width: 280px;
+  flex-shrink: 0;
 }
 
 .metric-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 3px solid #e5e7eb;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-    min-height: 120px;
-    width: 100%;
+  background: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 3px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  min-height: 120px;
+  width: 100%;
+  color: #1f2937;
 }
 
 .metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Estados normales - bordes grises */
-.metric-card {
-    color: #1f2937;
-    border-color: #e5e7eb;
-}
-
-/* Estados activos - bordes de colores */
 .metric-card.active {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Borde MORADO para "Todos" */
-.metric-card[data-filter="all"].active {
-    border-color: #6366f1 !important;
-    background: white !important;
-}
+/* Estados activos con colores específicos */
+.metric-card[data-filter="all"].active { border-color: #6366f1 !important; }
+.metric-card[data-filter="all"].active .metric-value { color: #6366f1 !important; }
 
-.metric-card[data-filter="all"].active .metric-value {
-    color: #6366f1 !important;
-}
+.metric-card[data-filter="abierto"].active { border-color: #3b82f6 !important; }
+.metric-card[data-filter="abierto"].active .metric-value { color: #3b82f6 !important; }
 
-/* Borde AZUL para "Abiertos" */
-.metric-card[data-filter="abierto"].active {
-    border-color: #3b82f6 !important;
-    background: white !important;
-}
+.metric-card[data-filter="proceso"].active { border-color: #f59e0b !important; }
+.metric-card[data-filter="proceso"].active .metric-value { color: #f59e0b !important; }
 
-.metric-card[data-filter="abierto"].active .metric-value {
-    color: #3b82f6 !important;
-}
-
-/* Borde NARANJA para "En Proceso" */
-.metric-card[data-filter="proceso"].active {
-    border-color: #f59e0b !important;
-    background: white !important;
-}
-
-.metric-card[data-filter="proceso"].active .metric-value {
-    color: #f59e0b !important;
-}
-
-/* Borde VERDE para "Resueltos" */
-.metric-card[data-filter="resuelto"].active {
-    border-color: #10b981 !important;
-    background: white !important;
-}
-
-.metric-card[data-filter="resuelto"].active .metric-value {
-    color: #10b981 !important;
-}
+.metric-card[data-filter="resuelto"].active { border-color: #10b981 !important; }
+.metric-card[data-filter="resuelto"].active .metric-value { color: #10b981 !important; }
 
 .metric-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: 4px;
-    line-height: 1;
-    color: #1f2937;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  line-height: 1;
+  color: #1f2937;
 }
 
 .metric-label {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-    color: #6b7280;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  color: #6b7280;
 }
 
 .metric-icon {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 2rem;
-    opacity: 0.2;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 2rem;
+  opacity: 0.2;
 }
 
 .metric-card.active .metric-icon {
-    opacity: 0.4;
+  opacity: 0.4;
 }
 
-/* Leyenda de colores */
+/* ═══════════════════════════════════════════════════════
+   LEYENDA DE COLORES
+   ═══════════════════════════════════════════════════════ */
+
 .color-legend {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e5e7eb;
-    margin-bottom: 24px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 24px;
 }
 
 .legend-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
 }
 
 .legend-items {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
 }
 
 .legend-color {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .legend-label {
-    color: #374151;
-    font-weight: 500;
+  color: #374151;
+  font-weight: 500;
 }
 
+/* ═══════════════════════════════════════════════════════
+   SECCIÓN DE TICKETS
+   ═══════════════════════════════════════════════════════ */
+
 .tickets-section {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
 }
 
 .section-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+/* ═══════════════════════════════════════════════════════
+   TABLA
+   ═══════════════════════════════════════════════════════ */
+
 .tickets-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 8px;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
 }
 
 .tickets-table thead th {
-    background: #f9fafb;
-    color: #6b7280;
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 12px 16px;
-    border: none;
-    text-align: left;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  border: none;
+  text-align: left;
 }
 
 .tickets-table thead th:first-child {
-    border-radius: 8px 0 0 8px;
+  border-radius: 8px 0 0 8px;
 }
 
 .tickets-table thead th:last-child {
-    border-radius: 0 8px 8px 0;
+  border-radius: 0 8px 8px 0;
 }
 
 .tickets-table tbody tr {
-    background: white;
-    transition: all 0.2s;
-    border: 1px solid #e5e7eb;
+  background: white;
+  transition: all 0.2s;
+  border: 1px solid #e5e7eb;
 }
 
 .tickets-table tbody tr:hover {
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .tickets-table tbody td {
-    padding: 16px;
-    border-top: 1px solid #f3f4f6;
-    border-bottom: 1px solid #f3f4f6;
+  padding: 16px;
+  border-top: 1px solid #f3f4f6;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .tickets-table tbody td:first-child {
-    border-left: 1px solid #f3f4f6;
-    border-radius: 8px 0 0 8px;
+  border-left: 1px solid #f3f4f6;
+  border-radius: 8px 0 0 8px;
 }
 
 .tickets-table tbody td:last-child {
-    border-right: 1px solid #f3f4f6;
-    border-radius: 0 8px 8px 0;
+  border-right: 1px solid #f3f4f6;
+  border-radius: 0 8px 8px 0;
 }
 
 .ticket-number {
-    font-weight: 700;
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
 }
 
 .ticket-number:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .ticket-user {
-    color: #6b7280;
-    font-size: 0.9rem;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .ticket-title {
-    color: #1f2937;
-    font-weight: 500;
-    font-size: 0.95rem;
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 0.95rem;
 }
 
 .badge-custom {
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    display: inline-block;
-    white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  white-space: nowrap;
 }
 
+/* ═══════════════════════════════════════════════════════
+   BOTONES
+   ═══════════════════════════════════════════════════════ */
+
 .btn-view {
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
 }
 
 .btn-view:hover {
-    background: var(--accent2);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(155, 35, 53, 0.3);
-    color: white;
+  background: var(--accent2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(155, 35, 53, 0.3);
+  color: white;
 }
 
+/* ═══════════════════════════════════════════════════════
+   ESTADOS VACÍOS Y FILTROS
+   ═══════════════════════════════════════════════════════ */
+
 .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #9ca3af;
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
 }
 
 .empty-state-icon {
-    font-size: 4rem;
-    margin-bottom: 16px;
-    opacity: 0.5;
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
 }
 
 .empty-state-text {
-    font-size: 1.1rem;
-    color: #6b7280;
+  font-size: 1.1rem;
+  color: #6b7280;
 }
 
 .filter-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--accent);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
 }
 
 .filter-tag button {
-    background: rgba(255, 255, 255, 0.3);
-    border: none;
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .filter-tag button:hover {
-    background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.5);
 }
 
-/* Responsive */
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE - MÓVILES (< 768px)
+   ═══════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
-    .filters-container {
-        flex-direction: column !important;
-    }
-    
-    .filter-card-wrapper {
-        width: 100% !important;
-    }
+  .filters-container {
+    flex-direction: column;
+  }
+  
+  .filter-card-wrapper {
+    width: 100%;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .page-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .metric-value {
+    font-size: 2rem;
+  }
+  
+  .tickets-table {
+    font-size: 0.85rem;
+  }
+  
+  .tickets-table thead th {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+  
+  .tickets-table tbody td {
+    padding: 12px;
+  }
+}
+
+/* TABLETS (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .filter-card-wrapper {
+    width: calc(50% - 6px);
+  }
+  
+  .metric-value {
+    font-size: 2.2rem;
+  }
+}
+
+/* LAPTOPS (1024px - 1439px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .filter-card-wrapper {
+    width: calc(33.333% - 8px);
+  }
+  
+  .metric-card {
+    padding: 18px 20px;
+  }
+  
+  .metric-value {
+    font-size: 2.3rem;
+  }
+}
+
+/* PANTALLAS GRANDES (≥1440px) */
+@media (min-width: 1440px) {
+  .filter-card-wrapper {
+    width: 280px;
+  }
+  
+  .page-header {
+    padding: 36px;
+  }
+  
+  .page-title {
+    font-size: 2.2rem;
+  }
 }
