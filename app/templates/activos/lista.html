@@ -1,63 +1,189 @@
-<!-- app/templates/activos.html -->
+<!-- app/templates/activos.html REDISEÑADO -->
 {% extends "base.html" %}
 {% block title %}Activos{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/activos/lista.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">📦 Activos</div>
-    <div class="page-sub">Inventario completo de activos de la empresa</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- HEADER CON DEGRADADO (como ticketing) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">📦 Inventario de Activos</h1>
+    <p class="hero-subtitle">Gestión completa de recursos de la empresa</p>
   </div>
   <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
     + Nuevo activo
   </button>
 </div>
 
-<!-- Filtros -->
-<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-  <a href="{{ url_for('activos.lista') }}"
-     class="btn-sm {% if not request.args.get('estado') %}active{% endif %}"
-     style="{% if not request.args.get('estado') %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
-  {% for e in ['activo','mantenimiento','baja'] %}
-  <a href="{{ url_for('activos.lista', estado=e) }}"
-     class="btn-sm {% if request.args.get('estado')==e %}active{% endif %}"
-     style="{% if request.args.get('estado')==e %}border-color:var(--accent);color:#a78bfa{% endif %}">
-    {{ e|capitalize }}
-  </a>
-  {% endfor %}
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MÉTRICAS (Cards superiores) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="metrics-grid">
+  <!-- Total Activos -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">📊</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ activos|length }}</div>
+      <div class="metric-label">Total Activos</div>
+      <div class="metric-sub">Inventario completo</div>
+    </div>
+  </div>
+
+  <!-- Activos -->
+  <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('activos.lista', estado='activo') }}'">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">✅</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ activos|selectattr('estado', 'equalto', 'activo')|list|length }}</div>
+      <div class="metric-label">Activos</div>
+      <div class="metric-sub">En operación</div>
+    </div>
+  </div>
+
+  <!-- Mantenimiento -->
+  <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('activos.lista', estado='mantenimiento') }}'">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">⚙️</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ activos|selectattr('estado', 'equalto', 'mantenimiento')|list|length }}</div>
+      <div class="metric-label">Mantenimiento</div>
+      <div class="metric-sub">Requieren atención</div>
+    </div>
+  </div>
+
+  <!-- Dados de Baja -->
+  <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('activos.lista', estado='baja') }}'">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">📤</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ activos|selectattr('estado', 'equalto', 'baja')|list|length }}</div>
+      <div class="metric-label">Dados de Baja</div>
+      <div class="metric-sub">Fuera de servicio</div>
+    </div>
+  </div>
+
+  <!-- Valor Total -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #ffa34e 0%, #ff6b6b 100%)">💰</div>
+    <div class="metric-content">
+      <div class="metric-value">${{ "%.0f"|format(activos|sum(attribute='valor')) }}</div>
+      <div class="metric-label">Valor Total</div>
+      <div class="metric-sub">Inventario valorizado</div>
+    </div>
+  </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- FILTROS MEJORADOS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="filters-bar">
+  <a href="{{ url_for('activos.lista') }}"
+     class="filter-btn {% if not request.args.get('estado') %}active{% endif %}">
+    <span class="filter-icon">📋</span>
+    <span>Todos</span>
+  </a>
+  <a href="{{ url_for('activos.lista', estado='activo') }}"
+     class="filter-btn {% if request.args.get('estado')=='activo' %}active{% endif %}">
+    <span class="filter-icon">✅</span>
+    <span>Activo</span>
+  </a>
+  <a href="{{ url_for('activos.lista', estado='mantenimiento') }}"
+     class="filter-btn {% if request.args.get('estado')=='mantenimiento' %}active{% endif %}">
+    <span class="filter-icon">⚙️</span>
+    <span>Mantenimiento</span>
+  </a>
+  <a href="{{ url_for('activos.lista', estado='baja') }}"
+     class="filter-btn {% if request.args.get('estado')=='baja' %}active{% endif %}">
+    <span class="filter-icon">📤</span>
+    <span>Baja</span>
+  </a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- TABLA DE ACTIVOS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 <div class="panel">
+  <div class="panel-header">
+    <h3 class="panel-title">📦 Listado de Activos</h3>
+    <div class="panel-info">{{ activos|length }} activos encontrados</div>
+  </div>
+
   {% if activos %}
   <div style="overflow-x:auto">
-    <table>
+    <table class="activos-table">
       <thead>
         <tr>
-          <th>#</th><th>Nombre</th><th>Serie</th><th>Categoría</th>
-          <th>Estado</th><th>Departamento</th><th>Valor</th><th>Acciones</th>
+          <th>#</th>
+          <th>Activo</th>
+          <th>Categoría</th>
+          <th>Estado</th>
+          <th>Departamento</th>
+          <th>Valor</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for a in activos %}
         <tr>
-          <td style="color:var(--muted)">{{ a.id }}</td>
+          <td style="color:var(--muted);font-weight:600">#{{ a.id }}</td>
           <td>
-            <strong>{{ a.nombre }}</strong>
-            {% if a.descripcion %}
-            <br><span style="font-size:11px;color:var(--muted)">{{ a.descripcion[:60] }}</span>
+            <div class="activo-info">
+              <div class="activo-icon">
+                {% if a.categoria == 'equipo' %}💻
+                {% elif a.categoria == 'mueble' %}🪑
+                {% elif a.categoria == 'vehiculo' %}🚗
+                {% elif a.categoria == 'software' %}📀
+                {% else %}📦{% endif %}
+              </div>
+              <div>
+                <div class="activo-nombre">{{ a.nombre }}</div>
+                {% if a.numero_serie %}
+                <div class="activo-serie">Serie: {{ a.numero_serie }}</div>
+                {% endif %}
+                {% if a.descripcion %}
+                <div class="activo-desc">{{ a.descripcion[:50] }}{% if a.descripcion|length > 50 %}...{% endif %}</div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td>
+            {% if a.categoria %}
+            <span class="categoria-badge categoria-{{ a.categoria }}">{{ a.categoria|capitalize }}</span>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px">—</span>
             {% endif %}
           </td>
-          <td style="color:var(--muted);font-size:12px">{{ a.numero_serie or '—' }}</td>
-          <td style="color:var(--muted)">{{ a.categoria or '—' }}</td>
-          <td><span class="badge badge-{{ a.estado }}">{{ a.estado }}</span></td>
-          <td style="color:var(--muted)">{{ a.departamento_nombre or '—' }}</td>
-          <td style="color:var(--muted)">${{ "%.2f"|format(a.valor) }}</td>
           <td>
-            <button class="btn-sm" onclick="editarActivo({{ a.to_dict()|tojson }})">✏️ Editar</button>
-            <form method="POST" action="{{ url_for('activos.eliminar', id=a.id) }}" style="display:inline"
-                  onsubmit="return confirm('¿Eliminar {{ a.nombre }}?')">
-              <button type="submit" class="btn-sm btn-del">🗑️</button>
-            </form>
+            <span class="estado-badge estado-{{ a.estado }}">
+              {% if a.estado == 'activo' %}✓ Activo
+              {% elif a.estado == 'mantenimiento' %}⚙️ Mantenimiento
+              {% elif a.estado == 'baja' %}✗ Baja
+              {% else %}{{ a.estado }}{% endif %}
+            </span>
+          </td>
+          <td>
+            {% if a.departamento_nombre %}
+            <span style="font-size:13px;color:var(--text2)">{{ a.departamento_nombre }}</span>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px">Sin asignar</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="valor-text">${{ "%.2f"|format(a.valor) }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-sm" onclick="editarActivo({{ a.to_dict()|tojson }})" title="Editar">
+                ✏️ Editar
+              </button>
+              <form method="POST" action="{{ url_for('activos.eliminar', id=a.id) }}" style="display:inline"
+                    onsubmit="return confirm('¿Eliminar {{ a.nombre }}?')">
+                <button type="submit" class="btn-sm btn-del" title="Eliminar">🗑️</button>
+              </form>
+            </div>
           </td>
         </tr>
         {% endfor %}
@@ -65,50 +191,68 @@
     </table>
   </div>
   {% else %}
-  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin activos. Agrega el primero →</p>
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <div class="empty-title">No hay activos registrados</div>
+    <div class="empty-text">Comienza agregando tu primer activo al inventario</div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+      + Agregar primer activo
+    </button>
+  </div>
   {% endif %}
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODALES (sin cambios funcionales) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 
 <!-- Modal Nuevo -->
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
-    <h2>Nuevo activo</h2>
+    <div class="modal-header">
+      <h3>Nuevo Activo</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-nuevo').classList.remove('open')">×</button>
+    </div>
     <form method="POST" action="{{ url_for('activos.nuevo') }}">
-      <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input name="nombre" required></div>
-        <div class="field"><label>Número de serie</label><input name="numero_serie"></div>
-      </div>
-      <div class="field"><label>Descripción</label><textarea name="descripcion"></textarea></div>
-      <div class="grid-2">
-        <div class="field"><label>Categoría</label>
-          <select name="categoria">
-            <option value="">— Sin categoría —</option>
-            {% for c in ['equipo','mueble','vehiculo','software','otro'] %}
-            <option value="{{ c }}">{{ c|capitalize }}</option>
-            {% endfor %}
+      <div class="modal-body">
+        <div class="grid-2">
+          <div class="field"><label>Nombre *</label><input name="nombre" required></div>
+          <div class="field"><label>Número de serie</label><input name="numero_serie"></div>
+        </div>
+        <div class="field"><label>Descripción</label><textarea name="descripcion"></textarea></div>
+        <div class="grid-2">
+          <div class="field"><label>Categoría</label>
+            <select name="categoria">
+              <option value="">— Sin categoría —</option>
+              <option value="equipo">💻 Equipo</option>
+              <option value="mueble">🪑 Mueble</option>
+              <option value="vehiculo">🚗 Vehículo</option>
+              <option value="software">📀 Software</option>
+              <option value="otro">📦 Otro</option>
+            </select>
+          </div>
+          <div class="field"><label>Estado</label>
+            <select name="estado">
+              <option value="activo">Activo</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Valor ($)</label><input name="valor" type="number" step="0.01" min="0"></div>
+          <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
+        </div>
+        <div class="field"><label>Departamento</label>
+          <select name="departamento_id">
+            <option value="">— Sin departamento —</option>
+            {% for d in departamentos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
           </select>
         </div>
-        <div class="field"><label>Estado</label>
-          <select name="estado">
-            <option value="activo">Activo</option>
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="baja">Baja</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Valor ($)</label><input name="valor" type="number" step="0.01" min="0"></div>
-        <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" type="date"></div>
-      </div>
-      <div class="field"><label>Departamento</label>
-        <select name="departamento_id">
-          <option value="">— Sin departamento —</option>
-          {% for d in departamentos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
-        </select>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="submit" class="btn btn-primary">Guardar Activo</button>
       </div>
     </form>
   </div>
@@ -117,47 +261,55 @@
 <!-- Modal Editar -->
 <div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
-    <h2>Editar activo</h2>
+    <div class="modal-header">
+      <h3>Editar Activo</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-editar').classList.remove('open')">×</button>
+    </div>
     <form method="POST" id="form-editar">
-      <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input name="nombre" id="e-nombre" required></div>
-        <div class="field"><label>Número de serie</label><input name="numero_serie" id="e-serie"></div>
-      </div>
-      <div class="field"><label>Descripción</label><textarea name="descripcion" id="e-desc"></textarea></div>
-      <div class="grid-2">
-        <div class="field"><label>Categoría</label>
-          <select name="categoria" id="e-cat">
-            <option value="">— Sin categoría —</option>
-            {% for c in ['equipo','mueble','vehiculo','software','otro'] %}
-            <option value="{{ c }}">{{ c|capitalize }}</option>
-            {% endfor %}
+      <div class="modal-body">
+        <div class="grid-2">
+          <div class="field"><label>Nombre *</label><input name="nombre" id="e-nombre" required></div>
+          <div class="field"><label>Número de serie</label><input name="numero_serie" id="e-serie"></div>
+        </div>
+        <div class="field"><label>Descripción</label><textarea name="descripcion" id="e-desc"></textarea></div>
+        <div class="grid-2">
+          <div class="field"><label>Categoría</label>
+            <select name="categoria" id="e-cat">
+              <option value="">— Sin categoría —</option>
+              <option value="equipo">💻 Equipo</option>
+              <option value="mueble">🪑 Mueble</option>
+              <option value="vehiculo">🚗 Vehículo</option>
+              <option value="software">📀 Software</option>
+              <option value="otro">📦 Otro</option>
+            </select>
+          </div>
+          <div class="field"><label>Estado</label>
+            <select name="estado" id="e-estado">
+              <option value="activo">Activo</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Valor ($)</label><input name="valor" id="e-valor" type="number" step="0.01" min="0"></div>
+          <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" id="e-fecha" type="date"></div>
+        </div>
+        <div class="field"><label>Departamento</label>
+          <select name="departamento_id" id="e-depto">
+            <option value="">— Sin departamento —</option>
+            {% for d in departamentos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
           </select>
         </div>
-        <div class="field"><label>Estado</label>
-          <select name="estado" id="e-estado">
-            <option value="activo">Activo</option>
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="baja">Baja</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Valor ($)</label><input name="valor" id="e-valor" type="number" step="0.01" min="0"></div>
-        <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" id="e-fecha" type="date"></div>
-      </div>
-      <div class="field"><label>Departamento</label>
-        <select name="departamento_id" id="e-depto">
-          <option value="">— Sin departamento —</option>
-          {% for d in departamentos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
-        </select>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
       </div>
     </form>
   </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}

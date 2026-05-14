@@ -495,7 +495,7 @@ def agregar_comentario(id_ticket):
             )
         """), {
             'ticket': id_ticket,
-            'usuario': current_user.id,
+            'usuario': current_user.IdUsuario,
             'comentario': comentario_texto,
             'interno': 1 if es_interno else 0,
             'oficial': 1 if current_user.rol == 'Usuario TI' else 0

@@ -208,7 +208,7 @@ nav {
 /* ── Tabla ── */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th    { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 600; background: #fafafa; }
-td    { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--surface); }
+td    { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text2); }
 tr:last-child td { border-bottom: none; }
 tr:hover td      { background: #fafafa; }
 
