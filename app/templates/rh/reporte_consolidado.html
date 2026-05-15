@@ -2,29 +2,50 @@
 {% extends "base.html" %}
 {% block title %}Reporte Consolidado{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="hero-header">
   <div>
-    <h1 class="page-title">📊 Reporte Consolidado</h1>
-    <p class="page-sub">Equipo → Usuario → Área → Proyecto</p>
+    <h1 class="hero-title">📊 Reporte Consolidado</h1>
+    <p class="hero-subtitle">Equipo → Usuario → Área → Proyecto</p>
   </div>
   <a href="{{ url_for('rh.activos_usuario') }}" class="btn btn-outline">← Volver</a>
 </div>
 
 {# ── Stats ── #}
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
-  {% for num, lbl, ico, color in [
-    (stats.total,        'Total equipos',    '💻', '#6b7280'),
-    (stats.con_usuario,  'Con usuario',      '👤', '#2563eb'),
-    (stats.con_proyecto, 'En proyecto',      '📋', '#8b5cf6'),
-    (stats.sin_asignar,  'Sin asignar',      '📦', '#d97706'),
-  ] %}
-  <div class="stat-box" style="--c:{{ color }}">
-    <span style="font-size:20px">{{ ico }}</span>
-    <span class="sn">{{ num }}</span>
-    <span class="sl">{{ lbl }}</span>
+  
+  {# Total equipos - limpia filtros #}
+  <a href="{{ url_for('rh.reporte_consolidado') }}" class="stat-box" style="--c:#6b7280">
+    <span style="font-size:20px">💻</span>
+    <span class="sn">{{ stats.total }}</span>
+    <span class="sl">Total equipos</span>
+  </a>
+  
+  {# Con usuario - NO clicable (backend no filtra por esto) #}
+  <div class="stat-box" style="--c:#2563eb">
+    <span style="font-size:20px">👤</span>
+    <span class="sn">{{ stats.con_usuario }}</span>
+    <span class="sl">Con usuario</span>
   </div>
-  {% endfor %}
+  
+  {# En proyecto - NO clicable directo (checkbox inverso sería confuso) #}
+  <div class="stat-box" style="--c:#8b5cf6">
+    <span style="font-size:20px">📋</span>
+    <span class="sn">{{ stats.con_proyecto }}</span>
+    <span class="sl">En proyecto</span>
+  </div>
+  
+  {# Sin asignar - filtro por sin_proyecto #}
+  <a href="{{ url_for('rh.reporte_consolidado', sin_proyecto='1') }}" class="stat-box" style="--c:#d97706">
+    <span style="font-size:20px">📦</span>
+    <span class="sn">{{ stats.sin_asignar }}</span>
+    <span class="sl">Sin asignar</span>
+  </a>
+  
 </div>
 
 {# ── Filtros ── #}

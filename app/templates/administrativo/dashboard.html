@@ -1,18 +1,16 @@
 <!-- app/templates/administrativo/dashboard.html -->
 {% extends "base.html" %}
 {% block title %}Dashboard Vehicular{% endblock %}
-
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/administrativo/administrativo.css') }}">
-
 {% endblock %}
 
 {% block content %}
-<!-- Botón Nuevo vehículo - solo si tiene permiso crear -->
-<div class="topbar">
-  <div>
-    <div class="page-title">🚗 Dashboard Vehicular</div>
-    <div class="page-sub">Gestión de vehículos, conductores y permisos</div>
+
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">🚗 Dashboard Vehicular</h1>
+    <p class="hero-subtitle">Gestión de vehículos, conductores y permisos</p>
   </div>
   {% if tiene_permiso('Vehículos', 'crear') %}
   <button class="btn btn-primary" onclick="abrirModal('modal-nuevo')">

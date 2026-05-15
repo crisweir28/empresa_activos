@@ -2,20 +2,20 @@
 {% extends "base.html" %}
 {% block title %}{{ herramienta.Nombre }}{% endblock %}]
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/herramienta_detalle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/almacen.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">🔧 {{ herramienta.Nombre }}</div>
-    <div class="page-sub">
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">🔧 {{ herramienta.Nombre }}</h1>
+    <p class="hero-subtitle">
       {% if herramienta.NumeroSerie %}Serie: <strong>{{ herramienta.NumeroSerie }}</strong> · {% endif %}
       <span class="badge {% if herramienta.Estado == 'disponible' %}badge-activo{% elif herramienta.Estado == 'asignado' %}{% else %}badge-baja{% endif %}"
             style="{% if herramienta.Estado == 'asignado' %}background:rgba(124,92,252,.15);color:#a78bfa{% endif %}">
         {{ herramienta.Estado }}
       </span>
-    </div>
+    </p>
   </div>
   <a href="{{ url_for('almacenista.inventario') }}" class="btn-sm">← Volver</a>
 </div>

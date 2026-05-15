@@ -2,11 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Historial de asignaciones{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/almacen.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">📋 Historial de asignaciones</div>
-    <div class="page-sub">Registro de asignaciones y devoluciones</div>
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">📋 Historial de asignaciones</h1>
+    <p class="hero-subtitle">Registro de asignaciones y devoluciones</p>
   </div>
 </div>
 

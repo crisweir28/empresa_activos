@@ -1,4 +1,4 @@
-<!-- app/templates/usuarios/lista.html -->
+<!-- app/templates/usuarios/lista.html REDISEÑADO -->
 {% extends "base.html" %}
 {% block title %}Gestión de Usuarios{% endblock %}
 
@@ -12,10 +12,13 @@
 {% set es_rh = (current_user.IdRol != 1 and current_user.rol == 'rh' and current_user.es_administrador_area) %}
 {% set vista_global = (current_user.IdRol == 1 or es_rh) %}
 
-<div class="topbar">
-    <div>
-        <div class="page-title">👥 Gestión de Usuarios</div>
-        <div class="page-sub">
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- HERO HEADER -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="hero-header">
+    <div class="hero-content">
+        <h1 class="hero-title">👥 Gestión de Usuarios</h1>
+        <p class="hero-subtitle">
             {% if current_user.IdRol == 1 %}
             Administración de cuentas y áreas del sistema
             {% elif es_rh %}
@@ -23,7 +26,7 @@
             {% else %}
             Usuarios de {{ current_user.area_nombre }}
             {% endif %}
-        </div>
+        </p>
     </div>
     {% if current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'crear')) %}
     <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
@@ -32,38 +35,100 @@
     {% endif %}
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MÉTRICAS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="metrics-grid">
+    <!-- Total Usuarios -->
+    <div class="metric-card">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">👥</div>
+        <div class="metric-content">
+            <div class="metric-value">{{ usuarios|length }}</div>
+            <div class="metric-label">Total Usuarios</div>
+            <div class="metric-sub">Cuentas registradas</div>
+        </div>
+    </div>
+
+    <!-- Administradores -->
+    <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('usuarios.lista', tipo='administrador') }}'">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">⭐</div>
+        <div class="metric-content">
+            <div class="metric-value">{{ usuarios|selectattr('TipoUsuario', 'equalto', 'administrador')|list|length }}</div>
+            <div class="metric-label">Administradores</div>
+            <div class="metric-sub">Con permisos elevados</div>
+        </div>
+    </div>
+
+    <!-- Empleados -->
+    <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('usuarios.lista', tipo='empleado') }}'">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">👤</div>
+        <div class="metric-content">
+            <div class="metric-value">{{ usuarios|selectattr('TipoUsuario', 'equalto', 'empleado')|list|length }}</div>
+            <div class="metric-label">Empleados</div>
+            <div class="metric-sub">Usuario estándar</div>
+        </div>
+    </div>
+
+    <!-- Activos -->
+    <div class="metric-card">
+        <div class="metric-icon" style="background: linear-gradient(135deg, #ffa34e 0%, #ff6b6b 100%)">✅</div>
+        <div class="metric-content">
+            <div class="metric-value">{{ usuarios|selectattr('Estatus', 'equalto', True)|list|length }}</div>
+            <div class="metric-label">Activos</div>
+            <div class="metric-sub">Con acceso al sistema</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- FILTROS MEJORADOS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 {% if vista_global %}
-<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
-    <a href="{{ url_for('usuarios.lista') }}"
-        class="btn-sm {% if not area_filtro and not tipo_filtro %}active{% endif %}"
-        style="{% if not area_filtro and not tipo_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">
-        Todos
-    </a>
-    {% for d in departamentos %}
-    <a href="{{ url_for('usuarios.lista', area=d.id) }}"
-        class="btn-sm {% if area_filtro|string == d.id|string %}active{% endif %}"
-        style="{% if area_filtro|string == d.id|string %}border-color:var(--accent);color:var(--accent){% endif %}">
-        {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
-    </a>
-    {% endfor %}
-    <span style="color:var(--border)">|</span>
-    <a href="{{ url_for('usuarios.lista', tipo='administrador') }}"
-        class="btn-sm {% if tipo_filtro == 'administrador' %}active{% endif %}"
-        style="{% if tipo_filtro == 'administrador' %}border-color:var(--accent);color:var(--accent){% endif %}">
-        ⭐ Administradores
-    </a>
-    <a href="{{ url_for('usuarios.lista', tipo='empleado') }}"
-        class="btn-sm {% if tipo_filtro == 'empleado' %}active{% endif %}"
-        style="{% if tipo_filtro == 'empleado' %}border-color:var(--accent);color:var(--accent){% endif %}">
-        👤 Empleados
-    </a>
+<div class="filters-section">
+    <div class="filter-group">
+        <div class="filter-label">Por Área:</div>
+        <div class="filter-buttons">
+            <a href="{{ url_for('usuarios.lista') }}"
+                class="filter-btn {% if not area_filtro and not tipo_filtro %}active{% endif %}">
+                📋 Todos
+            </a>
+            {% for d in departamentos %}
+            <a href="{{ url_for('usuarios.lista', area=d.id) }}"
+                class="filter-btn {% if area_filtro|string == d.id|string %}active{% endif %}">
+                {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <div class="filter-label">Por Tipo:</div>
+        <div class="filter-buttons">
+            <a href="{{ url_for('usuarios.lista', tipo='administrador') }}"
+                class="filter-btn {% if tipo_filtro == 'administrador' %}active{% endif %}">
+                ⭐ Administradores
+            </a>
+            <a href="{{ url_for('usuarios.lista', tipo='empleado') }}"
+                class="filter-btn {% if tipo_filtro == 'empleado' %}active{% endif %}">
+                👤 Empleados
+            </a>
+        </div>
+    </div>
 </div>
 {% endif %}
 
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- TABLA DE USUARIOS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 <div class="panel">
+    <div class="panel-header">
+        <h3 class="panel-title">📋 Listado de Usuarios</h3>
+        <div class="panel-info">{{ usuarios|length }} usuarios encontrados</div>
+    </div>
+
     {% if usuarios %}
-    <div style="overflow-x:auto">
-        <table>
+    <div class="table-wrap">
+        <table class="usuarios-table">
             <thead>
                 <tr>
                     <th>Usuario</th>
@@ -77,93 +142,91 @@
             </thead>
             <tbody>
                 {% for u in usuarios %}
-                <tr style="opacity:{% if not u.Estatus %}0.55{% else %}1{% endif %}">
+                <tr class="{% if not u.Estatus %}row-inactive{% endif %}">
                     <td>
-                        <div style="display:flex;align-items:center;gap:10px">
-                            <div style="width:32px;height:32px;border-radius:50%;
-                          background:linear-gradient(135deg,var(--accent),var(--accent2));
-                          display:flex;align-items:center;justify-content:center;
-                          font-weight:700;font-size:13px;color:#fff;flex-shrink:0">
-                                {{ u.Nombre[0]|upper }}
-                            </div>
-                            <div>
-                                <strong>{{ u.NombreUsuario }}</strong>
-                                {% if u.IdRol == 1 %}
-                                <span style="display:inline-block;margin-left:6px;background:#fef9c3;
-                             color:#a16207;font-size:10px;font-weight:700;padding:2px 7px;
-                             border-radius:20px">⭐ Super Admin</span>
-                                {% endif %}
-                                {% if u.BloqueadoHasta and u.BloqueadoHasta.year == 9999 %}
-                                <span style="display:inline-block;margin-left:6px;background:#fee2e2;
-                             color:#b91c1c;font-size:10px;font-weight:700;padding:2px 7px;
-                             border-radius:20px">🔒 Bloqueado</span>
-                                {% endif %}
+                        <div class="usuario-info">
+                            <div class="usuario-avatar">{{ u.Nombre[0]|upper }}</div>
+                            <div class="usuario-data">
+                                <div class="usuario-nombre">{{ u.NombreUsuario }}</div>
+                                <div class="usuario-badges">
+                                    {% if u.IdRol == 1 %}
+                                    <span class="mini-badge super-admin">⭐ Super Admin</span>
+                                    {% endif %}
+                                    {% if u.BloqueadoHasta and u.BloqueadoHasta.year == 9999 %}
+                                    <span class="mini-badge bloqueado">🔒 Bloqueado</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </td>
-                    <td style="color:var(--text2)">
-                        {{ u.Nombre }} {{ u.ApellidoPaterno }}
-                        {% if u.ApellidoMaterno %} {{ u.ApellidoMaterno }}{% endif %}
+                    <td>
+                        <span class="nombre-completo">
+                            {{ u.Nombre }} {{ u.ApellidoPaterno }}
+                            {% if u.ApellidoMaterno %} {{ u.ApellidoMaterno }}{% endif %}
+                        </span>
                     </td>
-                    <td style="color:var(--muted);font-size:12px">{{ u.Correo }}</td>
+                    <td>
+                        <span class="correo-text">{{ u.Correo }}</span>
+                    </td>
                     {% if vista_global %}
                     <td>
                         {% if u.departamento_obj %}
-                        <span style="font-size:13px">
+                        <span class="area-badge">
                             {% if u.departamento_obj.nombre in areas_modulo %}🏢{% else %}👤{% endif %}
                             {{ u.departamento_obj.nombre }}
                         </span>
                         {% elif u.IdRol == 1 %}
-                        <span style="color:var(--muted);font-size:12px">— Todas —</span>
+                        <span class="area-text muted">— Todas —</span>
                         {% else %}
-                        <span style="color:var(--muted);font-size:12px">Sin área</span>
+                        <span class="area-text muted">Sin área</span>
                         {% endif %}
                     </td>
                     {% endif %}
                     <td>
                         {% if u.TipoUsuario == 'administrador' %}
-                        <span class="badge" style="background:#dbeafe;color:#1d4ed8">⭐ Administrador</span>
+                        <span class="tipo-badge admin">⭐ Administrador</span>
                         {% else %}
-                        <span class="badge" style="background:#f3f4f6;color:#374151">👤 Empleado</span>
+                        <span class="tipo-badge empleado">👤 Empleado</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if u.Estatus %}
-                        <span class="badge badge-activo">Activo</span>
+                        <span class="estado-badge activo">Activo</span>
                         {% else %}
-                        <span class="badge badge-baja">Inactivo</span>
+                        <span class="estado-badge inactivo">Inactivo</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if u.IdUsuario != current_user.id %}
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-
+                        <div class="action-buttons">
                             {# Admin RH NO puede tocar administradores de área ni super admins #}
                             {% set bloqueado_para_rh = (es_rh and (u.IdRol == 1 or u.TipoUsuario == 'administrador')) %}
 
                             {# Botón Permisos (individuales) #}
                             {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'editar'))) %}
-                            <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" class="btn-sm"
-                                title="Ver permisos">🔐 Permisos</a>
+                            <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" 
+                               class="btn-sm" 
+                               title="Ver permisos">🔐 Permisos</a>
                             {% endif %}
 
                             {# Botón Editar #}
                             {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'editar'))) %}
-                            <button class="btn-sm" onclick="editarUsuario({{ u.IdUsuario }})" title="Editar">✏️
-                                Editar</button>
+                            <button class="btn-sm" onclick="editarUsuario({{ u.IdUsuario }})" title="Editar">
+                                ✏️ Editar
+                            </button>
                             {% endif %}
 
                             {# Botón Eliminar #}
                             {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'eliminar') and u.IdRol != 1)) %}
-                            <button class="btn-sm btn-del" title="Eliminar"
-                                onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
+                            <button class="btn-sm btn-del" 
+                                    title="Eliminar"
+                                    onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
                                 🗑️
                             </button>
                             {% endif %}
-
                         </div>
                         {% else %}
-                        <span style="color:var(--muted);font-size:12px">Tu cuenta</span>
+                        <span class="tu-cuenta-text">Tu cuenta</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -172,7 +235,16 @@
         </table>
     </div>
     {% else %}
-    <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin usuarios registrados.</p>
+    <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <div class="empty-title">No hay usuarios registrados</div>
+        <div class="empty-text">Comienza agregando el primer usuario al sistema</div>
+        {% if current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'crear')) %}
+        <button class="btn btn-primary" style="margin-top:16px" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+            + Agregar primer usuario
+        </button>
+        {% endif %}
+    </div>
     {% endif %}
 </div>
 
@@ -186,7 +258,6 @@
 {% endblock %}
 
 <!-- ───────────────────────────────────────────────scripts ─────────────────────────────────────────────── -->
-
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/usuarios/lista.js') }}"></script>
 {% endblock %}

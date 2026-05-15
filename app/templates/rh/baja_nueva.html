@@ -2,11 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Nuevo Aviso de Baja{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="hero-header">
   <div>
-    <h1 class="page-title">Nuevo Aviso de Baja</h1>
-    <p class="page-sub">Registra el aviso de baja de un empleado</p>
+    <h1 class="hero-title">Nuevo Aviso de Baja</h1>
+    <p class="hero-subtitle">Registra el aviso de baja de un empleado</p>
   </div>
   <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-outline">← Volver</a>
 </div>

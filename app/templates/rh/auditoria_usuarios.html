@@ -2,11 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Auditoría — Usuarios{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="hero-header">
   <div>
-    <h1 class="page-title">Usuarios del Sistema</h1>
-    <p class="page-sub">Listado completo de usuarios registrados en ActivosApp</p>
+    <h1 class="hero-title">Usuarios del Sistema</h1>
+    <p class="hero-subtitle">Listado completo de usuarios registrados en ActivosApp</p>
   </div>
   <a href="{{ url_for('rh.auditoria') }}" class="btn btn-outline">
     📦 Ver Resguardo

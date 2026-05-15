@@ -3,33 +3,14 @@
 {% block title %}Almacén — Dashboard{% endblock %}
 
 {% block extra_head %}
-<style>
-/* Sobrescribir grid de stats para Almacén */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/almacen.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">📦 Almacén</div>
-    <div class="page-sub">Gestión de herramientas e inventario</div>
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">📦 Almacén</h1>
+    <p class="hero-subtitle">Gestión de herramientas e inventario</p>
   </div>
   {% if tiene_permiso('Almacén', 'crear') %}
   <button class="btn btn-primary" onclick="document.getElementById('modal-nueva').classList.add('open')">

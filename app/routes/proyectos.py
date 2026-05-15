@@ -55,6 +55,7 @@ def lista():
         stats          = stats,
         estatus_filtro = estatus_filtro,
         ESTATUS        = ['Activo','En progreso','Pausado','Completado','Cancelado'],
+        es_admin       = current_user.rol == "admin",  # ← AGREGAR ESTA LÍNEA
     )
 
 

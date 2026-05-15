@@ -2,11 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Procesos de Baja{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="hero-header">
   <div>
-    <h1 class="page-title">Validación de Procesos de Baja</h1>
-    <p class="page-sub">Gestiona el proceso de baja de empleados y retiro de activos</p>
+    <h1 class="hero-title">Validación de Procesos de Baja</h1>
+    <p class="hero-subtitle">Gestiona el proceso de baja de empleados y retiro de activos</p>
   </div>
   {% if puede_crear %}
   <a href="{{ url_for('rh.baja_nueva') }}" class="btn btn-primary">

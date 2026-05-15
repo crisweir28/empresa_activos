@@ -1,45 +1,90 @@
-<!-- app/templates/usuarios/permisos.html -->
+<!-- app/templates/usuarios/permisos.html REDISEÑADO -->
 {% extends "base.html" %}
 {% block title %}Roles & Permisos{% endblock %}
+
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios/permisos.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">🔐 Roles & Permisos</div>
-    <div class="page-sub">Define el acceso de cada rol a los módulos del sistema</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- HERO HEADER -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">🔐 Roles & Permisos</h1>
+    <p class="hero-subtitle">Define el acceso de cada rol a los módulos del sistema</p>
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MÉTRICAS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="metrics-grid">
+  <!-- Total Roles -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">👑</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ roles|length }}</div>
+      <div class="metric-label">Total Roles</div>
+      <div class="metric-sub">Roles configurados</div>
+    </div>
+  </div>
+
+  <!-- Total Usuarios -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">👥</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ usuarios_por_rol.values()|sum }}</div>
+      <div class="metric-label">Usuarios Activos</div>
+      <div class="metric-sub">Con permisos asignados</div>
+    </div>
+  </div>
+
+  <!-- Total Módulos -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #ffa34e 0%, #ff6b6b 100%)">📦</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ modulos|length if modulos else 0 }}</div>
+      <div class="metric-label">Módulos del Sistema</div>
+      <div class="metric-sub">Secciones disponibles</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- LAYOUT DE PERMISOS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 <div class="permisos-layout">
 
-  <!-- Panel izquierdo: roles -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- PANEL IZQUIERDO: ROLES -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
   <div class="roles-panel">
     <div class="roles-panel-title">Roles del sistema</div>
     {% set rol_colores = {
-  1:  {'bg': 'rgba(124,92,252,.15)', 'emoji': '👑'},
-  2:  {'bg': 'rgba(251,191,36,.15)', 'emoji': '🚗'},
-  3:  {'bg': 'rgba(34,211,165,.15)', 'emoji': '🏪'},
-  4:  {'bg': 'rgba(167,139,250,.15)', 'emoji': '👥'},
-  5:  {'bg': 'rgba(124,92,252,.15)', 'emoji': '💻'},
-  6:  {'bg': 'rgba(248,113,113,.15)', 'emoji': '👁'},
-  7:  {'bg': 'rgba(59,130,246,.15)',  'emoji': '💰'},
-  8:  {'bg': 'rgba(245,158,11,.15)',  'emoji': '⚙️'},
-  9:  {'bg': 'rgba(139,92,246,.15)',  'emoji': '📊'},
-  10: {'bg': 'rgba(236,72,153,.15)',  'emoji': '🛒'},
-  11: {'bg': 'rgba(34,197,94,.15)',   'emoji': '💼'},
-  12: {'bg': 'rgba(14,165,233,.15)',  'emoji': '🆔'},
-  13: {'bg': 'rgba(168,85,247,.15)',  'emoji': '🧹'},
-  14: {'bg': 'rgba(244,63,94,.15)',   'emoji': '🎉'},
-} %}
+      1:  {'bg': 'rgba(124,92,252,.15)', 'emoji': '👑'},
+      2:  {'bg': 'rgba(251,191,36,.15)', 'emoji': '🚗'},
+      3:  {'bg': 'rgba(34,211,165,.15)', 'emoji': '🏪'},
+      4:  {'bg': 'rgba(167,139,250,.15)', 'emoji': '👥'},
+      5:  {'bg': 'rgba(124,92,252,.15)', 'emoji': '💻'},
+      6:  {'bg': 'rgba(248,113,113,.15)', 'emoji': '👁'},
+      7:  {'bg': 'rgba(59,130,246,.15)',  'emoji': '💰'},
+      8:  {'bg': 'rgba(245,158,11,.15)',  'emoji': '⚙️'},
+      9:  {'bg': 'rgba(139,92,246,.15)',  'emoji': '📊'},
+      10: {'bg': 'rgba(236,72,153,.15)',  'emoji': '🛒'},
+      11: {'bg': 'rgba(34,197,94,.15)',   'emoji': '💼'},
+      12: {'bg': 'rgba(14,165,233,.15)',  'emoji': '🆔'},
+      13: {'bg': 'rgba(168,85,247,.15)',  'emoji': '🧹'},
+      14: {'bg': 'rgba(244,63,94,.15)',   'emoji': '🎉'},
+    } %}
     {% for r in roles %}
     {% set ci = rol_colores.get(r.IdRol, {'bg': 'rgba(96,96,122,.15)', 'emoji': '👤'}) %}
     <a href="{{ url_for('permisos.index', rol=r.IdRol) }}"
        class="rol-item {% if rol_sel and rol_sel.IdRol == r.IdRol %}active{% endif %}">
       <div class="rol-avatar" style="background:{{ ci.bg }}">{{ ci.emoji }}</div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="rol-name">{{ r.NombreRol }}</div>
         <div class="rol-count">{{ usuarios_por_rol.get(r.IdRol, 0) }} usuario(s)</div>
       </div>
@@ -47,18 +92,20 @@
     {% endfor %}
   </div>
 
-  <!-- Panel derecho -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- PANEL DERECHO: PERMISOS -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
   {% if rol_sel %}
   <div class="permisos-panel">
     <div class="permisos-header">
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="permisos-title">{{ rol_sel.NombreRol }}</div>
         <div class="permisos-sub">
           Configuración de acceso ·
           <span class="badge-count">{{ usuarios_por_rol.get(rol_sel.IdRol, 0) }} usuarios</span>
         </div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div class="header-buttons">
         <button type="button" class="btn-cancel" onclick="location.reload()">Cancelar</button>
         <button type="button" class="btn btn-primary" onclick="document.getElementById('form-permisos').submit()">
           💾 Guardar cambios
@@ -67,21 +114,29 @@
     </div>
 
     <!-- Tabs internos -->
-    <div class="inner-tabs" style="overflow-x:auto">
+    <div class="inner-tabs">
       <button class="inner-tab active" onclick="showInner('permisos', this)">🔐 Permisos</button>
       <button class="inner-tab" onclick="showInner('usuarios', this)">
         👤 Usuarios ({{ usuarios_rol|length }})
       </button>
     </div>
 
-    <!-- Tab: Permisos -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: PERMISOS -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
     <div id="inner-permisos" class="inner-panel active">
       <form method="POST" action="{{ url_for('permisos.guardar') }}" id="form-permisos">
         <input type="hidden" name="rol_id" value="{{ rol_sel.IdRol }}">
-        <div style="overflow-x:auto">
+        <div class="table-wrap">
           <table class="permisos-table">
             <thead>
-              <tr><th>Módulo</th><th>Ver</th><th>Crear</th><th>Editar</th><th>Eliminar</th></tr>
+              <tr>
+                <th>Módulo</th>
+                <th>Ver</th>
+                <th>Crear</th>
+                <th>Editar</th>
+                <th>Eliminar</th>
+              </tr>
             </thead>
             <tbody>
               {% for m in modulos %}
@@ -90,7 +145,7 @@
                 <td>
                   <div class="modulo-info">
                     <div class="modulo-icon">{{ m.Icono or '📦' }}</div>
-                    <div>
+                    <div style="flex:1;min-width:0">
                       <div class="modulo-name">{{ m.Nombre }}</div>
                       <div class="modulo-desc">{{ m.Descripcion or '' }}</div>
                     </div>
@@ -114,19 +169,21 @@
           </table>
         </div>
       </form>
-      <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <span style="font-size:11px;color:var(--muted)" id="sync-status">● Sincronizado</span>
-        <span style="font-size:11px;color:var(--muted)">Los cambios aplican al próximo inicio de sesión</span>
+      <div class="permisos-footer">
+        <span class="status-indicator" id="sync-status">● Sincronizado</span>
+        <span class="help-text">Los cambios aplican al próximo inicio de sesión</span>
       </div>
     </div>
 
-    <!-- Tab: Usuarios del rol -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: USUARIOS DEL ROL -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
     <div id="inner-usuarios" class="inner-panel">
       {% if usuarios_rol %}
         {% for u in usuarios_rol %}
         <div class="usuario-item">
           <div class="u-avatar">{{ u.Nombre[0]|upper }}</div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="u-nombre">{{ u.Nombre }} {{ u.ApellidoPaterno }}</div>
             <div class="u-correo">{{ u.Correo }} · @{{ u.NombreUsuario }}</div>
           </div>
@@ -137,17 +194,35 @@
             <span class="badge badge-baja">Inactivo</span>
             {% endif %}
           </div>
-          <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" class="btn-sm" style="margin-left:8px" title="Editar permisos individuales">🔐 Permisos</a>
+          <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" 
+             class="btn-sm" 
+             title="Editar permisos individuales">
+            🔐 Permisos
+          </a>
         </div>
         {% endfor %}
       {% else %}
-        <div class="empty-usuarios">Sin usuarios con este rol.</div>
+        <div class="empty-usuarios">
+          <div class="empty-icon">👤</div>
+          <div class="empty-text">Sin usuarios con este rol</div>
+        </div>
       {% endif %}
     </div>
 
   </div>
+  {% else %}
+  <!-- Estado inicial sin rol seleccionado -->
+  <div class="permisos-panel">
+    <div class="empty-state-large">
+      <div class="empty-icon-large">🔐</div>
+      <div class="empty-title-large">Selecciona un rol</div>
+      <div class="empty-text-large">Elige un rol del panel izquierdo para configurar sus permisos</div>
+    </div>
+  </div>
   {% endif %}
+
 </div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -168,7 +243,79 @@ function showInner(name, btn) {
 }
 
 window.addEventListener('beforeunload', e => {
-  if (hayChanges) { e.preventDefault(); e.returnValue = ''; }
+  if (hayChanges) { 
+    e.preventDefault(); 
+    e.returnValue = ''; 
+  }
+});
+
+// Prevenir submit accidental del form al cerrar
+document.getElementById('form-permisos').addEventListener('submit', () => {
+  hayChanges = false;
+});
+
+// ═══════════════════════════════════════════════════════════════
+// ICONOS DINÁMICOS PARA MÓDULOS
+// ═══════════════════════════════════════════════════════════════
+function obtenerIcono(nombreModulo) {
+  const texto = nombreModulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+  // Personal Corporativo
+  if (texto.includes('corporativo') || texto.includes('personal corporativo')) return '🌐';
+  
+  // Dashboard y métricas
+  if (texto.includes('dashboard') || texto.includes('vista general')) return '📊';
+  
+  // Activos
+  if (texto.includes('activo')) return '📦';
+  
+  // Vehículos
+  if (texto.includes('vehiculo') || texto.includes('flota')) return '🚗';
+  
+  // Mantenimiento
+  if (texto.includes('mantenimiento')) return '⚙️';
+  
+  // Almacén
+  if (texto.includes('almacen')) return '🏪';
+  
+  // Usuarios y permisos
+  if (texto.includes('usuario')) return '👥';
+  if (texto.includes('permiso') || texto.includes('rol')) return '🔐';
+  
+  // Departamentos
+  if (texto.includes('departamento')) return '🏢';
+  
+  // Ticketing
+  if (texto.includes('ticketing') || texto.includes('ticket')) return '🎫';
+  
+  // Recursos Humanos
+  if (texto.includes('recursos humanos') || texto.includes('rh')) return '👥';
+  if (texto.includes('vacacion')) return '🏖️';
+  if (texto.includes('nomina')) return '💰';
+  
+  // Proyectos
+  if (texto.includes('proyecto')) return '📁';
+  
+  // Reportes
+  if (texto.includes('reporte')) return '📈';
+  
+  // Default
+  return '📋';
+}
+
+// Aplicar iconos al cargar
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.modulo-icon').forEach(icon => {
+    const row = icon.closest('tr');
+    if (row) {
+      const nombreCell = row.querySelector('.modulo-name');
+      if (nombreCell) {
+        const nombreModulo = nombreCell.textContent.trim();
+        const iconoEmoji = obtenerIcono(nombreModulo);
+        icon.textContent = iconoEmoji;
+      }
+    }
+  });
 });
 </script>
 {% endblock %}

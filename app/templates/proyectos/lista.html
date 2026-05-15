@@ -3,32 +3,14 @@
 {% block title %}Proyectos{% endblock %}
 
 {% block extra_head %}
-<style>
-  .stats-grid-5 { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
-  @media (max-width:1024px) { .stats-grid-5 { grid-template-columns:repeat(3,1fr); } }  
-  @media (max-width:768px)  { .stats-grid-5 { grid-template-columns:repeat(2,1fr); } }
-  .proyecto-card {
-    background:white; border:1px solid var(--border); border-radius:14px;
-    padding:20px; transition:all .2s; cursor:pointer; text-decoration:none; color:inherit;
-    display:block; box-shadow:var(--shadow);
-  }
-  .proyecto-card:hover { border-color:var(--accent); box-shadow:var(--shadow-md); transform:translateY(-2px); }
-  .proyecto-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
-  .proyecto-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
-  .proyecto-nombre { font-family:'Plus Jakarta Sans',sans-serif; font-size:15px; font-weight:700; color:var(--text); }
-  .proyecto-desc { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
-  .proyecto-meta { display:flex; gap:12px; font-size:11px; color:var(--muted); }
-  .proyecto-meta span { display:flex; align-items:center; gap:4px; }
-  .dias-tag { font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; }
-  .filtros { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos/proyectos.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">📋 Proyectos</div>
-    <div class="page-sub">Gestión y supervisión de proyectos activos</div>
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">📋 Proyectos</h1>
+    <p class="hero-subtitle">Gestión y supervisión de proyectos activos</p>
   </div>
   {% if es_admin %}
   <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">

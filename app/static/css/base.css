@@ -130,6 +130,7 @@ nav {
 }
 .nav-link:hover { background: var(--bg); color: var(--text); }
 .nav-link.active {
+
   background: var(--accent-light);
   color: var(--accent);
   font-weight: 600;
@@ -415,7 +416,7 @@ tr:hover td      { background: #fafafa; }
 
 /* ── Forms ── */
 .field { margin-bottom: 14px; }
-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text); margin-bottom: 5px; font-weight: 600; }
 input, select, textarea { width: 100%; padding: 9px 13px; background: white; border: 1.5px solid var(--border); border-radius: 9px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; transition: all .15s; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
 input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(155,35,53,.1); }
 input::placeholder { color: var(--muted); }

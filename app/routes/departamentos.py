@@ -86,3 +86,13 @@ def api_lista():
         "total_activos":d.total_activos,
         "valor_total":  d.valor_total,
     } for d in deptos_ordenados])
+    
+@departamentos_bp.route("/<int:id>/editar", methods=["POST"])
+@login_required
+def editar(id):
+    depto = db.get_or_404(Departamento, id)
+    depto.nombre = request.form["nombre"]
+    depto.descripcion = request.form.get("descripcion")
+    db.session.commit()
+    flash(f'Departamento "{depto.nombre}" actualizado.', "success")
+    return redirect(url_for("departamentos.lista"))

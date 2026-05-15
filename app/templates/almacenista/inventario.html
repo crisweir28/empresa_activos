@@ -3,14 +3,14 @@
 {% block title %}Inventario{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/inventario.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/almacen.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">🔧 Inventario de herramientas</div>
-    <div class="page-sub">Consulta y gestión del inventario</div>
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">🔧 Inventario de herramientas</h1>
+    <p class="hero-subtitle">Consulta y gestión del inventario</p>
   </div>
   <button class="btn btn-primary" onclick="document.getElementById('modal-nueva').classList.add('open')">
     + Alta herramienta

@@ -2,33 +2,64 @@
 {% extends "base.html" %}
 {% block title %}Auditoría — Resguardo{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="hero-header">
   <div>
-    <h1 class="page-title">Acceso a Auditoría</h1>
-    <p class="page-sub">Activos en resguardo y estado del inventario</p>
+    <h1 class="hero-title">Acceso a Auditoría</h1>
+    <p class="hero-subtitle">Activos en resguardo y estado del inventario</p>
   </div>
   <a href="{{ url_for('rh.auditoria_usuarios') }}" class="btn btn-outline">
     👥 Ver Usuarios
   </a>
 </div>
 
-{# ── Stats ── #}
+{# ── Stats clicables ── #}
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px">
-  {% for num, lbl, ico, color in [
-    (stats.total,      'Total activos',    '📦', '#6b7280'),
-    (stats.asignados,  'Asignados',        '👤', '#2563eb'),
-    (stats.en_almacen, 'En almacén',       '🏭', '#d97706'),
-    (stats.bueno,      'Buen estado',      '✅', '#16a34a'),
-    (stats.regular,    'Estado regular',   '⚠️',  '#f59e0b'),
-    (stats.danado,     'Dañados',          '❌', '#ef4444'),
-  ] %}
-  <div class="stat-box" style="--c:{{ color }}">
-    <span style="font-size:22px">{{ ico }}</span>
-    <span class="sn">{{ num or 0 }}</span>
-    <span class="sl">{{ lbl }}</span>
+  {# Total - sin filtro #}
+  <a href="{{ url_for('rh.auditoria') }}" class="stat-box" style="--c:#6b7280">
+    <span style="font-size:22px">📦</span>
+    <span class="sn">{{ stats.total or 0 }}</span>
+    <span class="sl">Total activos</span>
+  </a>
+  
+  {# Asignados - filtro por estado? (ajusta según tu backend) #}
+  <div class="stat-box" style="--c:#2563eb">
+    <span style="font-size:22px">👤</span>
+    <span class="sn">{{ stats.asignados or 0 }}</span>
+    <span class="sl">Asignados</span>
   </div>
-  {% endfor %}
+  
+  {# En almacén - filtro por estado? #}
+  <div class="stat-box" style="--c:#d97706">
+    <span style="font-size:22px">🏭</span>
+    <span class="sn">{{ stats.en_almacen or 0 }}</span>
+    <span class="sl">En almacén</span>
+  </div>
+  
+  {# Buen estado - filtro por condición #}
+  <a href="{{ url_for('rh.auditoria', condicion='bueno') }}" class="stat-box" style="--c:#16a34a">
+    <span style="font-size:22px">✅</span>
+    <span class="sn">{{ stats.bueno or 0 }}</span>
+    <span class="sl">Buen estado</span>
+  </a>
+  
+  {# Estado regular - filtro por condición #}
+  <a href="{{ url_for('rh.auditoria', condicion='regular') }}" class="stat-box" style="--c:#f59e0b">
+    <span style="font-size:22px">⚠️</span>
+    <span class="sn">{{ stats.regular or 0 }}</span>
+    <span class="sl">Estado regular</span>
+  </a>
+  
+  {# Dañados - filtro por condición #}
+  <a href="{{ url_for('rh.auditoria', condicion='dañado') }}" class="stat-box" style="--c:#ef4444">
+    <span style="font-size:22px">❌</span>
+    <span class="sn">{{ stats.danado or 0 }}</span>
+    <span class="sl">Dañados</span>
+  </a>
 </div>
 
 {# ── Filtros ── #}

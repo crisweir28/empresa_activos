@@ -4,26 +4,28 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios/lista.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
 {% endblock %}
+
 
 {% block content %}
 
 {# Admin RH gestiona usuarios de todas las áreas (excepto super admins) #}
 {% set es_rh = (current_user.IdRol != 1 and current_user.rol == 'rh' and current_user.es_administrador_area) %}
 
-<div class="topbar">
-    <div>
-        <div class="page-title">👥 Personal Corporativo</div>
-        <div class="page-sub">
+<div class="hero-header">
+    <div class="hero-content">
+        <h1 class="hero-title">👥 Personal Corporativo</h1>
+        <p class="hero-subtitle">
             {% if current_user.IdRol == 1 %}
             Administración de cuentas de todas las áreas
             {% else %}
             Gestión de personal de todas las áreas del sistema
             {% endif %}
-        </div>
+        </p>
     </div>
     <button class="btn btn-primary" onclick="abrirModalNuevo()">
-    + Nuevo usuario
+        + Nuevo usuario
     </button>
 </div>
 

@@ -2,11 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Retiro de Activos — Baja #{{ baja.IdBaja }}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
+<div class="hero-header">
   <div>
-    <h1 class="page-title">Retiro de Activos</h1>
-    <p class="page-sub">Baja #{{ baja.IdBaja }} — {{ baja.Empleado }}</p>
+    <h1 class="hero-title">Retiro de Activos</h1>
+    <p class="hero-subtitle">Baja #{{ baja.IdBaja }} — {{ baja.Empleado }}</p>
   </div>
   <a href="{{ url_for('rh.bajas_lista') }}" class="btn btn-outline">← Volver</a>
 </div>

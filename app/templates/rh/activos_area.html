@@ -2,11 +2,15 @@
 {% extends "base.html" %}
 {% block title %}Activos por Área{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
-  <div>
-    <h1 class="page-title">Activos por Área</h1>
-    <p class="page-sub">Consulta los activos asignados por departamento</p>
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">Activos por Área</h1>
+    <p class="hero-subtitle">Consulta los activos asignados por departamento</p>
   </div>
   <a href="{{ url_for('rh.activos_usuario') }}" class="btn btn-outline">
     👤 Ver por Empleado

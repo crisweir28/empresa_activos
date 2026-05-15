@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-
+ 
 <!-- ══════════════════════════════════════════════════════════════ -->
 <!-- HEADER CON DEGRADADO (como ticketing) -->
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -176,9 +176,21 @@
           </td>
           <td>
             <div class="action-buttons">
-              <button class="btn-sm" onclick="editarActivo({{ a.to_dict()|tojson }})" title="Editar">
-                ✏️ Editar
-              </button>
+              <button class="btn-sm" 
+        onclick='editarActivo({
+          id: {{ a.id }}, 
+          nombre: {{ a.nombre|tojson }}, 
+          numero_serie: {{ (a.numero_serie or "")|tojson }},
+          descripcion: {{ (a.descripcion or "")|tojson }},
+          categoria: {{ (a.categoria or "")|tojson }},
+          estado: {{ (a.estado or "activo")|tojson }},
+          valor: {{ a.valor or 0 }},
+          fecha_adquisicion: {{ (a.fecha_adquisicion.isoformat() if a.fecha_adquisicion else "")|tojson }},
+          departamento_id: {{ a.departamento_id or "" }}
+        })' 
+        title="Editar">
+  ✏️ Editar
+</button>
               <form method="POST" action="{{ url_for('activos.eliminar', id=a.id) }}" style="display:inline"
                     onsubmit="return confirm('¿Eliminar {{ a.nombre }}?')">
                 <button type="submit" class="btn-sm btn-del" title="Eliminar">🗑️</button>

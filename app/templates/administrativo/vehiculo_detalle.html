@@ -12,14 +12,14 @@
 
 
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">🚗 {{ vehiculo.Nombre }}</div>
-    <div class="page-sub">
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">🚗 {{ vehiculo.Nombre }}</h1>
+    <p class="hero-subtitle">
       Placa: <strong>{{ vehiculo.Matricula }}</strong> ·
       {{ vehiculo.Marca or '' }} {{ vehiculo.Modelo or '' }} ·
       <span class="badge badge-{{ vehiculo.Estado }}">{{ vehiculo.Estado }}</span>
-    </div>
+    </p>
   </div>
   <a href="{{ url_for('administrativo.dashboard') }}" class="btn-sm">← Volver</a>
 </div>

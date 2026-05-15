@@ -1,55 +1,202 @@
-<!-- app/templates/departamentos.html -->
+<!-- app/templates/departamentos/lista.html REDISEÑADO -->
 {% extends "base.html" %}
 {% block title %}Departamentos{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/departamentos/lista.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="topbar">
-  <div>
-    <div class="page-title">🏬 Departamentos</div>
-    <div class="page-sub">Áreas y departamentos de la empresa</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- HERO HEADER -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="hero-header">
+  <div class="hero-content">
+    <h1 class="hero-title">🏬 Departamentos</h1>
+    <p class="hero-subtitle">Organización y estructura de áreas de la empresa</p>
   </div>
-  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open') ">
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
     + Nuevo departamento
   </button>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MÉTRICAS -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="metrics-grid">
+  <!-- Total Departamentos -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">🏢</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ departamentos|length }}</div>
+      <div class="metric-label">Total Departamentos</div>
+      <div class="metric-sub">Áreas registradas</div>
+    </div>
+  </div>
+
+  <!-- Con Activos -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">📦</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ departamentos|selectattr('total_activos', 'gt', 0)|list|length }}</div>
+      <div class="metric-label">Con Activos</div>
+      <div class="metric-sub">Tienen recursos asignados</div>
+    </div>
+  </div>
+
+  <!-- Total Activos -->
+  <div class="metric-card">
+    <div class="metric-icon" style="background: linear-gradient(135deg, #ffa34e 0%, #ff6b6b 100%)">📊</div>
+    <div class="metric-content">
+      <div class="metric-value">{{ departamentos|sum(attribute='total_activos') or 0 }}</div>
+      <div class="metric-label">Total Activos</div>
+      <div class="metric-sub">Distribuidos en áreas</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- GRID DE DEPARTAMENTOS (Cards visuales) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 <div class="panel">
+  <div class="panel-header">
+    <h3 class="panel-title">📋 Listado de Departamentos</h3>
+    <div class="panel-info">{{ departamentos|length }} departamentos registrados</div>
+  </div>
+
   {% if departamentos %}
-  <table>
-    <thead><tr><th>Nombre</th><th>Descripción</th><th>Activos</th><th>Acciones</th></tr></thead>
-    <tbody>
-      {% for d in departamentos %}
-      <tr>
-        <td><strong>{{ d.nombre }}</strong></td>
-        <td style="color:var(--muted)">{{ d.descripcion or '—' }}</td>
-        <td><span class="badge badge-activo">{{ d.total_activos or 0 }}</span></td>
-        <td>
-          <form method="POST" action="{{ url_for('departamentos.eliminar', id=d.id) }}" style="display:inline"
-                onsubmit="return confirm('¿Eliminar {{ d.nombre }}? Los activos quedarán sin departamento.')">
-            <button type="submit" class="btn-sm btn-del">🗑️ Eliminar</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="deptos-grid">
+    {% for d in departamentos %}
+    <div class="depto-card">
+      <div class="depto-header">
+        <div class="depto-icon">
+          {% if d.nombre in ['TI', 'Tecnología'] %}💻
+          {% elif d.nombre in ['Recursos Humanos', 'RH'] %}👥
+          {% elif d.nombre == 'Administrativo' %}📋
+          {% elif d.nombre == 'Almacén' %}📦
+          {% elif d.nombre == 'Contabilidad' %}💰
+          {% elif d.nombre == 'Operaciones' %}⚙️
+          {% elif d.nombre == 'Compras' %}🛒
+          {% elif d.nombre == 'SGI' %}📊
+          {% else %}🏢{% endif %}
+        </div>
+        <div class="depto-info">
+          <div class="depto-nombre">{{ d.nombre }}</div>
+          <div class="depto-desc">{{ d.descripcion or 'Sin descripción' }}</div>
+        </div>
+      </div>
+      
+      <div class="depto-stats">
+        <div class="depto-stat">
+          <div class="stat-icon">📦</div>
+          <div class="stat-data">
+            <div class="stat-value">{{ d.total_activos or 0 }}</div>
+            <div class="stat-label">Activos</div>
+          </div>
+        </div>
+        <div class="depto-stat">
+          <div class="stat-icon">👤</div>
+          <div class="stat-data">
+            <div class="stat-value">{{ d.usuarios|length if d.usuarios else 0 }}</div>
+            <div class="stat-label">Usuarios</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="depto-footer">
+        <button class="btn-sm" onclick="editarDepartamento({{ d.id }}, '{{ d.nombre }}', '{{ d.descripcion or '' }}')" title="Editar">
+          ✏️ Editar
+        </button>
+        <form method="POST" action="{{ url_for('departamentos.eliminar', id=d.id) }}" style="display:inline"
+              onsubmit="return confirm('¿Eliminar {{ d.nombre }}? Los activos quedarán sin departamento.')">
+          <button type="submit" class="btn-sm btn-del" title="Eliminar">🗑️</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
   {% else %}
-  <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin departamentos registrados.</p>
+  <div class="empty-state">
+    <div class="empty-icon">🏢</div>
+    <div class="empty-title">No hay departamentos registrados</div>
+    <div class="empty-text">Comienza creando las áreas de tu empresa</div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+      + Crear primer departamento
+    </button>
+  </div>
   {% endif %}
 </div>
 
-<!-- Modal -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL NUEVO DEPARTAMENTO -->
+<!-- ══════════════════════════════════════════════════════════════ -->
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()">
-    <h2>Nuevo departamento</h2>
+    <div class="modal-header">
+      <h3>Nuevo Departamento</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-nuevo').classList.remove('open')">×</button>
+    </div>
     <form method="POST" action="{{ url_for('departamentos.nuevo') }}">
-      <div class="field"><label>Nombre *</label><input name="nombre" required placeholder="Ej: Tecnología"></div>
-      <div class="field"><label>Descripción</label><textarea name="descripcion" placeholder="Descripción opcional"></textarea></div>
+      <div class="modal-body">
+        <div class="field">
+          <label>Nombre del departamento *</label>
+          <input name="nombre" required placeholder="Ej: Tecnología, Recursos Humanos, Operaciones">
+        </div>
+        <div class="field">
+          <label>Descripción</label>
+          <textarea name="descripcion" placeholder="Describe las funciones y responsabilidades del área" rows="3"></textarea>
+        </div>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-nuevo').classList.remove('open')">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">Crear Departamento</button>
       </div>
     </form>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL EDITAR DEPARTAMENTO -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Editar Departamento</h3>
+      <button class="modal-close" onclick="document.getElementById('modal-editar').classList.remove('open')">×</button>
+    </div>
+    <form method="POST" id="form-editar">
+      <div class="modal-body">
+        <div class="field">
+          <label>Nombre del departamento *</label>
+          <input name="nombre" id="e-nombre" required>
+        </div>
+        <div class="field">
+          <label>Descripción</label>
+          <textarea name="descripcion" id="e-descripcion" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="document.getElementById('modal-editar').classList.remove('open')">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editarDepartamento(id, nombre, descripcion) {
+  document.getElementById('e-nombre').value = nombre;
+  document.getElementById('e-descripcion').value = descripcion;
+  document.getElementById('form-editar').action = `/departamentos/${id}/editar`;
+  document.getElementById('modal-editar').classList.add('open');
+}
+</script>
 {% endblock %}

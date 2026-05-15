@@ -3,19 +3,19 @@
 {% block title %}{{ proyecto.Nombre }}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos/detalle.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/proyectos/proyectos.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="topbar">
-  <div style="display:flex;align-items:center;gap:12px">
-    <a href="{{ url_for('proyectos.lista') }}" class="btn-sm">← Volver</a>
+<div class="hero-header">
+  <div class="hero-content" style="display:flex;align-items:center;gap:12px">
+    <a href="{{ url_for('proyectos.lista') }}" class="btn-sm" style="background:rgba(255,255,255,0.2)!important;border-color:rgba(255,255,255,0.3)!important;color:#fff!important">← Volver</a>
     <div>
-      <div class="page-title">{{ proyecto.Nombre }}</div>
-      <div class="page-sub">
+      <h1 class="hero-title">{{ proyecto.Nombre }}</h1>
+      <p class="hero-subtitle">
         Creado por {{ proyecto.creador.Nombre }} {{ proyecto.creador.ApellidoPaterno }}
         · {{ proyecto.CreadoEn.strftime('%d/%m/%Y') }}
-      </div>
+      </p>
     </div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -177,10 +177,10 @@
 
 {# ── Modales ─────────────────────────────────────────────── #}
 {% if es_admin %}
-  {% include "modales/modal-proyecto_detalle/_modal_editar.html" %}
+  {% include "proyectos/modal-proyecto_detalle/_modal_editar.html" %}
 {% endif %}
-{% include "modales/modal-proyecto_detalle/_modal_personal.html" %}
-{% include "modales/modal-proyecto_detalle/_modal_activo.html" %}
+{% include "proyectos/modal-proyecto_detalle/_modal_personal.html" %}
+{% include "proyectos/modal-proyecto_detalle/_modal_activo.html" %}
 
 {% endblock %}
 
