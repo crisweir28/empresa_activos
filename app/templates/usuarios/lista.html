@@ -81,37 +81,34 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- FILTROS MEJORADOS -->
+<!-- FILTROS POR ÁREA -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 {% if vista_global %}
 <div class="filters-section">
-    <div class="filter-group">
-        <div class="filter-label">Por Área:</div>
-        <div class="filter-buttons">
-            <a href="{{ url_for('usuarios.lista') }}"
-                class="filter-btn {% if not area_filtro and not tipo_filtro %}active{% endif %}">
-                📋 Todos
+    <div class="filter-label">Filtrar por área:</div>
+    <div class="area-filter-container">
+        <button class="area-filter-btn" onclick="toggleAreaDropdown()" type="button">
+            📂 
+            {% if area_filtro %}
+                {% set area_actual = departamentos|selectattr('id', 'equalto', area_filtro|int)|first %}
+                {{ area_actual.nombre }}
+            {% else %}
+                Todas las áreas
+            {% endif %}
+            <span class="arrow">▾</span>
+        </button>
+        <div class="area-dropdown" id="area-dropdown">
+            <a href="{{ url_for('usuarios.lista') }}" 
+               class="area-dropdown-item {% if not area_filtro %}active{% endif %}">
+                📋 Todas las áreas
             </a>
+            <div class="area-dropdown-divider"></div>
             {% for d in departamentos %}
-            <a href="{{ url_for('usuarios.lista', area=d.id) }}"
-                class="filter-btn {% if area_filtro|string == d.id|string %}active{% endif %}">
+            <a href="{{ url_for('usuarios.lista', area=d.id) }}" 
+               class="area-dropdown-item {% if area_filtro|string == d.id|string %}active{% endif %}">
                 {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
             </a>
             {% endfor %}
-        </div>
-    </div>
-
-    <div class="filter-group">
-        <div class="filter-label">Por Tipo:</div>
-        <div class="filter-buttons">
-            <a href="{{ url_for('usuarios.lista', tipo='administrador') }}"
-                class="filter-btn {% if tipo_filtro == 'administrador' %}active{% endif %}">
-                ⭐ Administradores
-            </a>
-            <a href="{{ url_for('usuarios.lista', tipo='empleado') }}"
-                class="filter-btn {% if tipo_filtro == 'empleado' %}active{% endif %}">
-                👤 Empleados
-            </a>
         </div>
     </div>
 </div>
@@ -204,9 +201,7 @@
 
                             {# Botón Permisos (individuales) #}
                             {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'editar'))) %}
-                            <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" 
-                               class="btn-sm" 
-                               title="Ver permisos">🔐 Permisos</a>
+                            <a href="{{ url_for('permisos.usuario_permisos', usuario_id=u.IdUsuario) }}" class="btn-sm" title="Ver permisos">🔐 Permisos</a>
                             {% endif %}
 
                             {# Botón Editar #}
@@ -218,9 +213,8 @@
 
                             {# Botón Eliminar #}
                             {% if not bloqueado_para_rh and (current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'eliminar') and u.IdRol != 1)) %}
-                            <button class="btn-sm btn-del" 
-                                    title="Eliminar"
-                                    onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
+                            <button class="btn-sm btn-del" title="Eliminar"
+                                onclick="eliminarUsuario('{{ u.NombreUsuario }}', '{{ url_for('usuarios.eliminar', id=u.IdUsuario) }}')">
                                 🗑️
                             </button>
                             {% endif %}
@@ -240,7 +234,8 @@
         <div class="empty-title">No hay usuarios registrados</div>
         <div class="empty-text">Comienza agregando el primer usuario al sistema</div>
         {% if current_user.IdRol == 1 or (current_user.es_administrador_area and tiene_permiso('Usuarios', 'crear')) %}
-        <button class="btn btn-primary" style="margin-top:16px" onclick="document.getElementById('modal-nuevo').classList.add('open')">
+        <button class="btn btn-primary" style="margin-top:16px"
+            onclick="document.getElementById('modal-nuevo').classList.add('open')">
             + Agregar primer usuario
         </button>
         {% endif %}

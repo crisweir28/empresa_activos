@@ -118,6 +118,11 @@ def nuevo():
 
     depto  = Departamento.query.get(int(depto_id)) if depto_id else None
     id_rol = _rol_por_area(depto.nombre if depto else '', tipo)
+    
+    # ✅ VALIDACIÓN: Solo Super Admin puede crear Super Admins
+    if id_rol == 1 and current_user.IdRol != 1:
+        flash('No tienes permiso para crear Super Administradores.', 'error')
+        return redirect(url_for('usuarios.lista'))
 
     u = Usuario(
         NombreUsuario   = username,
@@ -202,16 +207,29 @@ def editar(id):
     u.Correo          = correo
     u.Estatus         = request.form.get("estatus") == "1"
 
-    # Solo super admin puede cambiar área y tipo
+    # Solo super admin puede cambiar área, tipo y rol
     if current_user.IdRol == 1:
         depto_id = request.form.get("departamento_id")
         tipo     = request.form.get("tipo_usuario", "empleado")
+        rol_id   = request.form.get("rol_id", type=int)  # Obtener rol del form
         depto    = Departamento.query.get(int(depto_id)) if depto_id else None
+        
+        # ✅ VALIDACIÓN: Solo Super Admin puede asignar rol de Super Admin
+        if rol_id == 1 and current_user.IdRol != 1:
+            flash('No tienes permiso para asignar el rol de Super Administrador.', 'error')
+            return redirect(url_for('usuarios.lista'))
+        
         u.IdDepartamento = int(depto_id) if depto_id else None
         u.TipoUsuario    = tipo
-        u.IdRol          = _rol_por_area(depto.nombre if depto else '', tipo)
+        
+        # Si se especificó un rol manualmente, usarlo; sino calcular automáticamente
+        if rol_id:
+            u.IdRol = rol_id
+        elif depto:
+            u.IdRol = _rol_por_area(depto.nombre, tipo)
+        # Si no hay rol ni área, mantener el rol actual (no hacer nada)
 
-    # Cambio de contraseña opcional
+    # Cambio de contraseña opcional (FUERA del if, aplica a todos)
     nueva_pass = request.form.get("nueva_password", "").strip()
     if nueva_pass:
         if len(nueva_pass) < 6:

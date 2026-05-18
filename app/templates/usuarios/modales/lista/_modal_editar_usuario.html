@@ -76,8 +76,27 @@
                 </div>
                 {% endif %}
             </div>
+            {# ✅ NUEVO: Select de Rol (solo visible para Super Admin) #}
+            {% if puede_cambiar_tipo_e %}
+            <div class="field">
+                <label>Rol del sistema</label>
+                <select id="e-rol" name="rol_id">
+                    <option value="">— Automático según área —</option>
+                    {% for r in roles %}
+                    {# ✅ Solo Super Admin puede asignar Super Admin #}
+                    {% if r.IdRol == 1 and current_user.IdRol != 1 %}
+                    {# Ocultar opción de Super Admin para usuarios que no son Super Admin #}
+                    {% else %}
+                    <option value="{{ r.IdRol }}">{{ r.NombreRol }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            {% else %}
             <input type="hidden" id="e-rol" name="rol_id">
             {% endif %}
+            {% endif %}
+
             <div class="field"><label>Estatus</label>
                 <select id="e-estatus" name="estatus">
                     <option value="1">Activo</option>

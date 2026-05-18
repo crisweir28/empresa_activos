@@ -1,5 +1,4 @@
-
-    const SOLO_LETRAS = /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]+$/;
+const SOLO_LETRAS = /^[a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]+$/;
     const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     function soloLetras(input) {
@@ -130,12 +129,23 @@
         setVal('e-correo', u.correo);
         setVal('e-pass', '');
 
+        // ✅ Estatus
         if (document.getElementById('e-estatus'))
             document.getElementById('e-estatus').value = u.estatus ? '1' : '0';
+        
+        // ✅ Área (solo Super Admin puede cambiar)
         if (document.getElementById('e-depto')) {
             document.getElementById('e-depto').value = u.departamento_id || '';
+        }
+        
+        // ✅ Tipo (solo Super Admin puede cambiar)
+        if (document.getElementById('e-tipo')) {
             document.getElementById('e-tipo').value = u.tipo_usuario || 'empleado';
-            document.getElementById('e-rol').value = u.rol_id;
+        }
+        
+        // ✅ Rol del sistema (solo Super Admin puede cambiar)
+        if (document.getElementById('e-rol')) {
+            document.getElementById('e-rol').value = u.rol_id || '';
         }
 
         const panel = document.getElementById('panel-bloqueado');
@@ -183,3 +193,24 @@
             }
         });
     }
+
+// ══════════════════════════════════════════════════════════════
+// DROPDOWN SIMPLE DE ÁREAS
+// ══════════════════════════════════════════════════════════════
+
+function toggleAreaDropdown() {
+    const dropdown = document.getElementById('area-dropdown');
+    dropdown.classList.toggle('show');
+}
+
+// Cerrar al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('area-dropdown');
+    const button = document.querySelector('.area-filter-btn');
+    
+    if (dropdown && button) {
+        if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
