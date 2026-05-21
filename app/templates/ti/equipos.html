@@ -3,8 +3,297 @@
 {% block title %}Equipos TI{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/shared.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/ti.css') }}">
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   DATATABLES - ESPECIFICIDAD MÁXIMA
+   ═══════════════════════════════════════════════════════════ */
+
+body .main .panel div#tabla-equipos_wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+/* ENCABEZADOS */
+body .main .panel table#tabla-equipos.dataTable thead th {
+  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  padding: 16px 18px !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  text-align: left !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  position: relative !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable thead th:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: #e5e7eb;
+}
+
+body .main .panel table#tabla-equipos.dataTable thead th.sorting:hover,
+body .main .panel table#tabla-equipos.dataTable thead th.sorting_asc:hover,
+body .main .panel table#tabla-equipos.dataTable thead th.sorting_desc:hover {
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+  color: #374151 !important;
+}
+
+/* CUERPO */
+body .main .panel table#tabla-equipos.dataTable tbody td {
+  padding: 14px 18px !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  vertical-align: middle !important;
+  font-size: 13px !important;
+  color: var(--text2) !important;
+  background: white !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable tbody tr:nth-child(even) {
+  background-color: #fafafa !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable tbody tr:nth-child(even) td {
+  background-color: #fafafa !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable tbody tr {
+  transition: all 0.15s ease !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable tbody tr:hover td {
+  background: #f0f9ff !important;
+  box-shadow: inset 0 0 0 1px #e0f2fe !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable tbody tr:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+body .main .panel table#tabla-equipos.dataTable tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* CONTROLES */
+body .main .panel div.dataTables_wrapper {
+  padding: 0 !important;
+  margin-top: 20px !important;
+}
+
+body .main .panel div.dataTables_filter {
+  float: right !important;
+  margin-bottom: 20px !important;
+}
+
+body .main .panel div.dataTables_filter label {
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+body .main .panel div.dataTables_filter input {
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 10px 16px 10px 40px !important;
+  margin-left: 0 !important;
+  font-size: 13px !important;
+  width: 280px !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  background: white url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b7280" viewBox="0 0 16 16"%3e%3cpath d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/%3e%3c/svg%3e') no-repeat 14px center !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+body .main .panel div.dataTables_filter input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+}
+
+body .main .panel div.dataTables_length {
+  float: left !important;
+  margin-bottom: 20px !important;
+}
+
+body .main .panel div.dataTables_length label {
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+body .main .panel div.dataTables_length select {
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 10px 40px 10px 16px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  background: white !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  appearance: none !important;
+  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%236b7280" viewBox="0 0 16 16"%3e%3cpath d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/%3e%3c/svg%3e') !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  color: var(--text) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+body .main .panel div.dataTables_length select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+  outline: none !important;
+}
+
+body .main .panel div.dataTables_info {
+  padding-top: 20px !important;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+  float: left !important;
+}
+
+body .main .panel div.dataTables_paginate {
+  padding-top: 20px !important;
+  float: right !important;
+}
+
+body .main .panel .dataTables_paginate .paginate_button {
+  padding: 8px 14px !important;
+  margin: 0 3px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid var(--border) !important;
+  background: white !important;
+  color: var(--text) !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+body .main .panel .dataTables_paginate .paginate_button:hover {
+  background: #f9fafb !important;
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+
+body .main .panel .dataTables_paginate .paginate_button.current {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+body .main .panel .dataTables_paginate .paginate_button.disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+body .main .panel div.dataTables_wrapper::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* FILTROS ESTILO CARDS MODERNOS */
+.filter-pills {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-pills .btn-sm {
+  padding: 10px 18px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid var(--border) !important;
+  background: white !important;
+  color: var(--text2) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.filter-pills .btn-sm:hover {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+  background: #f0f9ff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15) !important;
+}
+
+.filter-pills .btn-sm.active {
+  border-color: #2563eb !important;
+  color: white !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+  transform: scale(1.02) !important;
+}
+
+.filter-pills .separator {
+  color: var(--border);
+  font-weight: 300;
+  margin: 0 8px;
+  font-size: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body .main .panel div.dataTables_filter input {
+    width: 200px !important;
+  }
+  
+  body .main .panel div.dataTables_length,
+  body .main .panel div.dataTables_filter {
+    float: none !important;
+    text-align: center !important;
+    margin-bottom: 16px !important;
+  }
+  
+  body .main .panel div.dataTables_info,
+  body .main .panel div.dataTables_paginate {
+    float: none !important;
+    text-align: center !important;
+  }
+  
+  .filter-pills {
+    justify-content: center;
+  }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -20,34 +309,44 @@
   {% endif %}
 </div>
 
-<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+<!-- Filtros estilo pills -->
+<div class="filter-pills">
   <a href="{{ url_for('ti.equipos') }}"
-     class="btn-sm {% if not tipo_filtro and not estado_filtro %}active{% endif %}"
-     style="{% if not tipo_filtro and not estado_filtro %}border-color:var(--accent);color:var(--accent){% endif %}">Todos</a>
+     class="btn-sm {% if not tipo_filtro and not estado_filtro %}active{% endif %}">
+    Todos
+  </a>
+  
   {% for t in ['laptop','desktop','monitor','celular','red'] %}
   <a href="{{ url_for('ti.equipos', tipo=t) }}"
-     class="btn-sm {% if tipo_filtro==t %}active{% endif %}"
-     style="{% if tipo_filtro==t %}border-color:var(--accent);color:var(--accent){% endif %}">
+     class="btn-sm {% if tipo_filtro==t %}active{% endif %}">
     {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐'} %}
     {{ iconos.get(t,'📦') }} {{ t }}
   </a>
   {% endfor %}
-  <span style="color:var(--border)">|</span>
+  
+  <span class="separator">|</span>
+  
   {% for e, label in [('almacen','Almacén'),('asignado','Asignado'),('mantenimiento','Mantenimiento'),('baja','Baja')] %}
   <a href="{{ url_for('ti.equipos', estado=e) }}"
-     class="btn-sm {% if estado_filtro==e %}active{% endif %}"
-     style="{% if estado_filtro==e %}border-color:var(--accent);color:var(--accent){% endif %}">{{ label }}</a>
+     class="btn-sm {% if estado_filtro==e %}active{% endif %}">
+    {{ label }}
+  </a>
   {% endfor %}
 </div>
 
 <div class="panel">
   {% if equipos %}
   <div style="overflow-x:auto">
-    <table>
+    <table id="tabla-equipos" class="display" style="width:100%">
       <thead>
         <tr>
-          <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th>
-          <th>Condición</th><th>Asignado a</th><th>Acciones</th>
+          <th>Equipo</th>
+          <th>Tipo</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Condición</th>
+          <th>Asignado a</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -75,19 +374,23 @@
           </td>
           <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
           <td>
+            {% if tiene_permiso('Equipos TI', 'ver') %}
             <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
+            {% endif %}
+            
             {% if tiene_permiso('Equipos TI', 'editar') %}
             <button class="btn-sm"
                     onclick="editarEquipo({{ e.IdElectronico }},'{{ e.Nombre }}','{{ e.TipoEquipo }}','{{ e.Marca or '' }}','{{ e.Modelo or '' }}','{{ e.NumeroSerie or '' }}','{{ e.Condicion }}',{{ e.Costo or 0 }},'{{ e.FechaAdquisicion or '' }}')">
               ✏️
             </button>
             {% endif %}
-            {% if e.Estado != 'baja' %}
+            
+            {% if e.Estado != 'baja' and tiene_permiso('Equipos TI', 'eliminar') %}
             <form method="POST" action="/ti/equipos/{{ e.IdElectronico }}/baja"
                   style="display:inline" id="baja-eq-{{ e.IdElectronico }}"></form>
             <button class="btn-sm btn-del"
                     onclick="confirmarBaja('{{ e.Nombre }}','baja-eq-{{ e.IdElectronico }}')">
-              🗑️ Baja
+              🗑️
             </button>
             {% endif %}
           </td>
@@ -101,14 +404,50 @@
   {% endif %}
 </div>
 
-{# ── Modales ─────────────────────────────────────────────── #}
 {% include "ti/modales/modal-equipos/_modal_equipo_nuevo.html" %}
 {% include "ti/modales/modal-equipos/_modal_equipo_editar.html" %}
 
 {% endblock %}
 
 {% block scripts %}
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<!-- Botones -->
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
 <script src="{{ url_for('static', filename='js/ti/shared.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ti/ti.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ti/equipos.js') }}"></script>
+
+<script>
+// Inicializar DataTables
+$(document).ready(function() {
+  $('#tabla-equipos').DataTable({
+    language: {
+      url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json'
+    },
+    pageLength: 25,
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+    order: [[0, 'asc']],
+    dom: 'lfrtip',
+    buttons: [
+      { extend: 'excelHtml5', exportOptions: { columns: [0,1,2,3,4,5] }},
+      { extend: 'csvHtml5', exportOptions: { columns: [0,1,2,3,4,5] }},
+      { extend: 'pdfHtml5', exportOptions: { columns: [0,1,2,3,4,5] }},
+      { extend: 'print', exportOptions: { columns: [0,1,2,3,4,5] }}
+    ],
+    scrollX: true,
+    columnDefs: [
+      { orderable: false, targets: [6] }
+    ]
+  });
+});
+</script>
 {% endblock %}
