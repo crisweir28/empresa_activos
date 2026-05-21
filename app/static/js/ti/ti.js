@@ -1,12 +1,4 @@
-/* app/static/js/ti.js
- * JS compartido del módulo TI.
- * Depende de: shared.js (debe cargarse antes)
- *
- * NOTA: algunos validadores duplican código de administrativo.js.
- * Cuando se consoliden patrones transversales, estos pueden moverse
- * a shared.js junto con sus equivalentes.
- */
-
+//app/static/js/ti.js
 // ══ Validación visual de formularios ═════════════════════════
 function setMsg(input, msgId, ok, msg) {
   const el = document.getElementById('msg-' + msgId);
@@ -100,4 +92,62 @@ if (typeof io !== 'undefined') {
     console.log('Evento SocketIO recibido: ti_equipos_update');
     location.reload();
   });
+}
+
+// Variable global para almacenar el filtro actual
+let filtroActual = 'todos';
+
+// Actualizar la función filtrarEquipos para guardar el filtro
+function filtrarEquipos(filtro) {
+  filtroActual = filtro; // ← AGREGAR ESTA LÍNEA
+  
+  const filas = document.querySelectorAll('#tabla-equipos tbody tr');
+  const mensajeVacio = document.getElementById('mensaje-vacio');
+  const titulo = document.getElementById('titulo-equipos');
+  const contador = document.getElementById('contador-equipos');
+  const cards = document.querySelectorAll('.stat-card');
+  
+  let visibles = 0;
+  
+  // ... resto del código existente ...
+}
+
+// Toggle del menú de reportes
+function toggleReportMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('report-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Cerrar el menú al hacer clic fuera
+document.addEventListener('click', function(event) {
+  const menu = document.getElementById('report-menu');
+  if (menu && !event.target.closest('.report-dropdown') && !event.target.closest('button')) {
+    menu.style.display = 'none';
+  }
+});
+
+// Generar reporte según el filtro activo
+function generarReporte(formato) {
+  const menu = document.getElementById('report-menu');
+  menu.style.display = 'none';
+  
+  // Construir URL con parámetros del filtro actual
+  let url = `/ti/reporte/${formato}?filtro=${filtroActual}`;
+  
+  // Mostrar toast de generación
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'info',
+    title: `📊 Generando reporte ${formato.toUpperCase()}...`,
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true,
+  });
+  
+  // Descargar el archivo
+  setTimeout(() => {
+    window.location.href = url;
+  }, 500);
 }

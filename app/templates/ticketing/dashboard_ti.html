@@ -72,16 +72,6 @@
                 <div class="metric-subtitle">Pendientes de técnico</div>
             </div>
         </div>
-
-        <!-- Estadísticas -->
-        <div class="filter-card-wrapper">
-            <div class="metric-card estadisticas-card" onclick="toggleEstadisticas()" style="cursor: pointer;">
-                <div class="metric-icon">📊</div>
-                <div class="metric-value" style="color: #7c3aed;">4</div>
-                <div class="metric-label">Estadísticas</div>
-                <div class="metric-subtitle" style="color: #7c3aed;">Ver gráficas</div>
-            </div>
-        </div>
     </div>
 
     <!-- Tabla de tickets -->
@@ -169,8 +159,9 @@
                 <thead>
                     <tr>
                         <th>Número</th>
+                        <th>Fecha Creación</th>
                         <th>Usuario</th>
-                        <th>Título</th>
+                        <th>Descripción</th>
                         <th>Categoría</th>
                         <th>Prioridad</th>
                         <th>Estado</th>
@@ -188,6 +179,12 @@
                                 class="ticket-number">
                                 {{ ticket.NumeroTicket }}
                             </a>
+                        </td>
+                        <td>
+                            <div class="fecha-info">
+                                <div class="fecha-date">{{ ticket.FechaCreacion.strftime('%d/%m/%Y') }}</div>
+                                <div class="fecha-time">{{ ticket.FechaCreacion.strftime('%H:%M') }}</div>
+                            </div>
                         </td>
                         <td>
                             <div class="user-info">
@@ -330,89 +327,4 @@
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="{{ url_for('static', filename='js/ticketing/dashboard_ti.js') }}"></script>
-
-<!-- ✅ INICIALIZACIÓN DE DATATABLES 
-<script>
-$(document).ready(function() {
-  // Inicializar DataTable
-  const table = $('#ticketsTable').DataTable({
-    // Configuración básica
-    paging: true,
-    pageLength: 10,
-    lengthChange: true,
-    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
-    searching: true,
-    ordering: true,
-    info: true,
-    autoWidth: false,
-    
-    // Configuración de columnas
-    columnDefs: [
-      { orderable: false, targets: [8] }, // Deshabilitar orden en "Acciones"
-      { type: 'date', targets: [7] }      // Columna de fecha
-    ],
-    
-    // Orden inicial: por fecha descendente (más recientes primero)
-    order: [[7, 'desc']],
-    
-    // Idioma en español
-    language: {
-      search: "Buscar:",
-      lengthMenu: "Mostrar _MENU_ registros",
-      info: "Mostrando _START_ a _END_ de _TOTAL_ tickets",
-      infoEmpty: "No hay tickets disponibles",
-      infoFiltered: "(filtrado de _MAX_ tickets totales)",
-      paginate: {
-        first: "Primero",
-        last: "Último",
-        next: "Siguiente",
-        previous: "Anterior"
-      },
-      zeroRecords: "No se encontraron tickets",
-      emptyTable: "No hay tickets en el sistema"
-    },
-    
-    // Deshabilitar el buscador por defecto de DataTables
-    dom: 'lrtip' // Sin 'f' = sin filtro por defecto
-  });
-
-  // Conectar búsqueda general personalizada
-  $('#searchGeneral').on('keyup', function() {
-    table.search(this.value).draw();
-  });
-
-  // Filtro por Categoría
-  $('#filterCategoria').on('change', function() {
-    const val = this.value;
-    table.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
-  });
-
-  // Filtro por Prioridad
-  $('#filterPrioridad').on('change', function() {
-    const val = this.value;
-    table.column(4).search(val ? '^' + val + '$' : '', true, false).draw();
-  });
-
-  // Filtro por Estado
-  $('#filterEstado').on('change', function() {
-    const val = this.value;
-    table.column(5).search(val ? '^' + val + '$' : '', true, false).draw();
-  });
-
-  // Limpiar todos los filtros
-  $('#clearFilters').on('click', function() {
-    $('#searchGeneral').val('');
-    $('#filterCategoria').val('');
-    $('#filterPrioridad').val('');
-    $('#filterEstado').val('');
-    table.search('').columns().search('').draw();
-  });
-
-  // Efecto hover en el botón limpiar
-  $('#clearFilters').hover(
-    function() { $(this).css('opacity', '0.85'); },
-    function() { $(this).css('opacity', '1'); }
-  );
-});
-</script>-->
 {% endblock %}

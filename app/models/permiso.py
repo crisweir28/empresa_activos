@@ -39,7 +39,7 @@ class PermisoRol(db.Model):
 class PermisoUsuario(db.Model):
     __tablename__ = "PermisoUsuario"
     IdPermiso     = db.Column(db.Integer, primary_key=True)
-    IdUsuario     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"), nullable=False)
+    IdUsuario     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"), nullable=False)
     IdModulo      = db.Column(db.Integer, db.ForeignKey("Modulo.IdModulo"),   nullable=False)
     PuedeVer      = db.Column(db.Boolean, nullable=False, default=False)
     PuedeCrear    = db.Column(db.Boolean, nullable=False, default=False)

@@ -13,6 +13,16 @@ from ..utils.permisos import requiere_rol, requiere_permiso
 from ..utils.archivos import guardar_archivo
 from ..models.baja_activo import BajaActivo
 
+from flask import send_file
+from io import BytesIO
+from datetime import datetime
+import pandas as pd
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch
+
 
 ti_bp = Blueprint("ti", __name__)
 
@@ -485,3 +495,201 @@ def equipo_baja(id):
 def api_equipo(id):
     e = Electronico.query.get_or_404(id)
     return jsonify(e.to_dict())
+
+
+# ── Reporte PDF ───────────────────────────────────────────────
+@ti_bp.route("/reporte/pdf")
+@login_required
+@requiere_permiso('Equipos TI')
+def reporte_pdf():
+    """Genera reporte PDF de equipos según filtro"""
+    
+    filtro = request.args.get('filtro', 'todos')
+    
+    # Obtener equipos según filtro
+    query = db.session.execute(db.text("""
+        SELECT 
+            e.Nombre,
+            e.TipoEquipo,
+            e.Marca,
+            e.Modelo,
+            e.NumeroSerie,
+            e.Estado,
+            e.Condicion,
+            CONCAT(u.Nombre, ' ', u.ApellidoPaterno) as Usuario,
+            e.FechaAdquisicion,
+            e.Costo
+        FROM electronico e
+        LEFT JOIN usuario u ON e.IdUsuario = u.IdUsuario
+        WHERE 1=1
+    """))
+    
+    equipos = [dict(row._mapping) for row in query.fetchall()]
+    
+    # Filtrar según el filtro activo
+    if filtro != 'todos':
+        if filtro in ('almacen', 'asignado', 'mantenimiento', 'baja'):
+            equipos = [e for e in equipos if e['Estado'] == filtro]
+        elif filtro == 'bueno':
+            equipos = [e for e in equipos if e['Condicion'] == 'bueno']
+        elif filtro == 'malo':
+            equipos = [e for e in equipos if e['Condicion'] in ('malo', 'dañado', 'regular')]
+    
+    # Crear PDF en memoria
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Título
+    titulo_filtro = {
+        'todos': 'Todos los Equipos',
+        'almacen': 'Equipos en Almacén',
+        'asignado': 'Equipos Asignados',
+        'bueno': 'Equipos en Buen Estado',
+        'malo': 'Equipos en Mal Estado',
+        'mantenimiento': 'Equipos en Mantenimiento',
+        'baja': 'Equipos Dados de Baja'
+    }.get(filtro, 'Equipos')
+    
+    title = Paragraph(f"<b>Reporte de Equipos TI</b><br/>{titulo_filtro}", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Información de generación
+    fecha_generacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+    info = Paragraph(f"<b>Generado:</b> {fecha_generacion}<br/><b>Total equipos:</b> {len(equipos)}", styles['Normal'])
+    elements.append(info)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Tabla de datos
+    data = [['Equipo', 'Tipo', 'Serie', 'Estado', 'Condición', 'Usuario']]
+    
+    for e in equipos:
+        data.append([
+            e['Nombre'],
+            e['TipoEquipo'],
+            e['NumeroSerie'] or '—',
+            e['Estado'],
+            e['Condicion'],
+            e['Usuario'] or '—'
+        ])
+    
+    # Crear tabla con estilo
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+    ]))
+    
+    elements.append(table)
+    
+    # Generar PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    # Enviar archivo
+    fecha_archivo = datetime.now().strftime('%Y%m%d')
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f'equipos_ti_{filtro}_{fecha_archivo}.pdf',
+        mimetype='application/pdf'
+    )
+ 
+ 
+# ── Reporte Excel ─────────────────────────────────────────────
+@ti_bp.route("/reporte/excel")
+@login_required
+@requiere_permiso('Equipos TI')
+def reporte_excel():
+    """Genera reporte Excel de equipos según filtro"""
+    
+    filtro = request.args.get('filtro', 'todos')
+    
+    # Obtener equipos según filtro
+    query = db.session.execute(db.text("""
+        SELECT 
+            e.Nombre as Equipo,
+            e.TipoEquipo as Tipo,
+            e.Marca,
+            e.Modelo,
+            e.NumeroSerie as 'N° Serie',
+            e.Estado,
+            e.Condicion as 'Condición',
+            CONCAT(u.Nombre, ' ', u.ApellidoPaterno) as 'Asignado a',
+            DATE_FORMAT(e.FechaAdquisicion, '%d/%m/%Y') as 'Fecha Adquisición',
+            CONCAT('$', FORMAT(e.Costo, 2)) as Costo,
+            ub.Nombre as 'Ubicación'
+        FROM electronico e
+        LEFT JOIN usuario u ON e.IdUsuario = u.IdUsuario
+        LEFT JOIN ubicacion ub ON e.IdUbicacion = ub.IdUbicacion
+        WHERE 1=1
+    """))
+    
+    equipos = [dict(row._mapping) for row in query.fetchall()]
+    
+    # Filtrar según el filtro activo
+    if filtro != 'todos':
+        if filtro in ('almacen', 'asignado', 'mantenimiento', 'baja'):
+            equipos = [e for e in equipos if e['Estado'] == filtro]
+        elif filtro == 'bueno':
+            equipos = [e for e in equipos if e['Condición'] == 'bueno']
+        elif filtro == 'malo':
+            equipos = [e for e in equipos if e['Condición'] in ('malo', 'dañado', 'regular')]
+    
+    # Crear DataFrame
+    df = pd.DataFrame(equipos)
+    
+    # Crear archivo Excel en memoria
+    buffer = BytesIO()
+    
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Equipos TI', index=False)
+        
+        # Obtener workbook y worksheet para aplicar estilos
+        workbook = writer.book
+        worksheet = writer.sheets['Equipos TI']
+        
+        # Ajustar ancho de columnas
+        for column in worksheet.columns:
+            max_length = 0
+            column = [cell for cell in column]
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+        
+        # Aplicar estilos al header
+        from openpyxl.styles import Font, PatternFill, Alignment
+        
+        header_fill = PatternFill(start_color="2563eb", end_color="2563eb", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    buffer.seek(0)
+    
+    # Enviar archivo
+    fecha_archivo = datetime.now().strftime('%Y%m%d')
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f'equipos_ti_{filtro}_{fecha_archivo}.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )

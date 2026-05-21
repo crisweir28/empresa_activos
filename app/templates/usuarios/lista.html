@@ -1,4 +1,4 @@
-<!-- app/templates/usuarios/lista.html REDISEÑADO -->
+<!-- app/templates/usuarios/lista.html-->
 {% extends "base.html" %}
 {% block title %}Gestión de Usuarios{% endblock %}
 
@@ -36,11 +36,12 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- MÉTRICAS -->
+<!-- MÉTRICAS CON FILTROS ACTIVOS -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="metrics-grid">
-    <!-- Total Usuarios -->
-    <div class="metric-card">
+    <!-- Total Usuarios - CLICKEABLE -->
+    <div class="metric-card metric-clickable {% if not request.args.get('tipo') %}filter-active active{% endif %}" 
+         onclick="window.location='{{ url_for('usuarios.lista') }}'">
         <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">👥</div>
         <div class="metric-content">
             <div class="metric-value">{{ usuarios|length }}</div>
@@ -50,7 +51,8 @@
     </div>
 
     <!-- Administradores -->
-    <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('usuarios.lista', tipo='administrador') }}'">
+    <div class="metric-card metric-clickable {% if request.args.get('tipo') == 'administrador' %}filter-active active{% endif %}" 
+         onclick="window.location='{{ url_for('usuarios.lista', tipo='administrador') }}'">
         <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">⭐</div>
         <div class="metric-content">
             <div class="metric-value">{{ usuarios|selectattr('TipoUsuario', 'equalto', 'administrador')|list|length }}</div>
@@ -60,7 +62,8 @@
     </div>
 
     <!-- Empleados -->
-    <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('usuarios.lista', tipo='empleado') }}'">
+    <div class="metric-card metric-clickable {% if request.args.get('tipo') == 'empleado' %}filter-active active{% endif %}" 
+         onclick="window.location='{{ url_for('usuarios.lista', tipo='empleado') }}'">
         <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">👤</div>
         <div class="metric-content">
             <div class="metric-value">{{ usuarios|selectattr('TipoUsuario', 'equalto', 'empleado')|list|length }}</div>
@@ -81,13 +84,15 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- FILTROS POR ÁREA -->
+<!-- FILTROS POR ÁREA CON ESTADO ACTIVO -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 {% if vista_global %}
 <div class="filters-section">
     <div class="filter-label">Filtrar por área:</div>
     <div class="area-filter-container">
-        <button class="area-filter-btn" onclick="toggleAreaDropdown()" type="button">
+        <button class="area-filter-btn {% if area_filtro %}filter-active{% endif %}" 
+                onclick="toggleAreaDropdown()" 
+                type="button">
             📂 
             {% if area_filtro %}
                 {% set area_actual = departamentos|selectattr('id', 'equalto', area_filtro|int)|first %}
@@ -99,13 +104,13 @@
         </button>
         <div class="area-dropdown" id="area-dropdown">
             <a href="{{ url_for('usuarios.lista') }}" 
-               class="area-dropdown-item {% if not area_filtro %}active{% endif %}">
+               class="area-dropdown-item {% if not area_filtro %}filter-active active{% endif %}">
                 📋 Todas las áreas
             </a>
             <div class="area-dropdown-divider"></div>
             {% for d in departamentos %}
             <a href="{{ url_for('usuarios.lista', area=d.id) }}" 
-               class="area-dropdown-item {% if area_filtro|string == d.id|string %}active{% endif %}">
+               class="area-dropdown-item {% if area_filtro|string == d.id|string %}filter-active active{% endif %}">
                 {% if d.nombre in areas_modulo %}🏢{% else %}👤{% endif %} {{ d.nombre }}
             </a>
             {% endfor %}

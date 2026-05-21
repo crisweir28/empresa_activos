@@ -1,9 +1,57 @@
 <!-- app/templates/ti/dashboard.html -->
 {% extends "base.html" %}
 {% block title %}Dashboard TI{% endblock %}
-
 {% block extra_head %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
 <style>
+
+/* Tabla DataTables - FORZAR estilos sobre base.css */
+#tabla-equipos_wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Eliminar estilos de hover de base.css */
+#tabla-equipos tbody tr:hover td {
+  background: transparent !important;
+}
+
+/* Restaurar estilos DataTables */
+#tabla-equipos.dataTable tbody tr {
+  background-color: white !important;
+}
+
+#tabla-equipos.dataTable tbody tr:hover {
+  background-color: #f9fafb !important;
+}
+
+/* Encabezados DataTables */
+#tabla-equipos.dataTable thead th {
+  background: #f9fafb !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  padding: 12px 14px !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+}
+
+/* Celdas DataTables */
+#tabla-equipos.dataTable tbody td {
+  padding: 11px 14px !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+/* Última fila */
+#tabla-equipos.dataTable tbody tr:last-child td {
+  border-bottom: 1px solid #f3f4f6 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ESTILOS DE CONTROLES DATATABLES
+   ═══════════════════════════════════════════════════════════ */
+
 /* Sobrescribir grid de stats para TI */
 .stats-grid {
   display: grid;
@@ -22,6 +70,195 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Dropdown de reportes */
+.report-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  z-index: 1000;
+  padding: 8px;
+}
+
+.report-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.report-option:hover {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.report-option i {
+  font-size: 18px;
+}
+
+.report-option:first-child i {
+  color: #dc2626;
+}
+
+.report-option:last-child i {
+  color: #16a34a;
+}
+
+/* DataTables personalizados */
+.dataTables_wrapper {
+  padding: 0 !important;
+  margin-top: 16px !important;
+}
+
+.dataTables_filter {
+  float: right !important;
+  margin-bottom: 16px !important;
+}
+
+.dataTables_filter label {
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.dataTables_filter input {
+  border: 1.5px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  margin-left: 8px !important;
+  font-size: 13px !important;
+  width: 250px !important;
+  outline: none !important;
+}
+
+.dataTables_filter input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+.dataTables_length {
+  float: left !important;
+  margin-bottom: 16px !important;
+}
+
+.dataTables_length label {
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.dataTables_length select {
+  border: 1.5px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 6px 32px 6px 12px !important;
+  margin: 0 8px !important;
+  font-size: 13px !important;
+  background: white !important;
+  cursor: pointer !important;
+}
+
+.dataTables_info {
+  padding-top: 16px !important;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  float: left !important;
+}
+
+.dataTables_paginate {
+  padding-top: 16px !important;
+  float: right !important;
+}
+
+.dataTables_paginate .paginate_button {
+  padding: 6px 12px !important;
+  margin: 0 2px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border) !important;
+  background: white !important;
+  color: var(--text) !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  box-sizing: border-box !important;
+}
+
+.dataTables_paginate .paginate_button:hover {
+  background: var(--surface) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+.dataTables_paginate .paginate_button.current {
+  background: #2563eb !important;
+  color: white !important;
+  border-color: #2563eb !important;
+}
+
+.dataTables_paginate .paginate_button.disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Botones de exportación */
+.dt-buttons {
+  float: left !important;
+  margin-bottom: 16px !important;
+  margin-left: 16px !important;
+}
+
+.dt-button {
+  padding: 8px 16px !important;
+  margin: 0 4px !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 8px !important;
+  background: white !important;
+  color: var(--text) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.dt-button:hover {
+  background: var(--surface) !important;
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+
+.dt-button:active {
+  transform: translateY(0) !important;
+}
+
+.buttons-pdf::before { content: "📄 "; }
+.buttons-excel::before { content: "📊 "; }
+.buttons-csv::before { content: "📋 "; }
+.buttons-print::before { content: "🖨️ "; }
+
+/* Clearfix para los controles */
+.dataTables_wrapper::after {
+  content: "";
+  display: table;
+  clear: both;
+}
 </style>
 {% endblock %}
 
@@ -31,52 +268,73 @@
     <div class="page-title">💻 Gestión de Equipos TI</div>
     <div class="page-sub">Control de equipos, mantenimiento y validación de estados</div>
   </div>
-  {% if tiene_permiso('Equipos TI', 'crear') %}
-  <button class="btn btn-primary" onclick="abrirModal('modal-nuevo')">
-    + Nuevo equipo
-  </button>
-  {% endif %}
+  
+  <div style="display: flex; gap: 12px; align-items: center;">
+    <!-- Botón de reportes con dropdown -->
+    <div style="position: relative;">
+      <button class="btn" 
+              style="background: var(--card); color: var(--text); border: 1.5px solid var(--border);"
+              onclick="toggleReportMenu(event)">
+        📊 Generar Reporte
+      </button>
+      
+      <div id="report-menu" class="report-dropdown" style="display: none;">
+        <button class="report-option" onclick="generarReporte('pdf')">
+          <i class="bi bi-file-pdf"></i> Descargar PDF
+        </button>
+        <button class="report-option" onclick="generarReporte('excel')">
+          <i class="bi bi-file-excel"></i> Descargar Excel
+        </button>
+      </div>
+    </div>
+
+    {% if tiene_permiso('Equipos TI', 'crear') %}
+    <button class="btn btn-primary" onclick="abrirModal('modal-nuevo')">
+      + Nuevo equipo
+    </button>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Stats con filtros clickables -->
 <div class="stats-grid" style="margin-bottom:22px">
-  <div class="stat-card" style="animation-delay:.0s;cursor:pointer" onclick="filtrarEquipos('todos')">
+  <div class="stat-card" id="filtro-todos" style="animation-delay:.0s;cursor:pointer" onclick="filtrarEquipos('todos')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Total equipos</span><span style="font-size:22px">💻</span></div>
     <div class="stat-val" style="color:var(--accent)">{{ stats.TotalEquipos if stats else 0 }}</div>
   </div>
   
-  <div class="stat-card" style="animation-delay:.07s;cursor:pointer" onclick="filtrarEquipos('almacen')">
+  <div class="stat-card" id="filtro-almacen" style="animation-delay:.07s;cursor:pointer" onclick="filtrarEquipos('almacen')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">En almacén</span><span style="font-size:22px">📦</span></div>
     <div class="stat-val" style="color:var(--green)">{{ stats.EnAlmacen if stats else 0 }}</div>
   </div>
   
-  <div class="stat-card" style="animation-delay:.14s;cursor:pointer" onclick="filtrarEquipos('asignado')">
+  <div class="stat-card" id="filtro-asignado" style="animation-delay:.14s;cursor:pointer" onclick="filtrarEquipos('asignado')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignados</span><span style="font-size:22px">👤</span></div>
     <div class="stat-val" style="color:var(--accent)">{{ stats.Asignados if stats else 0 }}</div>
   </div>
   
-  <div class="stat-card" style="animation-delay:.21s;cursor:pointer" onclick="filtrarEquipos('bueno')">
+  <div class="stat-card" id="filtro-bueno" style="animation-delay:.21s;cursor:pointer" onclick="filtrarEquipos('bueno')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Buen estado</span><span style="font-size:22px">✅</span></div>
     <div class="stat-val" style="color:var(--green)">{{ stats.EnBuenEstado if stats else 0 }}</div>
   </div>
   
-  <div class="stat-card" style="animation-delay:.28s;cursor:pointer" onclick="filtrarEquipos('malo')">
+  <div class="stat-card" id="filtro-malo" style="animation-delay:.28s;cursor:pointer" onclick="filtrarEquipos('malo')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Mal estado</span><span style="font-size:22px">⚠️</span></div>
     <div class="stat-val" style="color:var(--red)">{{ stats.EnMalEstado if stats else 0 }}</div>
   </div>
   
-  <div class="stat-card" style="animation-delay:.35s;cursor:pointer" onclick="filtrarEquipos('mantenimiento')">
+  <div class="stat-card" id="filtro-mantenimiento" style="animation-delay:.35s;cursor:pointer" onclick="filtrarEquipos('mantenimiento')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Mantenimiento</span><span style="font-size:22px">🔧</span></div>
     <div class="stat-val" style="color:var(--yellow)">{{ stats.EnMantenimiento if stats else 0 }}</div>
   </div>
   
-  <div class="stat-card" style="animation-delay:.42s;cursor:pointer" onclick="filtrarEquipos('baja')">
+  <div class="stat-card" id="filtro-baja" style="animation-delay:.42s;cursor:pointer" onclick="filtrarEquipos('baja')">
     <div style="display:flex;justify-content:space-between"><span class="stat-label">Dados de baja</span><span style="font-size:22px">🗑️</span></div>
     <div class="stat-val" style="color:var(--muted)">{{ bajas }}</div>
   </div>
 </div>
 
-<!-- Inventario completo con filtros -->
+<!-- Tabla con DataTables -->
 <div class="panel">
   <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
     <span id="titulo-equipos">💻 Equipos registrados</span>
@@ -87,7 +345,7 @@
   
   {% if equipos %}
   <div style="overflow-x:auto">
-    <table id="tabla-equipos">
+    <table id="tabla-equipos" class="display" style="width:100%">
       <thead>
         <tr>
           <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th>
@@ -144,19 +402,12 @@
       </tbody>
     </table>
   </div>
-  
-  <!-- Mensaje cuando no hay equipos en el filtro -->
-  <p id="mensaje-vacio" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:40px">
-    Sin equipos en este filtro
-  </p>
-  
   {% else %}
   <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin equipos registrados.</p>
   {% endif %}
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-top:16px">
-
   <!-- Por tipo -->
   <div class="panel">
     <div class="panel-title">📊 Por tipo</div>
@@ -189,7 +440,6 @@
       <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
     {% endif %}
   </div>
-
 </div>
 
 {# ── Modales ─────────────────────────────────────────────── #}
@@ -199,69 +449,118 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<!-- Botones -->
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
 <script src="{{ url_for('static', filename='js/ti/shared.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ti/ti.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ti/equipos.js') }}"></script>
+
 <script>
-// Filtrado de equipos en vivo
+// Variable global para la tabla
+let tablaEquipos;
+let filtroActual = 'todos';
+
+$(document).ready(function() {
+  tablaEquipos = $('#tabla-equipos').DataTable({
+    language: {
+      url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json'
+    },
+    pageLength: 25,
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+    order: [[0, 'asc']],
+    
+    // Botones de exportación
+    dom: 'Blfrtip',
+    buttons: [
+      {
+        extend: 'pdfHtml5',
+        text: 'PDF',
+        title: 'Equipos TI',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5],
+          modifier: { search: 'applied', order: 'applied', page: 'all' }
+        }
+      },
+      {
+        extend: 'excelHtml5',
+        text: 'Excel',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5],
+          modifier: { search: 'applied', order: 'applied', page: 'all' }
+        }
+      },
+      {
+        extend: 'csvHtml5',
+        text: 'CSV',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5],
+          modifier: { search: 'applied', order: 'applied', page: 'all' }
+        }
+      },
+      {
+        extend: 'print',
+        text: 'Imprimir',
+        exportOptions: {
+          columns: [0, 1, 2, 3, 4, 5],
+          modifier: { search: 'applied', order: 'applied', page: 'all' }
+        }
+      }
+    ],
+    
+    scrollX: true,
+    columnDefs: [
+      { orderable: false, targets: [6] }
+    ]
+  });
+  
+  // Aplicar filtro inicial
+  filtrarEquipos('todos');
+});
+
+// Filtrado de equipos
 function filtrarEquipos(filtro) {
-  const filas = document.querySelectorAll('#tabla-equipos tbody tr');
-  const mensajeVacio = document.getElementById('mensaje-vacio');
-  const titulo = document.getElementById('titulo-equipos');
-  const contador = document.getElementById('contador-equipos');
-  const cards = document.querySelectorAll('.stat-card');
+  filtroActual = filtro;
   
-  let visibles = 0;
-  
-  // Actualizar estado activo de las cards
-  cards.forEach((card, idx) => {
+  // Quitar clase active de todas las cards
+  document.querySelectorAll('.stat-card').forEach(card => {
     card.style.transform = '';
     card.style.boxShadow = '';
     card.style.border = '1px solid var(--border)';
   });
   
-  const cardMap = {
-    'todos': 0,
-    'almacen': 1,
-    'asignado': 2,
-    'bueno': 3,
-    'malo': 4,
-    'mantenimiento': 5,
-    'baja': 6
-  };
-  
-  if (cardMap[filtro] !== undefined) {
-    const activeCard = cards[cardMap[filtro]];
+  // Agregar clase active a la card seleccionada
+  const activeCard = document.getElementById('filtro-' + filtro);
+  if (activeCard) {
     activeCard.style.transform = 'scale(1.02)';
     activeCard.style.boxShadow = '0 8px 24px rgba(124,92,252,0.15)';
     activeCard.style.border = '1px solid var(--accent)';
   }
   
-  // Filtrar filas
-  filas.forEach(fila => {
-    const estado = fila.dataset.estado;
-    const condicion = fila.dataset.condicion;
-    let mostrar = false;
-    
-    if (filtro === 'todos') {
-      mostrar = true;
-    } else if (filtro === 'malo') {
-      mostrar = (condicion === 'malo' || condicion === 'dañado' || condicion === 'regular');
-    } else if (filtro === 'bueno') {
-      mostrar = (condicion === 'bueno');
-    } else {
-      mostrar = (estado === filtro);
-    }
-    
-    if (mostrar) {
-      fila.style.display = '';
-      visibles++;
-    } else {
-      fila.style.display = 'none';
-    }
-  });
+  // Aplicar filtro a DataTables
+  if (filtro === 'todos') {
+    tablaEquipos.columns([3, 4]).search('').draw();
+  } else if (filtro === 'bueno') {
+    tablaEquipos.column(4).search('bueno', false, false).draw();
+  } else if (filtro === 'malo') {
+    tablaEquipos.column(4).search('malo|dañado|regular', true, false).draw();
+  } else {
+    tablaEquipos.column(3).search(filtro, false, false).draw();
+  }
   
-  // Actualizar título y contador
+  // Actualizar contador
+  actualizarContador();
+  
+  // Actualizar título
   const titulos = {
     'todos': '💻 Equipos registrados',
     'almacen': '📦 Equipos en almacén',
@@ -271,21 +570,15 @@ function filtrarEquipos(filtro) {
     'mantenimiento': '🔧 Equipos en mantenimiento',
     'baja': '🗑️ Equipos dados de baja'
   };
-  
-  titulo.textContent = titulos[filtro] || '💻 Equipos';
-  contador.textContent = visibles;
-  
-  // Mostrar/ocultar mensaje de vacío
-  if (visibles === 0) {
-    document.querySelector('#tabla-equipos').style.display = 'none';
-    mensajeVacio.style.display = 'block';
-  } else {
-    document.querySelector('#tabla-equipos').style.display = 'table';
-    mensajeVacio.style.display = 'none';
-  }
+  document.getElementById('titulo-equipos').textContent = titulos[filtro] || '💻 Equipos';
 }
 
-// Estilo hover para las cards
+function actualizarContador() {
+  let total = tablaEquipos.rows({ search: 'applied' }).count();
+  document.getElementById('contador-equipos').textContent = total;
+}
+
+// Hover en cards
 document.querySelectorAll('.stat-card').forEach(card => {
   card.addEventListener('mouseenter', function() {
     if (!this.style.transform) {
@@ -299,5 +592,53 @@ document.querySelectorAll('.stat-card').forEach(card => {
     }
   });
 });
+</script>
+
+<!-- PEGA ESTO AL FINAL DEL BLOQUE scripts EN ti/dashboard.html -->
+
+<script>
+console.log('=== DIAGNÓSTICO DATATABLES ===');
+console.log('1. jQuery cargado?', typeof $ !== 'undefined');
+console.log('2. DataTables cargado?', typeof $.fn.DataTable !== 'undefined');
+console.log('3. Tabla existe?', document.getElementById('tabla-equipos') !== null);
+console.log('4. Variable tablaEquipos:', typeof tablaEquipos);
+
+if (typeof $ !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
+  console.log('✅ jQuery y DataTables están cargados');
+  
+  $(document).ready(function() {
+    console.log('5. DOM ready ejecutado');
+    
+    if ($('#tabla-equipos').length > 0) {
+      console.log('6. Tabla encontrada en DOM');
+      console.log('7. Intentando inicializar DataTables...');
+      
+      try {
+        var tabla = $('#tabla-equipos').DataTable({
+          language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json'
+          },
+          pageLength: 10,
+          dom: 'Blfrtip',
+          buttons: ['pdf', 'excel', 'csv', 'print']
+        });
+        console.log('✅ DataTables inicializado correctamente!');
+        console.log('Tabla:', tabla);
+      } catch(e) {
+        console.error('❌ Error al inicializar DataTables:', e);
+      }
+    } else {
+      console.error('❌ Tabla #tabla-equipos NO encontrada en DOM');
+    }
+  });
+} else {
+  console.error('❌ jQuery o DataTables NO están cargados');
+  if (typeof $ === 'undefined') {
+    console.error('   - jQuery falta');
+  }
+  if (typeof $.fn.DataTable === 'undefined') {
+    console.error('   - DataTables falta');
+  }
+}
 </script>
 {% endblock %}

@@ -5,7 +5,7 @@ from datetime import datetime
 # ── Mixins ────────────────────────────────────────────────────
 class TimestampMixin:
     """Agrega CreadoEn a cualquier modelo."""
-    CreadoEn = db.Column(db.DateTime, default=datetime.utcnow)
+    CreadoEn = db.Column(db.DateTime, default=datetime.now)  # ✅ Hora local
 
 class ArchivoAdjuntoMixin:
     """Campos y helpers para modelos con archivo adjunto."""
@@ -40,8 +40,7 @@ class Herramienta(TimestampMixin, db.Model):
     Costo           = db.Column(db.Float, default=0)
     FechaAlta       = db.Column(db.Date)
     Descripcion     = db.Column(db.Text)
-    ActualizadoEn   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    # Campos consumidos por las vistas SQL (VInventario / VHistorialAsignaciones)
+    ActualizadoEn   = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)  # ✅ Hora local
     TipoHerramienta = db.Column(db.String(100))
     IdCategoria     = db.Column(db.Integer)
     IdUbicacion     = db.Column(db.Integer)
@@ -66,13 +65,16 @@ class AsignacionHerramienta(TimestampMixin, db.Model):
 
     IdAsignacion    = db.Column(db.Integer, primary_key=True)
     IdHerramienta   = db.Column(db.Integer, db.ForeignKey("Herramienta.IdHerramienta"), nullable=False)
-    IdUsuario       = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),          nullable=False)
+    # ✅ CORREGIDO: usuario (minúscula)
+    IdUsuario       = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"), nullable=False)
     FechaAsignacion = db.Column(db.Date, nullable=False)
     FechaDevolucion = db.Column(db.Date)
-    AsignadoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
-    RecibidoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
+    # ✅ CORREGIDO: usuario (minúscula)
+    AsignadoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
+    RecibidoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
     Observaciones   = db.Column(db.Text)
 
+    # ✅ Relationship con foreign_keys explícito
     usuario = db.relationship("Usuario", foreign_keys=[IdUsuario], backref="herramientas_asignadas")
 
 
@@ -87,7 +89,8 @@ class EvidenciaHerramienta(TimestampMixin, db.Model):
     TipoArchivo   = db.Column(db.Enum("imagen", "documento"), nullable=False, default="imagen")
     MimeType      = db.Column(db.String(100))
     Descripcion   = db.Column(db.String(255))
-    CreadoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
+    # ✅ CORREGIDO: usuario (minúscula)
+    CreadoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
 
 class ReporteDanio(ArchivoAdjuntoMixin, TimestampMixin, db.Model):
     __tablename__ = "ReporteDanio"
@@ -98,8 +101,9 @@ class ReporteDanio(ArchivoAdjuntoMixin, TimestampMixin, db.Model):
     Caracteristica       = db.Column(db.Text, nullable=False)
     Razon                = db.Column(db.Text, nullable=False)
     Tipo                 = db.Column(db.String(20), nullable=False, default="daño")
-    IdUsuarioResponsable = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
-    CreadoPor            = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
+    # ✅ CORREGIDO: usuario (minúscula)
+    IdUsuarioResponsable = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
+    CreadoPor            = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
 
 
 class EvidenciaEquipo(TimestampMixin, db.Model):
@@ -115,7 +119,8 @@ class EvidenciaEquipo(TimestampMixin, db.Model):
     TipoArchivo   = db.Column(db.Enum("imagen", "documento"), nullable=False, default="imagen")
     MimeType      = db.Column(db.String(100))
     Descripcion   = db.Column(db.String(255))
-    CreadoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
+    # ✅ CORREGIDO: usuario (minúscula)
+    CreadoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
 
     @property
     def es_imagen(self):

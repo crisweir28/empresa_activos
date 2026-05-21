@@ -664,3 +664,98 @@
     transform: translateY(0);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CAMBIOS PARA: app/static/css/usuarios/lista.css
+   
+   REEMPLAZAR la sección de MÉTRICAS (líneas ~54-79) con esto:
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: var(--card);
+  border: 2px solid var(--border); /* ✅ CAMBIO: de 1px a 2px */
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* ✅ CAMBIO: transición mejorada */
+  animation: fadeIn 0.4s ease both;
+}
+
+.metric-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.metric-card.metric-clickable {
+  cursor: pointer;
+}
+
+/* ✅ AGREGAR ESTAS REGLAS NUEVAS: */
+.metric-card.filter-active,
+.metric-card.active {
+  border: 3px solid var(--accent) !important;
+  box-shadow: 0 8px 24px rgba(155, 35, 53, 0.15) !important;
+  transform: translateY(0) !important;
+  background: var(--card) !important;
+}
+
+.metric-card.filter-active .metric-icon,
+.metric-card.active .metric-icon {
+  transform: scale(1.05) !important;
+}
+
+.metric-card.filter-active .metric-value,
+.metric-card.active .metric-value {
+  color: var(--accent) !important;
+  font-weight: 800 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ACTUALIZAR TAMBIÉN LA SECCIÓN DE FILTROS POR ÁREA (líneas ~154-165)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.area-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--card);
+  border: 2px solid var(--border); /* ✅ CAMBIO: de 1.5px a 2px */
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* ✅ CAMBIO: transición mejorada */
+  box-shadow: var(--shadow);
+}
+
+/* ✅ AGREGAR ESTAS REGLAS NUEVAS para el botón de área activo: */
+.area-filter-btn.filter-active,
+.area-filter-btn.active {
+  border: 3px solid var(--accent) !important;
+  background: var(--card) !important;
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 16px rgba(155, 35, 53, 0.15) !important;
+}
+
+/* ✅ AGREGAR ESTAS REGLAS NUEVAS para dropdown items activos: */
+.area-dropdown-item.filter-active,
+.area-dropdown-item.active {
+  background: rgba(155, 35, 53, 0.1) !important;
+  color: var(--accent) !important;
+  border-left-color: var(--accent) !important;
+  font-weight: 700 !important;
+}

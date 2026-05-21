@@ -1,13 +1,14 @@
-# app/models/usuario.py
+﻿# app/models/usuario.py
 from flask_login import UserMixin
 from passlib.context import CryptContext
 from .departamento import Departamento
 from ..extensions import db, login_manager
+from datetime import datetime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Departamentos que tienen módulo propio en el sistema
-AREAS_CON_MODULO = {'TI', 'Tecnología', 'Recursos Humanos', 'Administrativo', 'Almacén'}
+# Departamentos que tienen mÃ³dulo propio en el sistema
+AREAS_CON_MODULO = {'TI', 'TecnologÃ­a', 'Recursos Humanos', 'Administrativo', 'AlmacÃ©n'}
 
 
 class Rol(db.Model):
@@ -20,7 +21,7 @@ class Rol(db.Model):
 
 
 class Usuario(UserMixin, db.Model):
-    __tablename__ = "Usuario"
+    __tablename__ = "usuario"  # âœ… MinÃºscula para coincidir con tu BD
 
     IdUsuario        = db.Column(db.Integer,     primary_key=True)
     NombreUsuario    = db.Column(db.String(50),  unique=True, nullable=False)
@@ -33,11 +34,11 @@ class Usuario(UserMixin, db.Model):
     Estatus          = db.Column(db.Boolean,     nullable=False, default=True)
     PrimerLogin      = db.Column(db.Boolean,     nullable=False, default=True)
     IdRol            = db.Column(db.Integer, db.ForeignKey("Rol.IdRol"), nullable=False)
-    CreadoEn         = db.Column(db.DateTime, server_default=db.func.now())
+    CreadoEn         = db.Column(db.DateTime, default=datetime.now)  # âœ… Hora local
     IntentosFallidos = db.Column(db.Integer,  nullable=False, default=0)
     BloqueadoHasta   = db.Column(db.DateTime, nullable=True,  default=None)
 
-    # ── Nuevas columnas ───────────────────────────────────────
+    # âœ… Foreign Key corregido
     IdDepartamento = db.Column(
         db.Integer,
         db.ForeignKey("departamentos.id"),
@@ -50,16 +51,19 @@ class Usuario(UserMixin, db.Model):
         default='empleado'
     )
 
-    # ── Relaciones ────────────────────────────────────────────
-    rol_obj         = db.relationship("Rol",          backref="usuarios",     lazy="joined")
-    departamento_obj = db.relationship("Departamento", backref="usuarios",     lazy="joined")
+    # âœ… Relaciones con foreign_keys explÃ­citos
+    rol_obj = db.relationship("Rol", backref="usuarios", lazy="joined")
+    departamento_obj = db.relationship("Departamento", 
+                                      foreign_keys=[IdDepartamento],
+                                      backref="usuarios", 
+                                      lazy="joined")
 
-    # ── Flask-Login ───────────────────────────────────────────
+    # â”€â”€ Flask-Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @property
     def id(self):
         return self.IdUsuario
 
-    # ── Compatibilidad ────────────────────────────────────────
+    # â”€â”€ Compatibilidad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @property
     def username(self):
         return self.NombreUsuario
@@ -88,15 +92,15 @@ class Usuario(UserMixin, db.Model):
     def password_hash(self):
         return self.Contrasena
 
-    # ── Área ─────────────────────────────────────────────────
+    # â”€â”€ Ãrea â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     @property
     def area_nombre(self):
-        """Nombre del área/departamento asignado."""
+        """Nombre del Ã¡rea/departamento asignado."""
         return self.departamento_obj.nombre if self.departamento_obj else None
 
     @property
     def tiene_modulo(self):
-        """True si el área del usuario tiene módulo propio en el sistema."""
+        """True si el Ã¡rea del usuario tiene mÃ³dulo propio en el sistema."""
         return self.area_nombre in AREAS_CON_MODULO if self.area_nombre else False
 
     @property
@@ -107,29 +111,29 @@ class Usuario(UserMixin, db.Model):
     def es_empleado(self):
         return self.TipoUsuario == 'empleado'
 
-    # ── Rol helpers (compatibilidad con código existente) ─────
+    # â”€â”€ Rol helpers (compatibilidad con cÃ³digo existente) â”€â”€â”€â”€â”€
     @property
     def rol(self):
         """
         Slug del rol para compatibilidad con permisos existentes.
         El super admin (IdRol=1) sigue siendo 'admin'.
-        Para el resto, el slug se deriva del área.
+        Para el resto, el slug se deriva del Ã¡rea.
         """
         if not self.rol_obj:
             return "viewer"
 
-        # Super admin — acceso total
+        # Super admin â€” acceso total
         if self.IdRol == 1:
             return "admin"
 
-        # Derivar slug del área
+        # Derivar slug del Ã¡rea
         area = self.area_nombre or ""
         mapa_area = {
             "TI":               "ti",
-            "Tecnología":       "ti",
+            "TecnologÃ­a":       "ti",
             "Recursos Humanos": "rh",
             "Administrativo":   "administrativo",
-            "Almacén":          "almacenista",
+            "AlmacÃ©n":          "almacenista",
         }
         return mapa_area.get(area, "empleado")
 
@@ -146,15 +150,15 @@ class Usuario(UserMixin, db.Model):
         """Etiqueta legible para mostrar en UI."""
         if self.IdRol == 1:
             return "Super Administrador"
-        area  = self.area_nombre or "Sin área"
+        area  = self.area_nombre or "Sin Ã¡rea"
         tipo  = "Administrador" if self.es_administrador_area else "Empleado"
-        return f"{tipo} — {area}"
+        return f"{tipo} â€” {area}"
 
     @property
     def departamento_id(self):
         return self.IdDepartamento
 
-    # ── Contraseña ────────────────────────────────────────────
+    # â”€â”€ ContraseÃ±a â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     def set_password(self, password: str):
         self.Contrasena = pwd_context.hash(password)
 
@@ -170,3 +174,4 @@ class Usuario(UserMixin, db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
+

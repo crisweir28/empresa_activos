@@ -1,15 +1,172 @@
-<!-- app/templates/activos.html REDISEÑADO -->
+<!-- app/templates/activos.html - CON FILTROS INTEGRADOS A DATATABLES -->
 {% extends "base.html" %}
 {% block title %}Activos{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/activos/lista.css') }}">
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+<!-- DataTables Buttons CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+
+<style>
+  /* ✅ FORZAR ESTILOS PARA METRIC-CARD ACTIVE */
+  .metric-card.active {
+    border: 3px solid var(--accent) !important;
+    box-shadow: 0 8px 24px rgba(155, 35, 53, 0.15) !important;
+    transform: translateY(0) !important;
+    background: var(--card) !important;
+  }
+
+  .metric-card.active .metric-icon {
+    transform: scale(1.05) !important;
+  }
+
+  .metric-card.active .metric-value {
+    color: var(--accent) !important;
+    font-weight: 800 !important;
+  }
+
+  /* DataTables Custom Styles */
+  .dataTables_wrapper {
+    padding: 0 !important;
+  }
+  
+  .dataTables_filter {
+    float: right;
+    margin-bottom: 16px;
+  }
+  
+  .dataTables_filter input {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-left: 8px;
+    font-size: 13px;
+    width: 250px;
+    transition: all 0.2s;
+  }
+  
+  .dataTables_filter input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(155, 35, 53, 0.1);
+  }
+  
+  .dataTables_length {
+    float: left;
+    margin-bottom: 16px;
+  }
+  
+  .dataTables_length select {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 32px 6px 12px;
+    margin: 0 8px;
+    font-size: 13px;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--text);
+  }
+  
+  .dataTables_info {
+    padding-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  
+  .dataTables_paginate {
+    padding-top: 16px;
+    float: right;
+  }
+  
+  .paginate_button {
+    padding: 6px 12px !important;
+    margin: 0 2px !important;
+    border-radius: 6px !important;
+    border: 1px solid var(--border) !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  
+  .paginate_button:hover {
+    background: var(--surface) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+  }
+  
+  .paginate_button.current {
+    background: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+  }
+  
+  .paginate_button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Botones de exportación */
+  .dt-buttons {
+    float: left;
+    margin-bottom: 16px;
+    margin-left: 16px;
+  }
+
+  .dt-button {
+    padding: 8px 16px !important;
+    margin: 0 4px !important;
+    border: 1.5px solid var(--border) !important;
+    border-radius: 8px !important;
+    background: var(--card) !important;
+    color: var(--text) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+  }
+
+  .dt-button:hover {
+    background: var(--surface) !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    transform: translateY(-1px);
+  }
+
+  .dt-button:active {
+    transform: translateY(0);
+  }
+
+  /* Iconos en los botones */
+  .buttons-pdf::before {
+    content: "📄 ";
+    margin-right: 4px;
+  }
+
+  .buttons-excel::before {
+    content: "📊 ";
+    margin-right: 4px;
+  }
+
+  .buttons-csv::before {
+    content: "📋 ";
+    margin-right: 4px;
+  }
+
+  .buttons-print::before {
+    content: "🖨️ ";
+    margin-right: 4px;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
  
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- HEADER CON DEGRADADO (como ticketing) -->
+<!-- HEADER CON DEGRADADO -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="hero-header">
   <div class="hero-content">
@@ -22,11 +179,11 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- MÉTRICAS (Cards superiores) -->
+<!-- MÉTRICAS (Cards superiores) - CON FILTROS -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="metrics-grid">
-  <!-- Total Activos -->
-  <div class="metric-card">
+  <!-- Total Activos - CLICKEABLE -->
+  <div class="metric-card metric-clickable active" id="filtro-todos" onclick="filtrarActivos('todos')">
     <div class="metric-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">📊</div>
     <div class="metric-content">
       <div class="metric-value">{{ activos|length }}</div>
@@ -36,7 +193,7 @@
   </div>
 
   <!-- Activos -->
-  <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('activos.lista', estado='activo') }}'">
+  <div class="metric-card metric-clickable" id="filtro-activo" onclick="filtrarActivos('activo')">
     <div class="metric-icon" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">✅</div>
     <div class="metric-content">
       <div class="metric-value">{{ activos|selectattr('estado', 'equalto', 'activo')|list|length }}</div>
@@ -46,7 +203,7 @@
   </div>
 
   <!-- Mantenimiento -->
-  <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('activos.lista', estado='mantenimiento') }}'">
+  <div class="metric-card metric-clickable" id="filtro-mantenimiento" onclick="filtrarActivos('mantenimiento')">
     <div class="metric-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">⚙️</div>
     <div class="metric-content">
       <div class="metric-value">{{ activos|selectattr('estado', 'equalto', 'mantenimiento')|list|length }}</div>
@@ -56,7 +213,7 @@
   </div>
 
   <!-- Dados de Baja -->
-  <div class="metric-card metric-clickable" onclick="window.location='{{ url_for('activos.lista', estado='baja') }}'">
+  <div class="metric-card metric-clickable" id="filtro-baja" onclick="filtrarActivos('baja')">
     <div class="metric-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%)">📤</div>
     <div class="metric-content">
       <div class="metric-value">{{ activos|selectattr('estado', 'equalto', 'baja')|list|length }}</div>
@@ -64,71 +221,32 @@
       <div class="metric-sub">Fuera de servicio</div>
     </div>
   </div>
-
-  <!-- Valor Total -->
-  <div class="metric-card">
-    <div class="metric-icon" style="background: linear-gradient(135deg, #ffa34e 0%, #ff6b6b 100%)">💰</div>
-    <div class="metric-content">
-      <div class="metric-value">${{ "%.0f"|format(activos|sum(attribute='valor')) }}</div>
-      <div class="metric-label">Valor Total</div>
-      <div class="metric-sub">Inventario valorizado</div>
-    </div>
-  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- FILTROS MEJORADOS -->
-<!-- ══════════════════════════════════════════════════════════════ -->
-<div class="filters-bar">
-  <a href="{{ url_for('activos.lista') }}"
-     class="filter-btn {% if not request.args.get('estado') %}active{% endif %}">
-    <span class="filter-icon">📋</span>
-    <span>Todos</span>
-  </a>
-  <a href="{{ url_for('activos.lista', estado='activo') }}"
-     class="filter-btn {% if request.args.get('estado')=='activo' %}active{% endif %}">
-    <span class="filter-icon">✅</span>
-    <span>Activo</span>
-  </a>
-  <a href="{{ url_for('activos.lista', estado='mantenimiento') }}"
-     class="filter-btn {% if request.args.get('estado')=='mantenimiento' %}active{% endif %}">
-    <span class="filter-icon">⚙️</span>
-    <span>Mantenimiento</span>
-  </a>
-  <a href="{{ url_for('activos.lista', estado='baja') }}"
-     class="filter-btn {% if request.args.get('estado')=='baja' %}active{% endif %}">
-    <span class="filter-icon">📤</span>
-    <span>Baja</span>
-  </a>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════ -->
-<!-- TABLA DE ACTIVOS -->
+<!-- TABLA CON DATATABLES + EXPORTACIÓN -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="panel">
   <div class="panel-header">
     <h3 class="panel-title">📦 Listado de Activos</h3>
-    <div class="panel-info">{{ activos|length }} activos encontrados</div>
+    <div class="panel-info" id="contador-activos">{{ activos|length }} activos encontrados</div>
   </div>
 
   {% if activos %}
-  <div style="overflow-x:auto">
-    <table class="activos-table">
+  <div class="tabla-container">
+    <table id="tabla-activos" class="activos-table display" style="width:100%">
       <thead>
         <tr>
-          <th>#</th>
           <th>Activo</th>
           <th>Categoría</th>
           <th>Estado</th>
           <th>Departamento</th>
-          <th>Valor</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for a in activos %}
-        <tr>
-          <td style="color:var(--muted);font-weight:600">#{{ a.id }}</td>
+        <tr data-estado="{{ a.estado }}">
           <td>
             <div class="activo-info">
               <div class="activo-icon">
@@ -172,27 +290,24 @@
             {% endif %}
           </td>
           <td>
-            <span class="valor-text">${{ "%.2f"|format(a.valor) }}</span>
-          </td>
-          <td>
             <div class="action-buttons">
               <button class="btn-sm" 
-        onclick='editarActivo({
-          id: {{ a.id }}, 
-          nombre: {{ a.nombre|tojson }}, 
-          numero_serie: {{ (a.numero_serie or "")|tojson }},
-          descripcion: {{ (a.descripcion or "")|tojson }},
-          categoria: {{ (a.categoria or "")|tojson }},
-          estado: {{ (a.estado or "activo")|tojson }},
-          valor: {{ a.valor or 0 }},
-          fecha_adquisicion: {{ (a.fecha_adquisicion.isoformat() if a.fecha_adquisicion else "")|tojson }},
-          departamento_id: {{ a.departamento_id or "" }}
-        })' 
-        title="Editar">
-  ✏️ Editar
-</button>
+                onclick='editarActivo({
+                  id: {{ a.id }}, 
+                  nombre: {{ a.nombre|tojson }}, 
+                  numero_serie: {{ (a.numero_serie or "")|tojson }},
+                  descripcion: {{ (a.descripcion or "")|tojson }},
+                  categoria: {{ (a.categoria or "")|tojson }},
+                  estado: {{ (a.estado or "activo")|tojson }},
+                  valor: {{ a.valor or 0 }},
+                  fecha_adquisicion: {{ (a.fecha_adquisicion.isoformat() if a.fecha_adquisicion else "")|tojson }},
+                  departamento_id: {{ a.departamento_id or "" }}
+                })' 
+                title="Editar">
+                ✏️ Editar
+              </button>
               <form method="POST" action="{{ url_for('activos.eliminar', id=a.id) }}" style="display:inline"
-                    onsubmit="return confirm('¿Eliminar {{ a.nombre }}?')">
+                    onsubmit="return confirmarEliminarActivo(event, '{{ a.nombre|replace("'", "\\'") }}', this)">
                 <button type="submit" class="btn-sm btn-del" title="Eliminar">🗑️</button>
               </form>
             </div>
@@ -215,7 +330,7 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- MODALES (sin cambios funcionales) -->
+<!-- MODALES (SIN CAMBIOS) -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 
 <!-- Modal Nuevo -->
@@ -243,11 +358,10 @@
               <option value="otro">📦 Otro</option>
             </select>
           </div>
-          <div class="field"><label>Estado</label>
-            <select name="estado">
-              <option value="activo">Activo</option>
-              <option value="mantenimiento">Mantenimiento</option>
-              <option value="baja">Baja</option>
+          <div class="field"><label>Estatus</label>
+            <select name="estatus">
+              <option value="comprado">💳 Comprado</option>
+              <option value="rentado">📋 Rentado</option>
             </select>
           </div>
         </div>
@@ -280,13 +394,23 @@
     <form method="POST" id="form-editar">
       <div class="modal-body">
         <div class="grid-2">
-          <div class="field"><label>Nombre *</label><input name="nombre" id="e-nombre" required></div>
-          <div class="field"><label>Número de serie</label><input name="numero_serie" id="e-serie"></div>
+          <div class="field">
+            <label>Nombre * <span style="color:var(--muted);font-size:11px">(no editable)</span></label>
+            <input name="nombre" id="e-nombre" required readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
+          </div>
+          <div class="field">
+            <label>Número de serie <span style="color:var(--muted);font-size:11px">(no editable)</span></label>
+            <input name="numero_serie" id="e-serie" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
+          </div>
         </div>
-        <div class="field"><label>Descripción</label><textarea name="descripcion" id="e-desc"></textarea></div>
+        <div class="field">
+          <label>Descripción <span style="color:var(--muted);font-size:11px">(no editable)</span></label>
+          <textarea name="descripcion" id="e-desc" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed;resize:none"></textarea>
+        </div>
         <div class="grid-2">
-          <div class="field"><label>Categoría</label>
-            <select name="categoria" id="e-cat">
+          <div class="field">
+            <label>Categoría <span style="color:var(--muted);font-size:11px">(no editable)</span></label>
+            <select name="categoria" id="e-cat" disabled style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
               <option value="">— Sin categoría —</option>
               <option value="equipo">💻 Equipo</option>
               <option value="mueble">🪑 Mueble</option>
@@ -295,19 +419,27 @@
               <option value="otro">📦 Otro</option>
             </select>
           </div>
-          <div class="field"><label>Estado</label>
+          <div class="field">
+            <label>Estado</label>
             <select name="estado" id="e-estado">
-              <option value="activo">Activo</option>
-              <option value="mantenimiento">Mantenimiento</option>
-              <option value="baja">Baja</option>
+              <option value="activo">✓ Activo</option>
+              <option value="mantenimiento">⚙️ Mantenimiento</option>
+              <option value="baja">✗ Baja</option>
             </select>
           </div>
         </div>
         <div class="grid-2">
-          <div class="field"><label>Valor ($)</label><input name="valor" id="e-valor" type="number" step="0.01" min="0"></div>
-          <div class="field"><label>Fecha adquisición</label><input name="fecha_adquisicion" id="e-fecha" type="date"></div>
+          <div class="field">
+            <label>Valor ($) <span style="color:var(--muted);font-size:11px">(no editable)</span></label>
+            <input name="valor" id="e-valor" type="number" step="0.01" min="0" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
+          </div>
+          <div class="field">
+            <label>Fecha adquisición <span style="color:var(--muted);font-size:11px">(no editable)</span></label>
+            <input name="fecha_adquisicion" id="e-fecha" type="date" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
+          </div>
         </div>
-        <div class="field"><label>Departamento</label>
+        <div class="field">
+          <label>Departamento</label>
           <select name="departamento_id" id="e-depto">
             <option value="">— Sin departamento —</option>
             {% for d in departamentos %}<option value="{{ d.id }}">{{ d.nombre }}</option>{% endfor %}
@@ -325,5 +457,187 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- jQuery (requerido) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+<!-- Botones de exportación -->
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
 <script src="{{ url_for('static', filename='js/activos.js') }}"></script>
+
+<script>
+// Variable global para la tabla
+let tablaActivos;
+
+$(document).ready(function() {
+  tablaActivos = $('#tabla-activos').DataTable({
+    // Idioma en español
+    language: {
+      url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json'
+    },
+    
+    // Configuración básica
+    responsive: false,
+    autoWidth: false,
+    pageLength: 25,
+    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+    order: [[0, 'asc']],
+    
+    // Botones de exportación
+    dom: 'Blfrtip',
+    buttons: [
+      {
+        extend: 'pdfHtml5',
+        text: 'PDF',
+        title: 'Inventario de Activos',
+        orientation: 'landscape',
+        pageSize: 'LETTER',
+        exportOptions: {
+          columns: [0, 1, 2, 3], // Excluir columna "Acciones"
+          modifier: {
+            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
+            order: 'applied',
+            page: 'all'
+          }
+        },
+        customize: function(doc) {
+          doc.styles.title = {
+            fontSize: 16,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 0, 0, 10]
+          };
+          doc.styles.tableHeader = {
+            bold: true,
+            fontSize: 11,
+            fillColor: '#9B2335',
+            color: 'white',
+            alignment: 'left'
+          };
+          doc.content[1].table.widths = ['35%', '20%', '20%', '25%'];
+        }
+      },
+      {
+        extend: 'excelHtml5',
+        text: 'Excel',
+        title: 'Inventario de Activos',
+        exportOptions: {
+          columns: [0, 1, 2, 3],
+          modifier: {
+            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
+            order: 'applied',
+            page: 'all'
+          }
+        }
+      },
+      {
+        extend: 'csvHtml5',
+        text: 'CSV',
+        exportOptions: {
+          columns: [0, 1, 2, 3],
+          modifier: {
+            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
+            order: 'applied',
+            page: 'all'
+          }
+        }
+      },
+      {
+        extend: 'print',
+        text: 'Imprimir',
+        title: 'Inventario de Activos',
+        exportOptions: {
+          columns: [0, 1, 2, 3],
+          modifier: {
+            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
+            order: 'applied',
+            page: 'all'
+          }
+        }
+      }
+    ],
+    
+    // Anchos de columna
+    columnDefs: [
+      { orderable: false, targets: [4] },
+      { width: "35%", targets: 0 },
+      { width: "15%", targets: 1 },
+      { width: "15%", targets: 2 },
+      { width: "15%", targets: 3 },
+      { width: "20%", targets: 4 }
+    ],
+    
+    // Scroll horizontal
+    scrollX: true
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+// FILTRAR ACTIVOS POR ESTADO (CARDS)
+// ══════════════════════════════════════════════════════════════
+function filtrarActivos(estado) {
+  // Quitar clase active de todas las cards
+  document.querySelectorAll('.metric-card').forEach(card => {
+    card.classList.remove('active');
+  });
+  
+  // Agregar clase active a la card seleccionada
+  document.getElementById('filtro-' + estado).classList.add('active');
+  
+  // Aplicar filtro a DataTables
+  if (estado === 'todos') {
+    tablaActivos.column(2).search('').draw(); // Limpiar filtro (columna 2 = Estado)
+  } else {
+    // Buscar por el texto exacto del estado
+    let textoEstado = estado === 'activo' ? '✓ Activo' : 
+                      estado === 'mantenimiento' ? '⚙️ Mantenimiento' : 
+                      '✗ Baja';
+    tablaActivos.column(2).search(textoEstado, false, false).draw();
+  }
+  
+  // Actualizar contador
+  actualizarContador();
+}
+
+// Actualizar contador de activos
+function actualizarContador() {
+  let total = tablaActivos.rows({ search: 'applied' }).count();
+  document.getElementById('contador-activos').textContent = total + ' activos encontrados';
+}
+
+// ══════════════════════════════════════════════════════════════
+// SWEETALERT PARA ELIMINAR ACTIVO
+// ══════════════════════════════════════════════════════════════
+function confirmarEliminarActivo(event, nombreActivo, formElement) {
+  event.preventDefault();
+  
+  Swal.fire({
+    title: '¿Eliminar activo?',
+    html: `<p style="margin:0;color:#64748b;font-size:14px;">Esta acción no se puede deshacer.</p>
+           <p style="margin:8px 0 0 0;font-weight:600;color:#1e293b;font-size:15px;">${nombreActivo}</p>`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: '🗑️ Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    focusCancel: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      formElement.submit();
+    }
+  });
+  
+  return false;
+}
+</script>
 {% endblock %}

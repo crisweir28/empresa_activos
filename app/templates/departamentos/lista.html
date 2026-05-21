@@ -105,7 +105,12 @@
       </div>
 
       <div class="depto-footer">
-        <button class="btn-sm" onclick="editarDepartamento({{ d.id }}, '{{ d.nombre }}', '{{ d.descripcion or '' }}')" title="Editar">
+        <!-- ✅ SOLUCIÓN: Usar data-* attributes en lugar de onclick con parámetros -->
+        <button class="btn-sm btn-editar" 
+                data-id="{{ d.id }}"
+                data-nombre="{{ d.nombre }}"
+                data-descripcion="{{ d.descripcion or '' }}"
+                title="Editar">
           ✏️ Editar
         </button>
         <form method="POST" action="{{ url_for('departamentos.eliminar', id=d.id) }}" style="display:inline"
@@ -192,11 +197,21 @@
 
 {% block scripts %}
 <script>
-function editarDepartamento(id, nombre, descripcion) {
-  document.getElementById('e-nombre').value = nombre;
-  document.getElementById('e-descripcion').value = descripcion;
-  document.getElementById('form-editar').action = `/departamentos/${id}/editar`;
-  document.getElementById('modal-editar').classList.add('open');
-}
+// ✅ SOLUCIÓN: Event listener que lee desde data-* attributes
+document.addEventListener('DOMContentLoaded', function() {
+  // Agregar evento click a todos los botones de editar
+  document.querySelectorAll('.btn-editar').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-id');
+      const nombre = this.getAttribute('data-nombre');
+      const descripcion = this.getAttribute('data-descripcion');
+      
+      document.getElementById('e-nombre').value = nombre;
+      document.getElementById('e-descripcion').value = descripcion || '';
+      document.getElementById('form-editar').action = `/departamentos/${id}/editar`;
+      document.getElementById('modal-editar').classList.add('open');
+    });
+  });
+});
 </script>
 {% endblock %}

@@ -231,6 +231,7 @@
         border-radius: 8px;
         font-weight: 600;
         transition: all 0.2s;
+        color:#f3f4f6;
     }
     
     .btn-primary-custom:hover {
@@ -274,10 +275,10 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb breadcrumb-custom">
-            <li class="breadcrumb-item">
+            <li class="breadcrumb">
                 <a href="{{ url_for('ticketing.mis_tickets') }}">← Mis Tickets</a>
             </li>
-            <li class="breadcrumb-item active">{{ ticket.NumeroTicket }}</li>
+            <li class="breadcrumb active">{{ ticket.NumeroTicket }}</li>
         </ol>
     </nav>
 
@@ -390,7 +391,7 @@
                     <tr>
                         <th>Estado</th>
                         <td>
-                            <span class="badge-custom" style="background-color: {{ ticket.EstadoColor }};">
+                            <span class="badge-custom" style="background-color: {{ ticket.EstadoColor }}; color: #f3f4f6;">
                                 {{ ticket.Estado }}
                             </span>
                         </td>
@@ -421,7 +422,7 @@
                     <tr>
                         <th>Prioridad</th>
                         <td>
-                            <span class="badge-custom" style="background-color: {{ ticket.PrioridadColor }};">
+                            <span class="badge-custom" style="background-color: {{ ticket.PrioridadColor }}; color: #f3f4f6;">
                                 {{ ticket.Prioridad }}
                             </span>
                         </td>
@@ -429,7 +430,7 @@
                     <tr>
                         <th>Categoría</th>
                         <td>
-                            <span class="badge-custom" style="background-color: {{ ticket.CategoriaColor }};">
+                            <span class="badge-custom" style="background-color: {{ ticket.CategoriaColor }}; color: #f3f4f6;">
                                 {{ ticket.Categoria }}
                             </span>
                         </td>

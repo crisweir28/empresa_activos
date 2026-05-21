@@ -72,10 +72,6 @@
   border-color: var(--accent);
 }
 
-.filtro-card.active::before {
-  border-color: var(--accent);
-}
-
 .filtro-card.active {
   background: var(--accent-light);
 }
@@ -150,7 +146,7 @@
 .permiso-card.ok {
   border-left-color: var(--green);
   background: linear-gradient(90deg, rgba(34,211,165,0.05) 0%, var(--card) 100%);
-  border-color: rgba(34,211,165,0.2);
+  /*border-color: rgba(34,211,165,0.2);*/
 }
 
 .permiso-card:hover {

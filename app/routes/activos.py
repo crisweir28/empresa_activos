@@ -1,8 +1,8 @@
-# app/routes/activos.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from datetime import date
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError  # ✅ AGREGAR ESTA LÍNEA
 from ..extensions import db
 from ..models.activo import Activo
 from ..models.departamento import Departamento
@@ -196,7 +196,45 @@ def _portal_empleado():
         docs_por_vencer=docs_por_vencer,
         hoy=date.today()
     )
+
+@activos_bp.route("/nuevo", methods=["POST"])
+@login_required
+def nuevo():
+    try:
+        depto_id = request.form.get("departamento_id") or None
+        if not es_admin():
+            depto_id = current_user.departamento_id
+
+        activo = Activo(
+            nombre            = request.form.get("nombre", "").strip(),
+            descripcion       = request.form.get("descripcion", "").strip() or None,
+            numero_serie      = request.form.get("numero_serie", "").strip() or None,
+            categoria         = request.form.get("categoria") or None,
+            estado            = request.form.get("estado", "activo"),
+            valor             = float(request.form.get("valor") or 0),
+            fecha_adquisicion = request.form.get("fecha_adquisicion") or None,
+            departamento_id   = int(depto_id) if depto_id else None,
+            usuario_id        = current_user.id,
+        )
+        db.session.add(activo)
+        db.session.commit()
+        flash("✅ Activo creado correctamente.", "success")
+        return redirect(url_for("activos.lista"))
     
+    except IntegrityError as e:
+        db.session.rollback()
+        # Detectar error de número de serie duplicado
+        if 'numero_serie' in str(e.orig):
+            flash("⚠️ El número de serie ya está registrado en otro activo.", "error")
+        else:
+            flash("❌ Error al guardar el activo. Verifique que los datos sean correctos.", "error")
+        return redirect(url_for("activos.lista"))
+    
+    except Exception as e:
+        db.session.rollback()
+        flash(f"❌ Error inesperado: {str(e)}", "error")
+        return redirect(url_for("activos.lista"))
+
 @activos_bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -279,31 +317,6 @@ def lista():
         es_admin      = es_admin(),
         tema          = tema,
     )
-
-
-@activos_bp.route("/nuevo", methods=["POST"])
-@login_required
-def nuevo():
-    depto_id = request.form.get("departamento_id") or None
-    if not es_admin():
-        depto_id = current_user.departamento_id
-
-    activo = Activo(
-        nombre            = request.form.get("nombre", "").strip(),
-        descripcion       = request.form.get("descripcion", "").strip() or None,
-        numero_serie      = request.form.get("numero_serie", "").strip() or None,
-        categoria         = request.form.get("categoria") or None,
-        estado            = request.form.get("estado", "activo"),
-        valor             = float(request.form.get("valor") or 0),
-        fecha_adquisicion = request.form.get("fecha_adquisicion") or None,
-        departamento_id   = int(depto_id) if depto_id else None,
-        usuario_id        = current_user.id,
-    )
-    db.session.add(activo)
-    db.session.commit()
-    flash("Activo creado correctamente.", "success")
-    return redirect(url_for("activos.lista"))
-
 
 @activos_bp.route("/<int:id>/editar", methods=["POST"])
 @login_required

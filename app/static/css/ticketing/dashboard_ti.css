@@ -900,3 +900,25 @@ table.dataTable thead th.sorting_desc:after { content: '↓'; opacity: 1; color:
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════ */
+/* ESTILOS PARA COLUMNA DE FECHA */
+/* ═══════════════════════════════════════════════════════════ */
+
+.fecha-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fecha-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fecha-time {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'Monaco', 'Courier New', monospace;
+}

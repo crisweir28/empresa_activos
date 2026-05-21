@@ -48,7 +48,7 @@ class Personal(db.Model):
     SeguroVigencia   = db.Column(db.Date)
     IdCondicion      = db.Column(db.Integer, db.ForeignKey("Condicion.IdCondicion"))
     Activo           = db.Column(db.Boolean, nullable=False, default=True)
-    CreadoEn         = db.Column(db.DateTime, default=datetime.utcnow)
+    CreadoEn         = db.Column(db.DateTime, default=datetime.now)
 
     condicion = db.relationship("Condicion", backref="personal")
 
@@ -105,8 +105,8 @@ class Vehiculo(db.Model):
     FechaRenovacion = db.Column(db.Date,        nullable=True)
     ProveedorArrendamiento = db.Column(db.String(150), nullable=True)
     # ─────────────────────────────────────────────────────────
-    CreadoEn        = db.Column(db.DateTime, default=datetime.utcnow)
-    ActualizadoEn   = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    CreadoEn        = db.Column(db.DateTime, default=datetime.now)
+    ActualizadoEn   = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     ubicacion      = db.relationship("Ubicacion",            backref="vehiculos")
     conductores    = db.relationship("ConductorVehiculo",    backref="vehiculo",  lazy="dynamic")
@@ -162,7 +162,7 @@ class PermisosVehiculo(db.Model):
     FechaInicio      = db.Column(db.Date)
     FechaVencimiento = db.Column(db.Date, nullable=False)
     ArchivoUrl       = db.Column(db.String(255))
-    CreadoEn         = db.Column(db.DateTime, default=datetime.utcnow)
+    CreadoEn         = db.Column(db.DateTime, default=datetime.now)
 
     tipo_servicio = db.relationship("TipoServicio", backref="permisos")
 
@@ -192,8 +192,8 @@ class MantenimientoVehiculo(db.Model):
     Costo           = db.Column(db.Float, default=0)
     Proveedor       = db.Column(db.String(120))
     Estatus         = db.Column(db.String(20), nullable=False, default="en_proceso")
-    CreadoPor       = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
-    CreadoEn        = db.Column(db.DateTime, default=datetime.utcnow)
+    CreadoPor       = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"), nullable=True)
+    CreadoEn        = db.Column(db.DateTime, default=datetime.now)
 
     personal      = db.relationship("Personal",     backref="mantenimientos")
     tipo_servicio = db.relationship("TipoServicio", backref="mantenimientos")

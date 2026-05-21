@@ -12,7 +12,7 @@ class Proyecto(db.Model):
     FechaTermino  = db.Column(db.Date, nullable=False)
     Estatus       = db.Column(db.Enum('Activo','En progreso','Pausado','Completado','Cancelado'),
                               nullable=False, default='Activo')
-    CreadoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"), nullable=False)
+    CreadoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"), nullable=False)
     CreadoEn      = db.Column(db.DateTime, server_default=db.func.now())
     ActualizadoEn = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
@@ -52,10 +52,10 @@ class ProyectoPersonal(db.Model):
     __tablename__ = "ProyectoPersonal"
     IdAsignacion    = db.Column(db.Integer, primary_key=True)
     IdProyecto      = db.Column(db.Integer, db.ForeignKey("Proyecto.IdProyecto"), nullable=False)
-    IdUsuario       = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),   nullable=False)
+    IdUsuario       = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"),   nullable=False)
     Rol             = db.Column(db.String(80))
     FechaAsignacion = db.Column(db.Date, nullable=False)
-    AsignadoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),   nullable=False)
+    AsignadoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"),   nullable=False)
     CreadoEn        = db.Column(db.DateTime, server_default=db.func.now())
 
     usuario      = db.relationship("Usuario", foreign_keys=[IdUsuario])
@@ -70,7 +70,7 @@ class ProyectoActivo(db.Model):
     IdActivo        = db.Column(db.Integer, nullable=False)
     EstadoInicial   = db.Column(db.String(50))
     EstadoFinal     = db.Column(db.String(50))
-    AsignadoPor     = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),   nullable=False)
+    AsignadoPor     = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"),   nullable=False)
     FechaAsignacion = db.Column(db.Date, nullable=False)
     FechaDevolucion = db.Column(db.Date)
     Observaciones   = db.Column(db.Text)
@@ -86,7 +86,7 @@ class ProyectoAuditoria(db.Model):
     Accion       = db.Column(db.String(50), nullable=False)
     Detalle      = db.Column(db.Text)
     RazonCambio  = db.Column(db.String(255))
-    RealizadoPor = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),   nullable=False)
+    RealizadoPor = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"),   nullable=False)
     RealizadoEn  = db.Column(db.DateTime, server_default=db.func.now())
 
     usuario = db.relationship("Usuario", foreign_keys=[RealizadoPor])

@@ -55,21 +55,21 @@
 /* ══════════════════════════════════════════════════════════════ */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
 
 .metric-card {
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border); /* ✅ Borde de 2px para que el cambio sea más visible */
   border-radius: 14px;
   padding: 20px;
   display: flex;
   gap: 14px;
   align-items: center;
   box-shadow: var(--shadow);
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* ✅ Transición más suave */
   animation: fadeIn 0.4s ease both;
 }
 
@@ -81,6 +81,22 @@
 
 .metric-card.metric-clickable {
   cursor: pointer;
+}
+
+/* ✅ ESTILO ACTIVO - Borde grueso como en la imagen */
+.metric-card.active {
+  border: 3px solid var(--accent) !important; /* ✅ Borde grueso de 3px */
+  box-shadow: 0 8px 24px rgba(155, 35, 53, 0.15) !important;
+  transform: translateY(0) !important; /* ✅ Sin elevar, solo borde */
+  background: var(--card) !important;
+}
+
+.metric-card.active .metric-icon {
+  transform: scale(1.05) !important; /* ✅ Icono ligeramente más grande */
+}
+
+.metric-card.active .metric-value {
+  color: var(--accent) !important; /* ✅ Número en color del tema */
 }
 
 .metric-icon {
@@ -195,11 +211,47 @@
 }
 
 /* ══════════════════════════════════════════════════════════════ */
+/* ✅ NUEVO: CONTENEDOR CON SCROLL HORIZONTAL Y VERTICAL */
+/* ══════════════════════════════════════════════════════════════ */
+.tabla-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  max-height: calc(100vh - 400px);
+  position: relative;
+}
+
+/* Scrollbar personalizado */
+.tabla-container::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+.tabla-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.tabla-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.tabla-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
 /* TABLA MEJORADA */
 /* ══════════════════════════════════════════════════════════════ */
 .activos-table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 1200px; /* ✅ Fuerza scroll horizontal en pantallas pequeñas */
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
 }
 
@@ -212,13 +264,18 @@
   color: var(--muted);
   border-bottom: 2px solid var(--border);
   font-weight: 700;
-  background: var(--bg);
+  background: #f8fafc;
+  position: sticky; /* ✅ Headers fijos al hacer scroll vertical */
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .activos-table tbody td {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  background: white;
 }
 
 .activos-table tbody tr:last-child td {
@@ -352,6 +409,23 @@
 }
 
 /* ══════════════════════════════════════════════════════════════ */
+/* ✅ NUEVO: CAMPOS BLOQUEADOS EN MODAL EDITAR */
+/* ══════════════════════════════════════════════════════════════ */
+input[readonly],
+textarea[readonly],
+select[disabled] {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  border-color: #e2e8f0 !important;
+}
+
+select[disabled] {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
 /* ESTADO VACÍO */
 /* ══════════════════════════════════════════════════════════════ */
 .empty-state {
@@ -385,7 +459,7 @@
 /* Tablet (≤1024px) */
 @media (max-width: 1024px) {
   .metrics-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .hero-header {
@@ -446,10 +520,6 @@
     font-size: 12px;
   }
 
-  .activos-table {
-    min-width: 600px;
-  }
-
   .activo-icon {
     width: 36px;
     height: 36px;
@@ -460,6 +530,13 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  /* ✅ En móviles, permitir scroll horizontal */
+  .tabla-container {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
 }
 

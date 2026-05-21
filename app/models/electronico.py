@@ -15,7 +15,7 @@ class Electronico(db.Model):
     Gama             = db.Column(db.String(20),  nullable=True)   # Baja | Media | Alta | Gamer
     Estado           = db.Column(db.String(20),  nullable=False, default="almacen")
     Condicion        = db.Column(db.String(20),  nullable=False, default="bueno")
-    IdUsuario        = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"),     nullable=True)
+    IdUsuario        = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"),     nullable=True)
     IdUbicacion      = db.Column(db.Integer, db.ForeignKey("Ubicacion.IdUbicacion"), nullable=True)
     FechaAdquisicion = db.Column(db.Date)
     Costo            = db.Column(db.Float, default=0)
@@ -33,8 +33,8 @@ class Electronico(db.Model):
     FechaRenovacion       = db.Column(db.Date,        nullable=True)
     ProveedorArrendamiento = db.Column(db.String(150), nullable=True)
     # ─────────────────────────────────────────────────────────
-    CreadoEn      = db.Column(db.DateTime, default=datetime.utcnow)
-    ActualizadoEn = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    CreadoEn      = db.Column(db.DateTime, default=datetime.now)
+    ActualizadoEn = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     usuario        = db.relationship("Usuario",   foreign_keys=[IdUsuario],   backref="equipos_asignados")
     ubicacion      = db.relationship("Ubicacion", foreign_keys=[IdUbicacion], backref="equipos")
@@ -120,8 +120,8 @@ class MantenimientoElectronico(db.Model):
     Costo           = db.Column(db.Float, default=0)
     Tecnico         = db.Column(db.String(120))
     Estatus         = db.Column(db.String(20), nullable=False, default="en_proceso")
-    CreadoPor       = db.Column(db.Integer, db.ForeignKey("Usuario.IdUsuario"))
-    CreadoEn        = db.Column(db.DateTime, default=datetime.utcnow)
+    CreadoPor       = db.Column(db.Integer, db.ForeignKey("usuario.IdUsuario"))
+    CreadoEn        = db.Column(db.DateTime, default=datetime.now)
 
     creado_por = db.relationship("Usuario", foreign_keys=[CreadoPor], backref="mantenimientos_elec")
 

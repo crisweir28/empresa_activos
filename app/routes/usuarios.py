@@ -1,10 +1,5 @@
 # app/routes/usuarios.py
-"""
-Gestión de usuarios DEL ÁREA PROPIA.
-Cada admin de área ve solo los usuarios de su departamento.
-Para gestión corporativa (todas las áreas), usar /rh/personal.
-"""
-
+from sqlalchemy.exc import IntegrityError 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from passlib.context import CryptContext
@@ -260,9 +255,9 @@ def eliminar(id):
     if id == current_user.id:
         flash("No puedes eliminar tu propia cuenta.", "error")
         return redirect(url_for("usuarios.lista"))
-
+ 
     u = Usuario.query.get_or_404(id)
-
+ 
     # Verificar permisos
     if current_user.IdRol != 1:
         if not current_user.es_administrador_area:
@@ -277,22 +272,87 @@ def eliminar(id):
         if u.IdRol == 1:
             flash("No puedes eliminar al Super Administrador.", "error")
             return redirect(url_for("usuarios.lista"))
-
+ 
     nombre = u.NombreUsuario
-
-    # Limpiar relaciones
-    db.session.execute(db.text("DELETE FROM permisousuario WHERE IdUsuario = :uid"),           {'uid': id})
-    db.session.execute(db.text("DELETE FROM proyectopersonal WHERE IdUsuario = :uid"),         {'uid': id})
-    db.session.execute(db.text("UPDATE electronico SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
-    db.session.execute(db.text("UPDATE asignacionherramienta SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
-    db.session.execute(db.text("UPDATE activos SET usuario_id = NULL WHERE usuario_id = :uid"), {'uid': id})
-
-    db.session.delete(u)
-    db.session.commit()
-    flash(f"Usuario '{nombre}' eliminado.", "success")
-    socketio.emit('usuarios_actualizados', {'accion': 'eliminar', 'usuario_id': id})
-    return redirect(url_for("usuarios.lista"))
-
+ 
+    try:
+        # ✅ LIMPIAR TODAS LAS RELACIONES
+        
+        # 1. Tickets - ELIMINAR completamente los creados por este usuario
+        #    Y desasignar los tickets asignados a él
+        db.session.execute(db.text("""
+            DELETE FROM tickets WHERE IdUsuarioCreador = :uid
+        """), {'uid': id})
+        
+        # Desasignar tickets donde es el técnico asignado
+        db.session.execute(db.text("""
+            UPDATE tickets SET IdAsignadoA = NULL WHERE IdAsignadoA = :uid
+        """), {'uid': id})
+        
+        # 2. Permisos de usuario
+        db.session.execute(db.text("DELETE FROM permisousuario WHERE IdUsuario = :uid"), {'uid': id})
+        
+        # 3. Proyectos
+        db.session.execute(db.text("DELETE FROM proyectopersonal WHERE IdUsuario = :uid"), {'uid': id})
+        
+        # 4. Equipos TI - Desasignar
+        db.session.execute(db.text("UPDATE electronico SET IdUsuario = NULL WHERE IdUsuario = :uid"), {'uid': id})
+        
+        # 5. Herramientas - Devolver automáticamente
+        db.session.execute(db.text("""
+            UPDATE asignacionherramienta 
+            SET FechaDevolucion = NOW() 
+            WHERE IdUsuario = :uid AND FechaDevolucion IS NULL
+        """), {'uid': id})
+        
+        # 6. Activos generales - Desasignar
+        db.session.execute(db.text("UPDATE activos SET usuario_id = NULL WHERE usuario_id = :uid"), {'uid': id})
+        
+        # 7. Auditorías de proyectos (si existe)
+        try:
+            db.session.execute(db.text("DELETE FROM proyectoauditoria WHERE IdUsuario = :uid"), {'uid': id})
+        except:
+            pass
+        
+        # 8. Vehículos - Desasignar conductor (si existe)
+        try:
+            db.session.execute(db.text("UPDATE vehiculos SET IdConductor = NULL WHERE IdConductor = :uid"), {'uid': id})
+        except:
+            pass
+        
+        # 9. Mantenimientos - Actualizar responsable (si existe)
+        try:
+            db.session.execute(db.text("""
+                UPDATE mantenimientovehiculo 
+                SET IdUsuarioResponsable = NULL 
+                WHERE IdUsuarioResponsable = :uid
+            """), {'uid': id})
+        except:
+            pass
+        
+        # 10. Bajas de activos - Desasociar (si existe)
+        try:
+            db.session.execute(db.text("""
+                UPDATE bajaactivo 
+                SET DadoDeBajaPor = NULL 
+                WHERE DadoDeBajaPor = :uid
+            """), {'uid': id})
+        except:
+            pass
+ 
+        # 11. Finalmente, eliminar el usuario
+        db.session.delete(u)
+        db.session.commit()
+        
+        flash(f"✅ El usuario {nombre} ha sido eliminado correctamente.", "success")
+        socketio.emit('usuarios_actualizados', {'accion': 'eliminar', 'usuario_id': id})
+        return redirect(url_for("usuarios.lista"))
+    
+    except Exception as e:
+        db.session.rollback()
+        error_detail = str(e)
+        flash(f"❌ Error al eliminar usuario: {error_detail}", "error")
+        return redirect(url_for("usuarios.lista"))
 
 # ══════════════════════════════════════════════════════════════
 # API PARA MODAL EDITAR
