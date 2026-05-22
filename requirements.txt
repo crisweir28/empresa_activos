@@ -29,3 +29,8 @@ Flask-Mail==0.10.0
 python-dotenv==1.2.2
 marshmallow==4.2.2
 pytz==2024.1
+
+# Reportes y exportación
+reportlab==4.0.7      # Generación de PDFs
+openpyxl==3.1.2       # Lectura/escritura de Excel
+pandas==2.1.4         # Manipulación de datos tabulares
