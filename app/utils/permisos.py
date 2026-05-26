@@ -3,7 +3,7 @@
 # ================================================================
 
 from functools import wraps
-from flask import redirect, url_for, flash
+from flask import redirect, url_for, flash, abort
 from flask_login import current_user
 from ..extensions import db
 
@@ -28,12 +28,7 @@ def es_admin():
 
 
 def es_admin_rh():
-    """True si el usuario es admin de área de RH Y tiene permiso en módulo 'Recursos Humanos'.
-    
-    Los admin de RH con este módulo tienen poderes transversales sobre usuarios de todas las áreas.
-    El módulo "Usuarios" (IdModulo=7) es solo para gestión del área propia.
-    El módulo "Recursos Humanos" (IdModulo=10) habilita gestión corporativa transversal.
-    """
+    """True si el usuario es admin de área de RH Y tiene permiso en módulo 'Recursos Humanos'."""
     if not current_user.is_authenticated:
         return False
     if current_user.IdRol == 1:
@@ -41,18 +36,11 @@ def es_admin_rh():
     if current_user.rol != "rh" or not current_user.es_administrador_area:
         return False
     
-    # CRÍTICO: verificar que tenga permiso en el módulo "Recursos Humanos"
-    # (no confundir con "Usuarios" que es solo para su propia área)
     return tiene_permiso('Recursos Humanos', 'ver')
 
 
 def puede_gestionar_usuarios_globales():
-    """True si el usuario puede gestionar usuarios de CUALQUIER área.
-    
-    - Super admin: siempre puede
-    - Admin de RH con permiso en "Recursos Humanos": puede crear/editar usuarios en cualquier área
-      (pero sólo como 'empleado' y no puede eliminar admins de área)
-    """
+    """True si el usuario puede gestionar usuarios de CUALQUIER área."""
     if not current_user.is_authenticated:
         return False
     if current_user.IdRol == 1:
@@ -133,9 +121,10 @@ def requiere_permiso(modulo_nombre: str, accion: str = "ver"):
         def decorated(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for("auth.login"))
+            
             if not tiene_permiso(modulo_nombre, accion):
-                flash("No tienes permiso para acceder a esta sección.", "error")
-                return redirect(url_for("activos.dashboard"))
+                abort(403)
+            
             return f(*args, **kwargs)
         return decorated
     return decorator
@@ -147,8 +136,7 @@ def requiere_admin(f):
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
         if not es_admin():
-            flash("No tienes permiso para acceder a esta sección.", "error")
-            return redirect(url_for("activos.dashboard"))
+            abort(403)
         return f(*args, **kwargs)
     return decorated
 
@@ -160,8 +148,7 @@ def requiere_rol(*roles):
             if not current_user.is_authenticated:
                 return redirect(url_for("auth.login"))
             if current_user.rol not in roles:
-                flash("No tienes permiso para acceder a esta sección.", "error")
-                return redirect(url_for("activos.dashboard"))
+                abort(403)
             return f(*args, **kwargs)
         return decorated
     return decorator

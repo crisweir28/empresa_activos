@@ -1,6 +1,6 @@
 <!-- app/templates/almacenista/herramienta_detalle.html -->
 {% extends "base.html" %}
-{% block title %}{{ herramienta.Nombre }}{% endblock %}]
+{% block title %}{{ herramienta.Nombre }}{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/almacenista/almacen.css') }}">
 {% endblock %}
@@ -45,10 +45,10 @@
       {% endif %}
     </div>
     {% if asignacion %}
-    <div style="font-size:14px;font-weight:600;margin-bottom:8px;overflow-x:auto">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px">
       {{ asignacion.usuario.Nombre }} {{ asignacion.usuario.ApellidoPaterno }}
     </div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.8;overflow-x:auto">
+    <div style="font-size:12px;color:var(--muted);line-height:1.8">
       Desde: {{ asignacion.FechaAsignacion }}<br>
       {% if asignacion.Observaciones %}Notas: {{ asignacion.Observaciones }}{% endif %}
     </div>
@@ -64,41 +64,38 @@
 </div>
 
 <!-- Tabs -->
-<div style="display:flex;border-bottom:1px solid var(--border);overflow-x:auto">
-  <button class="tab-btn active" onclick="showTab('historial',this)">📋 Historial</button>
-  <button class="tab-btn" onclick="showTab('evidencias',this)">🖼️ Evidencias</button>
-  <button class="tab-btn" onclick="showTab('reportes',this)">⚠️ Reportes de daño</button>
-</div>
-
-<!-- Tab Historial -->
-<div id="tab-historial" class="tab-content panel" style="border-top:none;border-radius:0 0 16px 16px">
-  <div class="panel-title" style="margin-top:4px">Historial de asignaciones</div>
-  {% if historial %}
-  <table>
-    <thead><tr><th>Usuario</th><th>Asignación</th><th>Devolución</th><th>Estado</th></tr></thead>
-    <tbody>
-      {% for h in historial %}
-      <tr>
-        <td>{{ h.UsuarioNombre }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ h.FechaAsignacion }}</td>
-        <td style="color:var(--muted);font-size:12px">{{ h.FechaDevolucion or '—' }}</td>
-        <td>
-          <span class="badge {% if h.EstadoAsignacion == 'activa' %}badge-activo{% endif %}"
-                style="{% if h.EstadoAsignacion != 'activa' %}background:rgba(96,96,122,.15);color:var(--muted){% endif %}">
-            {{ h.EstadoAsignacion }}
-          </span>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p style="color:var(--muted);font-size:13px;text-align:center;padding:24px">Sin historial.</p>
-  {% endif %}
+<div style="display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--border);overflow-x:auto">
+  <button class="tab-btn active" onclick="showTab('evidencias', this)">
+    📎 Evidencias
+    {% if evidencias %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ evidencias|length }}
+    </span>
+    {% endif %}
+  </button>
+  <button class="tab-btn" onclick="showTab('reportes', this)">
+    ⚠️ Reportes de daño
+    {% if reportes %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ reportes|length }}
+    </span>
+    {% endif %}
+  </button>
+  <button class="tab-btn" onclick="showTab('historial', this)">
+    📋 Historial de movimientos
+    {% if historial %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ historial|length }}
+    </span>
+    {% endif %}
+  </button>
 </div>
 
 <!-- Tab Evidencias -->
-<div id="tab-evidencias" class="tab-content panel" style="display:none;border-top:none;border-radius:0 0 16px 16px">
+<div id="tab-evidencias" class="tab-content panel" style="border-top:none;border-radius:0 0 16px 16px">
   <div class="panel-title" style="margin-top:4px">
     Evidencias fotográficas
     <span style="color:var(--muted);font-size:12px;font-weight:400">
@@ -109,7 +106,7 @@
   </div>
 
   {% if evidencias %}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:4px 0;overflow-x:auto">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:4px 0">
     {% for ev in evidencias %}
     <div class="ev-card"
          onclick="abrirLightbox('{{ ev.ArchivoUrl }}','{{ ev.Tipo }}','{{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}','{{ ev.NombreArchivo }}')">
@@ -124,7 +121,7 @@
           {{ ev.CreadoEn.strftime('%d/%m/%Y') if ev.CreadoEn else '' }}
         </span>
       </div>
-      <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;overflow-x:auto"
+      <div style="padding:0 8px 8px;font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
            title="{{ ev.NombreArchivo }}">
         {{ ev.NombreArchivo }}
       </div>
@@ -194,10 +191,64 @@
   {% endif %}
 </div>
 
-<!-- ══ LIGHTBOX — sin style inline, el CSS lo controla ══════ -->
+<!-- Tab Historial -->
+<div id="tab-historial" class="tab-content panel" style="display:none;border-top:none;border-radius:0 0 16px 16px">
+  <div class="panel-title" style="margin-top:4px">
+    Historial de movimientos
+    <span style="color:var(--muted);font-size:12px;font-weight:400">
+      (Asignaciones y devoluciones)
+    </span>
+  </div>
+  {% if historial %}
+  <table>
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Asignación</th>
+        <th>Devolución</th>
+        <th>Duración</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in historial %}
+      <tr>
+        <td>
+          <div style="font-weight:600;color:var(--text);margin-bottom:2px">
+            {{ h.UsuarioNombre }}
+          </div>
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {{ h.FechaAsignacion.strftime('%d/%m/%Y %H:%M') if h.FechaAsignacion else '—' }}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {{ h.FechaDevolucion.strftime('%d/%m/%Y %H:%M') if h.FechaDevolucion else '—' }}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {% if h.FechaDevolucion and h.FechaAsignacion %}
+            {% set dias = (h.FechaDevolucion - h.FechaAsignacion).days %}
+            {{ dias }} día{{ 's' if dias != 1 else '' }}
+          {% else %}
+            <span style="color:var(--muted)">En uso</span>
+          {% endif %}
+        </td>
+        <td>
+          <span class="badge {% if h.EstadoAsignacion == 'activa' %}badge-activo{% else %}{% endif %}"
+                style="{% if h.EstadoAsignacion != 'activa' %}background:rgba(100,116,139,.12);color:var(--muted){% endif %}">
+            {{ h.EstadoAsignacion }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin historial de movimientos.</p>
+  {% endif %}
+</div>
 
+<!-- ══ LIGHTBOX ══════ -->
 <div id="lightbox" onclick="cerrarLightbox()">
-
   <button onclick="cerrarLightbox()" style="
     position:fixed;top:20px;right:24px;
     background:rgba(255,255,255,.15);border:none;color:#fff;
@@ -211,7 +262,7 @@
 
   <div onclick="event.stopPropagation()"
        style="margin-top:16px;text-align:center;color:#fff">
-    <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;overflow-x:auto">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap">
       <span id="lb-tipo"
             style="background:rgba(255,255,255,.15);padding:3px 10px;
                    border-radius:20px;font-size:12px"></span>
@@ -236,5 +287,40 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/almacenista/almacenista.js') }}"></script>
+<script>
+function showTab(name, btn) {
+  console.log('showTab llamado:', name);
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const tab = document.getElementById('tab-' + name);
+  if (tab) {
+    tab.style.display = 'block';
+  } else {
+    console.error('Tab no encontrado:', 'tab-' + name);
+  }
+  if (btn) {
+    btn.classList.add('active');
+  }
+}
+
+function abrirLightbox(url, tipo, fecha, nombre) {
+  document.getElementById('lb-img').src = url;
+  document.getElementById('lb-tipo').textContent = tipo;
+  document.getElementById('lb-fecha').textContent = fecha;
+  document.getElementById('lb-nombre').textContent = nombre;
+  document.getElementById('lb-download').href = url;
+  document.getElementById('lb-download').download = nombre;
+  document.getElementById('lightbox').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cerrarLightbox();
+});
+</script>
 {% endblock %}

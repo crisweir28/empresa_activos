@@ -42,7 +42,7 @@
           <td>{{ vehiculo.Color }}</td></tr>
       {% endif %}
       {% if vehiculo.VIN %}
-      <tr><td style="color:var(--muted);padding:5px 0">VIN</td>
+      <tr><td style="color:var(--muted);padding:5px 0">VIN</td>cle
           <td style="font-family:monospace;font-size:12px">{{ vehiculo.VIN }}</td></tr>
       {% endif %}
       <tr><td style="color:var(--muted);padding:5px 0">Kilometraje</td>
@@ -108,31 +108,6 @@
     {% else %}
       <p style="color:var(--muted);font-size:13px">Sin conductor asignado.</p>
     {% endif %}
-   <!-- Historial de conductores -->
-  {% if historial_conductores|length > 1 or (historial_conductores|length == 1 and historial_conductores[0].FechaFin) %}
-  <details style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">
-    <summary style="cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;user-select:none">
-      📋 Historial de conductores ({{ historial_conductores|length }})
-    </summary>
-    <div style="margin-top:12px;max-height:200px;overflow-y:auto">
-      {% for h in historial_conductores %}
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12px">
-        <div style="font-weight:600;margin-bottom:4px">
-          {{ h.personal.Nombre }} {{ h.personal.Apellido }}
-          {% if not h.FechaFin %}
-          <span style="background:var(--green);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px">Actual</span>
-          {% endif %}
-        </div>
-        <div style="color:var(--muted);line-height:1.6">
-          Desde: {{ h.FechaInicio }}
-          {% if h.FechaFin %} → Hasta: {{ h.FechaFin }}{% else %} → <span style="color:var(--green)">Presente</span>{% endif %}
-          <br>Lic: {{ h.personal.LicenciaNumero or '—' }}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </details>
-  {% endif %}
   </div>
 </div>
 
@@ -145,6 +120,16 @@
     <span style="background:var(--accent);color:#fff;font-size:10px;
                  padding:1px 6px;border-radius:20px;margin-left:4px">
       {{ permisos|length }}
+    </span>
+    {% endif %}
+  </button>
+  <!-- ✅ AGREGAR ESTE BOTÓN: -->
+  <button class="tab-btn" onclick="showTab('historial', this)">
+    📋 Historial de Conductores
+    {% if historial_conductores %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ historial_conductores|length }}
     </span>
     {% endif %}
   </button>
@@ -286,6 +271,81 @@
   </div>
   {% else %}
   <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">Sin permisos registrados.</p>
+  {% endif %}
+</div>
+
+<!-- Tab: Historial de Conductores -->
+<div id="tab-historial" class="tab-content panel" 
+     style="display:none;border-top:none;border-radius:0 0 16px 16px">
+  <div class="panel-title" style="margin-top:4px">
+    Historial de Conductores
+    <span style="color:var(--muted);font-size:12px;font-weight:400">
+      ({{ historial_conductores|length }} asignación{{ 'es' if historial_conductores|length != 1 else '' }})
+    </span>
+  </div>
+
+  {% if historial_conductores %}
+  <table>
+    <thead>
+      <tr>
+        <th>Conductor</th>
+        <th>Licencia</th>
+        <th>Fecha Inicio</th>
+        <th>Fecha Fin</th>
+        <th>Duración</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in historial_conductores %}
+      <tr>
+        <td>
+          <div style="font-weight:600;color:var(--text);margin-bottom:2px">
+            {{ h.personal.Nombre }} {{ h.personal.Apellido }}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">
+            Vigencia lic: {{ h.personal.LicenciaVigencia or '—' }}
+          </div>
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {{ h.personal.LicenciaNumero or '—' }}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {{ h.FechaInicio.strftime('%d/%m/%Y') if h.FechaInicio else '—' }}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {% if h.FechaFin %}
+            {{ h.FechaFin.strftime('%d/%m/%Y') }}
+          {% else %}
+            <span style="color:var(--muted)">—</span>
+          {% endif %}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {% if h.FechaFin %}
+            {% set dias = (h.FechaFin - h.FechaInicio).days %}
+            {{ dias }} día{{ 's' if dias != 1 else '' }}
+          {% else %}
+            {% set dias = (now - h.FechaInicio).days %}
+            {{ dias }} día{{ 's' if dias != 1 else '' }}
+          {% endif %}
+        </td>
+        <td>
+          {% if h.FechaFin %}
+            <span class="badge" style="background:rgba(100,116,139,.12);color:var(--muted)">
+              Finalizada
+            </span>
+          {% else %}
+            <span class="badge badge-activo">Actual</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
+    Sin historial de conductores.
+  </p>
   {% endif %}
 </div>
 

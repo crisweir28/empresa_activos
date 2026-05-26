@@ -9,6 +9,7 @@ from ..views.vehiculo_vistas import VVehiculo, VPermisosVencer, VMantenimientoVe
 from ..utils.permisos import requiere_rol, requiere_permiso
 from ..utils.archivos import guardar_archivo
 from ..models.baja_activo import BajaActivo
+from datetime import datetime
 
 administrativo_bp = Blueprint("administrativo", __name__)
 
@@ -23,10 +24,10 @@ def _check_acceso():
 
 @administrativo_bp.route("/")
 @login_required
-@requiere_permiso('Dashboard') 
+@requiere_permiso('Vehículos', 'ver')  # ✅ CAMBIADO: usa módulo que SÍ existe
 def dashboard():
-    if not _check_acceso():
-        return redirect(url_for("activos.dashboard"))
+    #if not _check_acceso():
+    #    return redirect(url_for("activos.dashboard"))
 
     # Obtener TODOS los vehículos (incluidos baja)
     todos_vehiculos = VVehiculo.query.all()
@@ -51,14 +52,14 @@ def dashboard():
         vehiculos_baja   = len(vehiculos_baja),
         permisos_vencer  = permisos_vencer,
         mantenimientos   = mantenimientos,
-        vehiculos        = todos_vehiculos,  # ← Pasar TODOS para que JavaScript filtre
+        vehiculos        = todos_vehiculos,
         alertas_prox     = alertas,
-        ubicaciones      = Ubicacion.query.all(),  # ← Para el modal de nuevo vehículo
+        ubicaciones      = Ubicacion.query.all(),
     )
 
 @administrativo_bp.route("/vehiculos/nuevo", methods=["POST"])
 @login_required
-@requiere_permiso('Vehículos', 'crear')   # ← agregar
+@requiere_permiso('Vehículos', 'crear')
 def vehiculo_nuevo():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
@@ -151,22 +152,32 @@ def vehiculo_editar(id):
 def vehiculo_detalle(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-    vehiculo       = Vehiculo.query.get_or_404(id)
-    permisos       = PermisosVehiculo.query.filter_by(IdVehiculo=id).order_by(PermisosVehiculo.FechaVencimiento.asc()).all()
+    
+    vehiculo = Vehiculo.query.get_or_404(id)
+    permisos = PermisosVehiculo.query.filter_by(IdVehiculo=id).order_by(
+        PermisosVehiculo.FechaVencimiento.asc()
+    ).all()
     mantenimientos = VMantenimientoVehiculo.query.filter_by(vehiculo_id=id).all()
-    conductor_act  = ConductorVehiculo.query.filter_by(IdVehiculo=id, FechaFin=None).first()
-    historial_conductores = ConductorVehiculo.query.filter_by(IdVehiculo=id).order_by(ConductorVehiculo.FechaInicio.desc()).all()  # ← NUEVO
-    tipos          = TipoServicio.query.all()
-    personal       = Personal.query.filter_by(Activo=True).order_by(Personal.Nombre).all()
+    conductor_act = ConductorVehiculo.query.filter_by(IdVehiculo=id, FechaFin=None).first()
+    historial_conductores = ConductorVehiculo.query.filter_by(IdVehiculo=id).order_by(
+        ConductorVehiculo.FechaInicio.desc()
+    ).all()
+    
+    # ✅ CORREGIR: Variables bien nombradas
+    tipos_servicio = TipoServicio.query.all()
+    personal_disponible = Personal.query.filter_by(Activo=True).order_by(Personal.Nombre).all()
+    
     return render_template("administrativo/vehiculo_detalle.html",
-        vehiculo       = vehiculo,
-        permisos       = permisos,
-        mantenimientos = mantenimientos,
-        conductor_act  = conductor_act,
-        historial_conductores = historial_conductores,  # ← NUEVO
-        tipos          = tipos,
-        personal       = personal,
-        today_date     = date.today(),
+        vehiculo=vehiculo,
+        conductor_act=conductor_act,
+        historial_conductores=historial_conductores,
+        mantenimientos=mantenimientos,
+        permisos=permisos,
+        tipos_servicio=tipos_servicio,  # ✅ Ahora sí existe
+        personal_disponible=personal_disponible,  # ✅ Ahora sí existe
+        today_date=date.today(),
+        #now=datetime.utcnow()
+        now=date.today()
     )
 
 @administrativo_bp.route("/vehiculos/<int:id>/permisos/nuevo", methods=["POST"])

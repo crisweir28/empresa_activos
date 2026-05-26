@@ -210,55 +210,81 @@ def equipo_editar(id):
 def equipo_asignar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-
+ 
     usuario_id  = request.form.get('usuario_id', type=int)
     proyecto_id = request.form.get('proyecto_id', type=int)
-
+ 
     if not usuario_id:
         flash('Selecciona un usuario.', 'warning')
         return redirect(url_for('ti.equipo_detalle', id=id))
-
+ 
     try:
+        from ..models.asignacion import AsignacionEquipo
+        from datetime import datetime
+        
+        # 1. Actualizar el equipo
         db.session.execute(db.text("""
             UPDATE electronico SET IdUsuario = :uid, Estado = 'asignado'
             WHERE IdElectronico = :id
         """), {'uid': usuario_id, 'id': id})
-
+ 
+        # 2. ✅ REGISTRAR EN HISTORIAL
+        nueva_asignacion = AsignacionEquipo(
+            IdEquipo=id,
+            IdUsuario=usuario_id,
+            FechaAsignacion=datetime.utcnow(),
+            AsignadoPor=current_user.id
+        )
+        db.session.add(nueva_asignacion)
+ 
+        # 3. Proyecto (si aplica)
         if proyecto_id:
             existente = db.session.execute(db.text("""
                 SELECT IdAsignacion FROM proyectoactivo
                 WHERE IdProyecto = :pid AND TipoActivo = 'electronico'
                   AND IdActivo = :aid AND FechaDevolucion IS NULL LIMIT 1
             """), {'pid': proyecto_id, 'aid': id}).fetchone()
-
+ 
             if not existente:
                 db.session.execute(db.text("""
                     INSERT INTO proyectoactivo
                         (IdProyecto, TipoActivo, IdActivo, EstadoInicial, AsignadoPor, FechaAsignacion)
                     VALUES (:pid, 'electronico', :aid, 'bueno', :usr, CURDATE())
                 """), {'pid': proyecto_id, 'aid': id, 'usr': current_user.IdUsuario})
-
+ 
         db.session.commit()
         _emit_actualizar()
         flash('Equipo asignado correctamente.', 'success')
-
+ 
     except Exception as ex:
         db.session.rollback()
         flash(f'Error al asignar: {str(ex)}', 'error')
-
+ 
     return redirect(url_for('ti.equipo_detalle', id=id))
+ 
 
-
-# ── Liberar equipo ────────────────────────────────────────────
+# ── Liberar equipo (CON HISTORIAL) ────────────────────────────
 @ti_bp.route("/equipos/<int:id>/liberar", methods=["POST"])
 @login_required
 @requiere_permiso('Equipos TI', 'editar')
 def equipo_liberar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
-
+ 
     try:
-        # ← CAMBIO: Usar SQL directo en lugar de ORM
+        from ..models.asignacion import AsignacionEquipo
+        from datetime import datetime
+        
+        # 1. ✅ CERRAR LA ASIGNACIÓN ACTUAL EN EL HISTORIAL
+        asignacion_actual = AsignacionEquipo.query.filter_by(
+            IdEquipo=id,
+            FechaLiberacion=None
+        ).first()
+        
+        if asignacion_actual:
+            asignacion_actual.FechaLiberacion = datetime.utcnow()
+        
+        # 2. Liberar el equipo
         db.session.execute(db.text("""
             UPDATE electronico 
             SET IdUsuario = NULL, Estado = 'almacen'
@@ -275,70 +301,55 @@ def equipo_liberar(id):
     
     return redirect(url_for('ti.equipo_detalle', id=id))
 
-
-# ── Detalle equipo ────────────────────────────────────────────
+# ── Detalle equipo (CON HISTORIAL) ───────────────────────────
 @ti_bp.route("/equipos/<int:id>")
 @login_required
-@requiere_permiso('Equipos TI')
 def equipo_detalle(id):
-    if not _check_acceso():
-        return redirect(url_for("activos.dashboard"))
-
-    # ← USAR SQL DIRECTO en lugar del ORM
-    equipo_raw = db.session.execute(db.text("""
-        SELECT e.*, u.Nombre as UsuarioNombre, u.ApellidoPaterno, u.Correo,
-               r.NombreRol
-        FROM electronico e
-        LEFT JOIN usuario u ON e.IdUsuario = u.IdUsuario
-        LEFT JOIN rol r ON u.IdRol = r.IdRol
-        WHERE e.IdElectronico = :id
-    """), {'id': id}).fetchone()
+    """Vista de detalle de un equipo con toda su información"""
+    from ..models.electronico import Electronico, MantenimientoElectronico
+    from ..models.herramienta import EvidenciaEquipo
+    from ..models.usuario import Usuario
+    from ..models.asignacion import AsignacionEquipo  # ← HABILITAR ESTE IMPORT
+    from datetime import datetime
     
-    if not equipo_raw:
-        flash('Equipo no encontrado.', 'error')
-        return redirect(url_for('ti.equipos'))
+    equipo = Electronico.query.get_or_404(id)
     
-    # Convertir a diccionario para el template
-    equipo = dict(equipo_raw._mapping)
+    mantenimientos = MantenimientoElectronico.query.filter_by(
+        IdElectronico=id
+    ).order_by(MantenimientoElectronico.FechaInicio.desc()).all()
     
-    # Agregar propiedades calculadas que usa el template
-    tipo_labels = {
-        'laptop': 'Laptop', 'desktop': 'Desktop', 'monitor': 'Monitor',
-        'celular': 'Celular', 'red': 'Equipo de red', 'otro': 'Otro'
-    }
-    equipo['tipo_label'] = tipo_labels.get(equipo.get('TipoEquipo'), 'Otro')
-    
-    # Agregar objeto usuario si existe
-    if equipo.get('IdUsuario'):
-        equipo['usuario'] = {
-            'Nombre': equipo.get('UsuarioNombre'),
-            'ApellidoPaterno': equipo.get('ApellidoPaterno'),
-            'Correo': equipo.get('Correo'),
-            'rol_obj': {'NombreRol': equipo.get('NombreRol')} if equipo.get('NombreRol') else None
-        }
-    else:
-        equipo['usuario'] = None
-    
-    mantenimientos = VMantenimientoElectronico.query.filter_by(IdElectronico=id).all()
-    usuarios       = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
-    ubicaciones    = Ubicacion.query.all()
-    evidencias     = EvidenciaEquipo.query.filter_by(
+    evidencias = EvidenciaEquipo.query.filter_by(
         IdElectronico=id
     ).order_by(EvidenciaEquipo.CreadoEn.desc()).all()
-
-    proyectos_activos = db.session.execute(db.text("""
-        SELECT IdProyecto, Nombre, Estatus FROM proyecto
-        WHERE Estatus NOT IN ('Completado','Cancelado') ORDER BY Nombre
-    """)).fetchall()
-
-    return render_template("ti/equipo_detalle.html",
-        equipo            = equipo,
-        evidencias        = evidencias,
-        mantenimientos    = mantenimientos,
-        usuarios          = usuarios,
-        ubicaciones       = ubicaciones,
-        today             = date.today(),
-        proyectos_activos = proyectos_activos,
+    
+    # ✅ HABILITAR: Obtener historial de asignaciones
+    historial_asignaciones = AsignacionEquipo.query.filter_by(
+        IdEquipo=id
+    ).order_by(AsignacionEquipo.FechaAsignacion.desc()).all()
+    
+    # Lista de usuarios para el modal de asignación
+    usuarios = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
+    
+    # Iconos para evidencias
+    for ev in evidencias:
+        if ev.TipoArchivo == 'imagen':
+            ev.icono = '🖼️'
+        else:
+            ext = ev.NombreArchivo.rsplit('.', 1)[-1].lower() if ev.NombreArchivo else ''
+            ev.icono = {
+                'pdf': '📄', 'doc': '📝', 'docx': '📝',
+                'xls': '📊', 'xlsx': '📊', 'csv': '📊',
+                'txt': '📃', 'zip': '📦', 'rar': '📦'
+            }.get(ext, '📎')
+    
+    return render_template(
+        "ti/equipo_detalle.html",
+        equipo=equipo,
+        mantenimientos=mantenimientos,
+        evidencias=evidencias,
+        historial_asignaciones=historial_asignaciones,  # ✅ CON DATOS REALES
+        usuarios=usuarios,
+        now=datetime.utcnow()
     )
 
 # ── Mantenimiento nuevo ───────────────────────────────────────

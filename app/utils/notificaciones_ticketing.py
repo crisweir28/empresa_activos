@@ -345,9 +345,8 @@ def notificar_nuevo_comentario(ticket_data, comentario_data, url_base):
             cuerpo_html=email_html
         )
 
-
 # ══════════════════════════════════════════════════════════
-# NOTIFICACIÓN 4: CAMBIO DE ESTADO
+# NOTIFICACIÓN 4: CAMBIO DE ESTADO (VERSIÓN SIMPLIFICADA)
 # ══════════════════════════════════════════════════════════
 
 def notificar_cambio_estado(ticket_data, estado_anterior, estado_nuevo, url_base):
@@ -356,7 +355,7 @@ def notificar_cambio_estado(ticket_data, estado_anterior, estado_nuevo, url_base
     
     Args:
         ticket_data: dict con IdTicket, NumeroTicket, EmailCreador
-        estado_anterior: str
+        estado_anterior: str (no se usa, pero se mantiene por compatibilidad)
         estado_nuevo: str
         url_base: str
     """
@@ -373,38 +372,30 @@ def notificar_cambio_estado(ticket_data, estado_anterior, estado_nuevo, url_base
     }
     
     contenido = f"""
-    <p style="margin: 0 0 20px; color: #4b5563;">
-        El estado de tu ticket <strong>{ticket_data['NumeroTicket']}</strong> ha cambiado:
+    <p style="margin: 0 0 20px; color: #4b5563; font-size: 15px;">
+        El estatus de tu ticket <strong>{ticket_data['NumeroTicket']}</strong> ha cambiado:
     </p>
     
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
         <tr>
-            <td align="center" style="padding: 20px; background-color: #fef3c7; border-radius: 8px 0 0 8px; width: 50%;">
-                <p style="margin: 0 0 8px; color: #92400e; font-size: 12px; font-weight: 600; text-transform: uppercase;">
-                    Estado Anterior
+            <td align="center" style="padding: 40px; background-color: #d1fae5; border-radius: 12px;">
+                <p style="margin: 0 0 16px; color: #065f46; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;">
+                    Nuevo Estatus
                 </p>
-                <p style="margin: 0; color: #78350f; font-size: 18px; font-weight: 700;">
-                    {estados_emoji.get(estado_anterior, '📋')} {estado_anterior}
-                </p>
-            </td>
-            <td align="center" style="padding: 20px; background-color: #d1fae5; border-radius: 0 8px 8px 0; width: 50%;">
-                <p style="margin: 0 0 8px; color: #065f46; font-size: 12px; font-weight: 600; text-transform: uppercase;">
-                    Estado Nuevo
-                </p>
-                <p style="margin: 0; color: #047857; font-size: 18px; font-weight: 700;">
+                <p style="margin: 0; color: #047857; font-size: 32px; font-weight: 800; line-height: 1.2;">
                     {estados_emoji.get(estado_nuevo, '📋')} {estado_nuevo}
                 </p>
             </td>
         </tr>
     </table>
     
-    <p style="margin: 24px 0 0; color: #4b5563;">
-        Puedes revisar el progreso completo en el sistema.
+    <p style="margin: 24px 0 0; color: #4b5563; font-size: 15px;">
+        Puedes revisar el progreso completo del ticket haciendo clic en el botón de abajo.
     </p>
     """
     
     email_html = _generar_email_base(
-        titulo="Actualización de Estado",
+        titulo="Actualización de Estatus",
         contenido=contenido,
         url_ticket=url_ticket
     )
@@ -414,7 +405,6 @@ def notificar_cambio_estado(ticket_data, estado_anterior, estado_nuevo, url_base
         asunto=f"🔔 {ticket_data['NumeroTicket']}: {estado_nuevo}",
         cuerpo_html=email_html
     )
-
 
 # ══════════════════════════════════════════════════════════
 # NOTIFICACIÓN 5: TICKET RESUELTO

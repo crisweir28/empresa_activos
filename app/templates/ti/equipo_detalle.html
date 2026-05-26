@@ -116,7 +116,7 @@
   <!-- Asignación -->
   <div class="panel">
     <div class="panel-title">
-      👤 Asignación
+      👤 Asignación Actual
       {% if equipo.Estado == 'almacen' %}
       <button class="btn-sm" onclick="abrirModal('modal-asignar')">Asignar</button>
       {% elif equipo.Estado == 'asignado' %}
@@ -138,6 +138,7 @@
 
 </div>
 
+
 <!-- Tabs -->
 <div style="display:flex;border-bottom:1px solid var(--border);overflow-x:auto">
   <button class="tab-btn active" onclick="showTab('mantenimiento',this)">🔧 Mantenimiento</button>
@@ -147,6 +148,15 @@
     <span style="background:var(--accent);color:#fff;font-size:10px;
                  padding:1px 6px;border-radius:20px;margin-left:4px">
       {{ evidencias|length }}
+    </span>
+    {% endif %}
+  </button>
+  <button class="tab-btn" onclick="showTab('historial',this)">
+    📋 Historial
+    {% if historial_asignaciones %}
+    <span style="background:var(--accent);color:#fff;font-size:10px;
+                 padding:1px 6px;border-radius:20px;margin-left:4px">
+      {{ historial_asignaciones|length }}
     </span>
     {% endif %}
   </button>
@@ -273,6 +283,77 @@
   {% else %}
   <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
     Sin evidencias registradas.
+  </p>
+  {% endif %}
+</div>
+
+<!-- ── Tab Historial ──────────────────────────────────────── -->
+<div id="tab-historial" class="tab-content panel"
+     style="display:none;border-top:none;border-radius:0 0 16px 16px">
+  <div class="panel-title" style="margin-top:4px">
+    Historial de Asignaciones
+    <span style="color:var(--muted);font-size:12px;font-weight:400">
+      ({{ historial_asignaciones|length }} asignación{{ 'es' if historial_asignaciones|length != 1 else '' }})
+    </span>
+  </div>
+
+  {% if historial_asignaciones %}
+  <table>
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Fecha Asignación</th>
+        <th>Fecha Liberación</th>
+        <th>Duración</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asig in historial_asignaciones %}
+      <tr>
+        <td>
+          <div style="font-weight:600;color:var(--text);margin-bottom:2px">
+            {{ asig.usuario.Nombre }} {{ asig.usuario.ApellidoPaterno }}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">
+            {{ asig.usuario.Correo }}
+          </div>
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {{ asig.FechaAsignacion.strftime('%d/%m/%Y %H:%M') if asig.FechaAsignacion else '—' }}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {% if asig.FechaLiberacion %}
+            {{ asig.FechaLiberacion.strftime('%d/%m/%Y %H:%M') }}
+          {% else %}
+            <span style="color:var(--muted)">—</span>
+          {% endif %}
+        </td>
+        <td style="color:var(--muted);font-size:12px">
+          {% if asig.FechaLiberacion %}
+            {% set dias = (asig.FechaLiberacion - asig.FechaAsignacion).days %}
+            {{ dias }} día{{ 's' if dias != 1 else '' }}
+          {% else %}
+            {% set dias = (now - asig.FechaAsignacion).days %}
+            {{ dias }} día{{ 's' if dias != 1 else '' }}
+          {% endif %}
+        </td>
+        <td>
+          {% if asig.FechaLiberacion %}
+            <span class="badge" style="background:rgba(100,116,139,.12);color:var(--muted)">
+              Finalizada
+            </span>
+          {% else %}
+            <span class="badge badge-activo">Actual</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:32px">
+    Sin historial de asignaciones.
   </p>
   {% endif %}
 </div>

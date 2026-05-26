@@ -12,7 +12,7 @@ def create_app(env="default"):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app, cors_allowed_origins='*')
-    mail.init_app(app)   # ← agrega esta línea
+    mail.init_app(app)
 
     # ── Blueprints ────────────────────────────────────────────────────────────
     from .routes.auth           import auth_bp
@@ -111,9 +111,32 @@ def create_app(env="default"):
     def make_shell_context():
         return {"db": db, "Usuario": Usuario, "Activo": Activo,
                 "Departamento": Departamento}
-        
+    
+    # ── Rutas estáticas ───────────────────────────────────────────────────────
     @app.route('/documents/<path:filename>')
     def serve_document(filename):
         return send_from_directory('documents', filename)
+    
+    # ── Error Handlers ────────────────────────────────────────────────────────
+    
+    @app.errorhandler(403)
+    def acceso_denegado(e):
+        from flask import jsonify, request, redirect, url_for, flash
+        
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': True, 'mensaje': 'No tienes acceso a este módulo.'}), 403
+        
+        flash('No tienes permiso para acceder a esta sección.', 'error')
+        return redirect(url_for('activos.dashboard'))
+
+    @app.errorhandler(404)
+    def pagina_no_encontrada(e):
+        from flask import jsonify, request, redirect, url_for, flash
+        
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'error': True, 'mensaje': 'Página no encontrada.'}), 404
+        
+        flash('La página que buscas no existe.', 'error')
+        return redirect(url_for('activos.dashboard'))
 
     return app
