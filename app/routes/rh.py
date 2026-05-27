@@ -616,24 +616,45 @@ def baja_cancelar(id_baja):
 @rh_bp.route('/auditoria/')
 @login_required
 def auditoria():
+
     if not _puede('ver'):
         flash('No tienes permiso.', 'warning')
         return redirect(url_for('activos.dashboard'))
 
     tipo_filter = request.args.get('tipo', '')
     cond_filter = request.args.get('condicion', '')
+    estado_filter = request.args.get('estado', '')
 
     sql = "SELECT * FROM v_auditoria_resguardo WHERE 1=1"
+
     params = {}
+
     if tipo_filter:
         sql += " AND TipoActivo=:tipo"
         params['tipo'] = tipo_filter
+
     if cond_filter:
         sql += " AND Condicion=:cond"
         params['cond'] = cond_filter
+
+    if estado_filter:
+
+        if estado_filter == 'asignado':
+            sql += " AND AsignadoA IS NOT NULL"
+
+        elif estado_filter == 'almacen':
+            sql += " AND AsignadoA IS NULL"
+
+        else:
+            sql += " AND Estado=:estado"
+            params['estado'] = estado_filter
+
     sql += " ORDER BY TipoActivo, NombreActivo"
 
-    activos = db.session.execute(db.text(sql), params).fetchall()
+    activos = db.session.execute(
+        db.text(sql),
+        params
+    ).fetchall()
 
     stats = db.session.execute(db.text("""
         SELECT
@@ -646,10 +667,13 @@ def auditoria():
         FROM v_auditoria_resguardo
     """)).fetchone()
 
-    return render_template('ti/auditoria.html',
-                           activos=activos, stats=stats,
-                           tipo_filter=tipo_filter,
-                           cond_filter=cond_filter)
+    return render_template(
+        'ti/auditoria.html',
+        activos=activos,
+        stats=stats,
+        tipo_filter=tipo_filter,
+        cond_filter=cond_filter
+    )
 
 
 @rh_bp.route('/auditoria/usuarios')
@@ -861,6 +885,9 @@ def reporte_consolidado():
  
 def _obtener_activos_filtrados(tipo_filter, cond_filter):
     """Obtiene activos TI con los filtros aplicados."""
+    
+    estado_filter = request.args.get('estado', '').strip()
+
     sql = """
         SELECT 
             'electronico' as TipoActivo,
@@ -886,6 +913,11 @@ def _obtener_activos_filtrados(tipo_filter, cond_filter):
     if cond_filter:
         sql += " AND e.Condicion = :condicion"
         params['condicion'] = cond_filter
+
+    # ✅ AQUÍ VA
+    if estado_filter:
+        sql += " AND e.Estado = :estado"
+        params['estado'] = estado_filter
     
     sql += " ORDER BY e.Nombre"
     
