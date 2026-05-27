@@ -1,0 +1,861 @@
+<!-- app/templates/ti/auditoria.html -->
+{% extends "base.html" %}
+{% block title %}Auditoría — Resguardo{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/rh/rh.css') }}">
+
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   HERO HEADER ESTILIZADO (igual que Ticketing/Dashboard TI)
+   ═══════════════════════════════════════════════════════════ */
+.hero-banner {
+  background: linear-gradient(135deg, #9B2335 0%, #c0392b 100%);
+  border-radius: 16px;
+  padding: 32px 36px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 24px rgba(155, 35, 53, 0.25);
+  flex-wrap: wrap;
+  gap: 16px;
+  position: relative;
+  z-index: 10;
+}
+
+.hero-banner-content {
+  flex: 1;
+}
+
+.hero-banner-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
+}
+
+.hero-banner-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  font-weight: 500;
+}
+
+.hero-banner-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Botón Generar Reporte */
+.btn-reporte-hero {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-reporte-hero:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn-usuarios-hero {
+  background: rgba(255, 255, 255, 0.95);
+  color: #9B2335;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Inter', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-usuarios-hero:hover {
+  background: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DROPDOWN
+   ═══════════════════════════════════════════════════════════ */
+.report-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  min-width: 260px;
+  z-index: 1000;
+  padding: 8px;
+  animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.report-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: #374151;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  text-align: left;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.report-option:hover {
+  background: #f9fafb;
+  transform: translateX(4px);
+  color: #111827;
+}
+
+.report-option i {
+  font-size: 22px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+  font-style: normal;
+}
+
+.report-option:nth-child(1) i { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+.report-option:nth-child(2) i { background: rgba(22, 163, 74, 0.1); color: #16a34a; }
+.report-option:nth-child(3) i { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+.report-option:nth-child(4) i { background: rgba(124, 58, 237, 0.1); color: #7c3aed; }
+
+/* ═══════════════════════════════════════════════════════════
+   STAT BOXES
+   ═══════════════════════════════════════════════════════════ */
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+a.stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: var(--c, #2563eb);
+  text-decoration: none;
+}
+
+.stat-box .sn {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--c, var(--text));
+}
+
+.stat-box .sl {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.badge-green  { background: #dcfce7; color: #15803d; }
+.badge-yellow { background: #fef9c3; color: #a16207; }
+.badge-red    { background: #fee2e2; color: #b91c1c; }
+
+/* ═══════════════════════════════════════════════════════════
+   DATATABLES - Estilos del módulo TI
+   ═══════════════════════════════════════════════════════════ */
+body .main table#tabla-auditoria.dataTable {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+
+body .main table#tabla-auditoria.dataTable thead th {
+  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%) !important;
+  border-bottom: 2px solid #e5e7eb !important;
+  padding: 16px 18px !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  text-align: left !important;
+}
+
+body .main table#tabla-auditoria.dataTable tbody td {
+  padding: 14px 18px !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  vertical-align: middle !important;
+  font-size: 13px !important;
+}
+
+body .main table#tabla-auditoria.dataTable tbody tr:nth-child(even) {
+  background-color: #fafafa !important;
+}
+
+body .main table#tabla-auditoria.dataTable tbody tr:hover td {
+  background: #f0f9ff !important;
+}
+
+body .main div.dataTables_filter {
+  float: right !important;
+  margin-bottom: 20px !important;
+   margin: 10px !important;
+}
+
+body .main div.dataTables_filter label {
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+body .main div.dataTables_filter input {
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  width: 280px !important;
+  outline: none !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+body .main div.dataTables_filter input:focus {
+  border-color: #9B2335 !important;
+  box-shadow: 0 0 0 4px rgba(155, 35, 53, 0.1) !important;
+}
+
+body .main div.dataTables_length {
+  float: left !important;
+  margin-bottom: 20px !important;
+}
+
+body .main div.dataTables_length label {
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 10px !important;
+}
+
+body .main div.dataTables_length select {
+  border: 1.5px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 10px 40px 10px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+body .main div.dataTables_info {
+  padding-top: 20px !important;
+  font-size: 13px !important;
+  color: var(--muted) !important;
+  float: left !important;
+  margin: 10px !important;
+}
+
+body .main div.dataTables_paginate {
+  padding-top: 7px !important;
+  float: right !important;
+   margin: 8px !important;
+}
+
+body .main .dataTables_paginate .paginate_button {
+  padding: 8px 14px !important;
+  margin: 0 3px !important;
+  border-radius: 8px !important;
+  border: 1.5px solid var(--border) !important;
+  background: white !important;
+  color: var(--text) !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+body .main .dataTables_paginate .paginate_button:hover {
+  background: #f9fafb !important;
+  border-color: #9B2335 !important;
+  color: #9B2335 !important;
+}
+
+body .main .dataTables_paginate .paginate_button.current {
+  background: linear-gradient(135deg, #9B2335 0%, #c0392b 100%) !important;
+  color: white !important;
+  border-color: #9B2335 !important;
+}
+
+body .main div.dataTables_wrapper::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL COLUMNAS
+   ═══════════════════════════════════════════════════════════ */
+.modal-columnas-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  backdrop-filter: blur(4px);
+}
+
+.modal-columnas {
+  width: 420px;
+  max-width: 95%;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-columnas-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-columnas-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.btn-cerrar-modal {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  color: #6b7280;
+}
+
+.modal-columnas-body {
+  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.check-columna {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.check-columna input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.modal-columnas-footer {
+  padding: 18px 22px;
+}
+
+.btn-modal-secundario {
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-modal-guardar {
+  border: none;
+  background: linear-gradient(135deg, #9B2335 0%, #c0392b 100%);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ✅ Hero header estilizado con gradiente -->
+<div class="hero-banner">
+  <div class="hero-banner-content">
+    <h1 class="hero-banner-title">🔍 Acceso a Auditoría</h1>
+    <p class="hero-banner-subtitle">Activos en resguardo y estado del inventario</p>
+  </div>
+  
+  <div class="hero-banner-actions">
+
+    <button class="btn-reporte-hero" onclick="abrirModalColumnas()">
+      ⚙️ Columnas
+    </button>
+    <!-- Botón de Reportes -->
+    <div style="position: relative;">
+      <button class="btn-reporte-hero" onclick="toggleReportMenu(event)">
+        📊 Generar Reporte
+      </button>
+      
+      <div id="report-menu" class="report-dropdown" style="display: none;">
+        <a href="#" class="report-option" onclick="generarReporte('pdf'); return false;">
+          <i>📄</i> Descargar PDF
+        </a>
+        <a href="#" class="report-option" onclick="generarReporte('excel'); return false;">
+          <i>📊</i> Descargar Excel
+        </a>
+        <a href="#" class="report-option" onclick="generarReporte('csv'); return false;">
+          <i>📋</i> Descargar CSV
+        </a>
+        <a href="#" class="report-option" onclick="generarReporte('print'); return false;">
+          <i>🖨️</i> Imprimir
+        </a>
+      </div>
+    </div>
+    
+    <a href="{{ url_for('rh.auditoria_usuarios') }}" class="btn-usuarios-hero">
+      👥 Ver Usuarios
+    </a>
+  </div>
+</div>
+
+{# ── Stats clicables ── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px">
+  <a href="{{ url_for('rh.auditoria') }}" class="stat-box" style="--c:#6b7280">
+    <span style="font-size:22px">📦</span>
+    <span class="sn">{{ stats.total or 0 }}</span>
+    <span class="sl">Total activos</span>
+  </a>
+  
+  <div class="stat-box" style="--c:#2563eb">
+    <span style="font-size:22px">👤</span>
+    <span class="sn">{{ stats.asignados or 0 }}</span>
+    <span class="sl">Asignados</span>
+  </div>
+  
+  <div class="stat-box" style="--c:#d97706">
+    <span style="font-size:22px">🏭</span>
+    <span class="sn">{{ stats.en_almacen or 0 }}</span>
+    <span class="sl">En almacén</span>
+  </div>
+  
+  <a href="{{ url_for('rh.auditoria', condicion='bueno') }}" class="stat-box" style="--c:#16a34a">
+    <span style="font-size:22px">✅</span>
+    <span class="sn">{{ stats.bueno or 0 }}</span>
+    <span class="sl">Buen estado</span>
+  </a>
+  
+  <a href="{{ url_for('rh.auditoria', condicion='regular') }}" class="stat-box" style="--c:#f59e0b">
+    <span style="font-size:22px">⚠️</span>
+    <span class="sn">{{ stats.regular or 0 }}</span>
+    <span class="sl">Estado regular</span>
+  </a>
+  
+  <a href="{{ url_for('rh.auditoria', condicion='dañado') }}" class="stat-box" style="--c:#ef4444">
+    <span style="font-size:22px">❌</span>
+    <span class="sn">{{ stats.danado or 0 }}</span>
+    <span class="sl">Dañados</span>
+  </a>
+</div>
+
+{# ── Filtros ── #}
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('rh.auditoria') }}"
+          style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div>
+        <label class="form-label">Tipo de activo</label>
+        <select name="tipo" class="form-control" onchange="this.form.submit()">
+          <option value="">Todos</option>
+          <option value="electronico" {% if tipo_filter=='electronico' %}selected{% endif %}>💻 TI / Electrónico</option>
+          <option value="general"     {% if tipo_filter=='general' %}selected{% endif %}>📦 General</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Condición</label>
+        <select name="condicion" class="form-control" onchange="this.form.submit()">
+          <option value="">Todas</option>
+          <option value="bueno"   {% if cond_filter=='bueno' %}selected{% endif %}>✅ Bueno</option>
+          <option value="regular" {% if cond_filter=='regular' %}selected{% endif %}>⚠️ Regular</option>
+          <option value="dañado"  {% if cond_filter=='dañado' %}selected{% endif %}>❌ Dañado</option>
+        </select>
+      </div>
+      {% if tipo_filter or cond_filter %}
+      <a href="{{ url_for('rh.auditoria') }}" class="btn btn-outline">✕ Limpiar</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+{# ── Tabla con DataTable ── #}
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Inventario en resguardo</h3>
+  </div>
+  {% if activos %}
+  <div style="overflow-x:auto">
+    <table class="display" id="tabla-auditoria" style="width:100%">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Nombre</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Condición</th>
+          <th>Valor</th>
+          <th>Asignado a</th>
+          <th>Ubicación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in activos %}
+        <tr>
+          <td>
+            {% if a.TipoActivo == 'electronico' %}
+              <span class="badge badge-blue">💻 TI</span>
+            {% else %}
+              <span class="badge badge-yellow">📦 General</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:500">{{ a.Nombre }}</td>
+          <td><code>{{ a.NumeroSerie or '—' }}</code></td>
+          <td>
+            <span class="badge {% if a.Estado in ('activo','asignado','almacen') %}badge-green
+                               {% elif a.Estado == 'mantenimiento' %}badge-yellow
+                               {% else %}badge-red{% endif %}">
+              {{ a.Estado }}
+            </span>
+          </td>
+          <td>
+            {% if a.Condicion == 'bueno' %}<span class="badge badge-green">✅ Bueno</span>
+            {% elif a.Condicion == 'regular' %}<span class="badge badge-yellow">⚠️ Regular</span>
+            {% elif a.Condicion == 'dañado' %}<span class="badge badge-red">❌ Dañado</span>
+            {% else %}<span style="color:var(--muted)">—</span>{% endif %}
+          </td>
+          <td>${{ "{:,.0f}".format(a.Valor or 0) }}</td>
+          <td>{{ a.AsignadoA or '<span style="color:var(--muted)">Sin asignar</span>' | safe }}</td>
+          <td style="font-size:12px;color:var(--muted)">{{ a.Ubicacion or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div style="font-size:48px">📭</div>
+    <p>No hay activos con los filtros seleccionados.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL COLUMNAS
+═══════════════════════════════════════════════════════ -->
+<div id="modal-columnas" class="modal-columnas-overlay" style="display:none;">
+  <div class="modal-columnas">
+
+    <div class="modal-columnas-header">
+      <h3>⚙️ Configurar columnas</h3>
+      <button type="button" class="btn-cerrar-modal" onclick="cerrarModalColumnas()">
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-columnas-body">
+
+      <label class="check-columna">
+        <input type="checkbox" value="0" checked>
+        Tipo
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="1" checked>
+        Nombre
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="2" checked>
+        N° Serie
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="3" checked>
+        Estado
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="4" checked>
+        Condición
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="5" checked>
+        Valor
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="6" checked>
+        Asignado a
+      </label>
+
+      <label class="check-columna">
+        <input type="checkbox" value="7" checked>
+        Ubicación
+      </label>
+
+    </div>
+
+    <div class="modal-columnas-footer">
+      <button type="button" class="btn-modal-secundario" onclick="restablecerColumnas()">
+        Restablecer
+      </button>
+
+      <button type="button" class="btn-modal-guardar" onclick="guardarConfiguracionColumnas()">
+        Guardar cambios
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<!-- jQuery + DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+<script>
+// ── Inicializar DataTable ─────────────────────────────────────
+let tablaAuditoria;
+$(document).ready(function() {
+  tablaAuditoria = $('#tabla-auditoria').DataTable({
+    language: {
+      lengthMenu: "Mostrar _MENU_ registros",
+      search: "Buscar:",
+      info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+      infoEmpty: "Sin registros",
+      infoFiltered: "(filtrado de _MAX_ registros)",
+      zeroRecords: "No se encontraron resultados",
+      emptyTable: "Sin datos disponibles",
+      paginate: {
+        first: "«",
+        previous: "‹",
+        next: "›",
+        last: "»"
+      }
+    },
+    pageLength: 10,
+    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+    order: [[1, 'asc']],
+    responsive: true
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// CONFIGURACIÓN DE COLUMNAS
+// ═══════════════════════════════════════════════════════════
+
+const STORAGE_KEY_COLUMNAS = 'auditoria_columnas_visibles';
+
+function abrirModalColumnas() {
+  document.getElementById('modal-columnas').style.display = 'flex';
+}
+
+function cerrarModalColumnas() {
+  document.getElementById('modal-columnas').style.display = 'none';
+}
+
+function guardarConfiguracionColumnas() {
+
+  const checks = document.querySelectorAll('.check-columna input');
+  const columnasVisibles = [];
+
+  checks.forEach(check => {
+
+    const index = parseInt(check.value);
+    const visible = check.checked;
+
+    tablaAuditoria.column(index).visible(visible);
+
+    if (visible) {
+      columnasVisibles.push(index);
+    }
+  });
+
+  localStorage.setItem(
+    STORAGE_KEY_COLUMNAS,
+    JSON.stringify(columnasVisibles)
+  );
+
+  cerrarModalColumnas();
+}
+
+function cargarConfiguracionColumnas() {
+
+  const guardadas = localStorage.getItem(STORAGE_KEY_COLUMNAS);
+
+  if (!guardadas) {
+    return;
+  }
+
+  const columnasVisibles = JSON.parse(guardadas);
+
+  const checks = document.querySelectorAll('.check-columna input');
+
+  checks.forEach(check => {
+
+    const index = parseInt(check.value);
+    const visible = columnasVisibles.includes(index);
+
+    check.checked = visible;
+
+    tablaAuditoria.column(index).visible(visible);
+  });
+}
+
+function restablecerColumnas() {
+
+  const checks = document.querySelectorAll('.check-columna input');
+
+  checks.forEach(check => {
+    check.checked = true;
+  });
+
+  guardarConfiguracionColumnas();
+}
+
+// Cerrar modal al hacer click fuera
+window.addEventListener('click', function(e) {
+
+  const modal = document.getElementById('modal-columnas');
+
+  if (e.target === modal) {
+    cerrarModalColumnas();
+  }
+});
+
+// Cargar configuración guardada
+$(document).ready(function() {
+  cargarConfiguracionColumnas();
+});
+
+
+// ── Toggle del menú de reportes ───────────────────────────────
+function toggleReportMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('report-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Cerrar el menú al hacer clic fuera
+document.addEventListener('click', function(event) {
+  const menu = document.getElementById('report-menu');
+  if (menu && !event.target.closest('.report-dropdown') && !event.target.closest('button[onclick*="toggleReportMenu"]')) {
+    menu.style.display = 'none';
+  }
+});
+
+// ── Generar reporte con filtros activos ──────────────────────
+function generarReporte(formato) {
+  const params = new URLSearchParams(window.location.search);
+  const tipo = params.get('tipo') || '';
+  const condicion = params.get('condicion') || '';
+  
+  let url = '';
+  
+  if (formato === 'print') {
+    window.print();
+    return;
+  }
+  
+  if (formato === 'pdf') {
+    url = "{{ url_for('rh.auditoria_reporte_pdf') }}";
+  } else if (formato === 'excel') {
+    url = "{{ url_for('rh.auditoria_reporte_excel') }}";
+  } else if (formato === 'csv') {
+    url = "{{ url_for('rh.auditoria_reporte_csv') }}";
+  }
+  
+  const queryParams = new URLSearchParams();
+  if (tipo) queryParams.append('tipo', tipo);
+  if (condicion) queryParams.append('condicion', condicion);
+  
+  if (queryParams.toString()) {
+    url += '?' + queryParams.toString();
+  }
+  
+  window.location.href = url;
+  document.getElementById('report-menu').style.display = 'none';
+}
+</script>
+{% endblock %}

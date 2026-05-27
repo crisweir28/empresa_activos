@@ -352,7 +352,10 @@
       <span class="ic"><i class="bi bi-clipboard-check"></i></span> Validación
     </a>
     {% endif %}
- 
+    <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
+            href="{{ url_for('rh.auditoria') }}">
+            <span class="ic"><i class="bi bi-search"></i></span> Auditoría
+    </a>
   </div>
 </div>
 {% endif %}
@@ -567,10 +570,6 @@
           <a class="nav-link {% if request.endpoint == 'rh.bajas_lista' %}active{% endif %}"
             href="{{ url_for('rh.bajas_lista') }}">
             <span class="ic"><i class="bi bi-file-earmark-x"></i></span> Procesos de Baja
-          </a>
-          <a class="nav-link {% if request.endpoint in ('rh.auditoria','rh.auditoria_usuarios') %}active{% endif %}"
-            href="{{ url_for('rh.auditoria') }}">
-            <span class="ic"><i class="bi bi-search"></i></span> Auditoría
           </a>
           <a class="nav-link {% if request.endpoint == 'rh.reporte_consolidado' %}active{% endif %}"
             href="{{ url_for('rh.reporte_consolidado') }}">

@@ -7,7 +7,17 @@ from ..models.usuario import Usuario, Rol, AREAS_CON_MODULO
 from ..models.departamento import Departamento
 from datetime import datetime
 from ..tasks.correo import enviar_bienvenida
-from ..utils.permisos import tiene_permiso, es_admin_rh
+from ..utils.permisos import tiene_permiso, es_admin_rh, requiere_permiso
+from flask import send_file
+from io import BytesIO, StringIO
+from datetime import datetime
+import pandas as pd
+import csv
+from reportlab.lib.pagesizes import letter, A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch
 
 rh_bp = Blueprint('rh', __name__, url_prefix='/rh')
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -625,7 +635,7 @@ def auditoria():
         FROM v_auditoria_resguardo
     """)).fetchone()
 
-    return render_template('rh/auditoria.html',
+    return render_template('ti/auditoria.html',
                            activos=activos, stats=stats,
                            tipo_filter=tipo_filter,
                            cond_filter=cond_filter)
@@ -833,3 +843,255 @@ def reporte_consolidado():
                            depto_filter=depto_filter,
                            tipo_filter=tipo_filter,
                            sin_proyecto=sin_proyecto)
+    
+# ══════════════════════════════════════════════════════════════
+# REPORTES DE AUDITORÍA (solo equipos TI/Electrónicos)
+# ══════════════════════════════════════════════════════════════
+ 
+def _obtener_activos_filtrados(tipo_filter, cond_filter):
+    """Obtiene activos TI con los filtros aplicados."""
+    sql = """
+        SELECT 
+            'electronico' as TipoActivo,
+            e.Nombre,
+            e.TipoEquipo,
+            e.Marca,
+            e.Modelo,
+            e.NumeroSerie,
+            e.Estado,
+            e.Condicion,
+            e.Costo as Valor,
+            CONCAT(COALESCE(u.Nombre,''), ' ', COALESCE(u.ApellidoPaterno,'')) as AsignadoA,
+            ub.Nombre as Ubicacion,
+            DATE_FORMAT(e.FechaAdquisicion, '%%d/%%m/%%Y') as FechaAdquisicion
+        FROM electronico e
+        LEFT JOIN usuario u ON e.IdUsuario = u.IdUsuario
+        LEFT JOIN Ubicacion ub ON e.IdUbicacion = ub.IdUbicacion
+        WHERE e.Estado != 'baja'
+    """
+    
+    params = {}
+    
+    if cond_filter:
+        sql += " AND e.Condicion = :condicion"
+        params['condicion'] = cond_filter
+    
+    sql += " ORDER BY e.Nombre"
+    
+    result = db.session.execute(db.text(sql), params).fetchall()
+    return [dict(row._mapping) for row in result]
+ 
+ 
+# ── Reporte PDF ───────────────────────────────────────────────
+@rh_bp.route("/auditoria/reporte/pdf")
+@login_required
+@requiere_permiso('Auditoria', 'ver')
+def auditoria_reporte_pdf():
+    """Genera reporte PDF de la auditoría con filtros aplicados."""
+    
+    tipo_filter = request.args.get('tipo', '')
+    cond_filter = request.args.get('condicion', '')
+    
+    activos = _obtener_activos_filtrados(tipo_filter, cond_filter)
+    
+    # Crear PDF en memoria
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Título
+    titulo_cond = {
+        'bueno': 'En Buen Estado',
+        'regular': 'En Estado Regular',
+        'dañado': 'Dañados'
+    }.get(cond_filter, 'Todos los Equipos')
+    
+    title = Paragraph(
+        f"<b>Reporte de Auditoría - Activos TI</b><br/>{titulo_cond}", 
+        styles['Title']
+    )
+    elements.append(title)
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Info
+    fecha_gen = datetime.now().strftime('%d/%m/%Y %H:%M')
+    info = Paragraph(
+        f"<b>Generado:</b> {fecha_gen}<br/><b>Total equipos:</b> {len(activos)}",
+        styles['Normal']
+    )
+    elements.append(info)
+    elements.append(Spacer(1, 0.3*inch))
+    
+    # Tabla
+    data = [['Equipo', 'Tipo', 'N° Serie', 'Estado', 'Condición', 'Valor', 'Asignado a', 'Ubicación']]
+    
+    for a in activos:
+        data.append([
+            a['Nombre'][:30],
+            a['TipoEquipo'] or '—',
+            a['NumeroSerie'] or '—',
+            a['Estado'],
+            a['Condicion'],
+            f"${a['Valor']:,.0f}" if a['Valor'] else '$0',
+            (a['AsignadoA'] or '—').strip() or '—',
+            a['Ubicacion'] or '—'
+        ])
+    
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    buffer.seek(0)
+    
+    fecha_archivo = datetime.now().strftime('%Y%m%d')
+    nombre = f'auditoria_ti_{fecha_archivo}.pdf'
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=nombre,
+        mimetype='application/pdf'
+    )
+ 
+ 
+# ── Reporte Excel ─────────────────────────────────────────────
+@rh_bp.route("/auditoria/reporte/excel")
+@login_required
+@requiere_permiso('Auditoria', 'ver')
+def auditoria_reporte_excel():
+    """Genera reporte Excel de la auditoría con filtros aplicados."""
+    
+    tipo_filter = request.args.get('tipo', '')
+    cond_filter = request.args.get('condicion', '')
+    
+    activos = _obtener_activos_filtrados(tipo_filter, cond_filter)
+    
+    # Renombrar columnas para Excel
+    activos_excel = []
+    for a in activos:
+        activos_excel.append({
+            'Equipo': a['Nombre'],
+            'Tipo': a['TipoEquipo'],
+            'Marca': a['Marca'],
+            'Modelo': a['Modelo'],
+            'N° Serie': a['NumeroSerie'],
+            'Estado': a['Estado'],
+            'Condición': a['Condicion'],
+            'Valor': f"${a['Valor']:,.2f}" if a['Valor'] else '$0.00',
+            'Asignado a': (a['AsignadoA'] or '').strip() or 'Sin asignar',
+            'Ubicación': a['Ubicacion'] or '—',
+            'Fecha Adquisición': a['FechaAdquisicion'] or '—'
+        })
+    
+    df = pd.DataFrame(activos_excel)
+    
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Auditoría TI', index=False)
+        
+        workbook = writer.book
+        worksheet = writer.sheets['Auditoría TI']
+        
+        # Ajustar anchos
+        for column in worksheet.columns:
+            max_length = 0
+            column_cells = [cell for cell in column]
+            for cell in column_cells:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column_cells[0].column_letter].width = adjusted_width
+        
+        # Estilo header
+        from openpyxl.styles import Font, PatternFill, Alignment
+        
+        header_fill = PatternFill(start_color="2563eb", end_color="2563eb", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+    
+    buffer.seek(0)
+    
+    fecha_archivo = datetime.now().strftime('%Y%m%d')
+    nombre = f'auditoria_ti_{fecha_archivo}.xlsx'
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=nombre,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+ 
+ 
+# ── Reporte CSV ───────────────────────────────────────────────
+@rh_bp.route("/auditoria/reporte/csv")
+@login_required
+@requiere_permiso('Auditoria', 'ver')
+def auditoria_reporte_csv():
+    """Genera reporte CSV de la auditoría con filtros aplicados."""
+    
+    tipo_filter = request.args.get('tipo', '')
+    cond_filter = request.args.get('condicion', '')
+    
+    activos = _obtener_activos_filtrados(tipo_filter, cond_filter)
+    
+    # Crear CSV en memoria
+    output = StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_ALL)
+    
+    # Encabezados
+    writer.writerow([
+        'Equipo', 'Tipo', 'Marca', 'Modelo', 'N° Serie',
+        'Estado', 'Condición', 'Valor', 'Asignado a', 'Ubicación', 'Fecha Adquisición'
+    ])
+    
+    # Datos
+    for a in activos:
+        writer.writerow([
+            a['Nombre'],
+            a['TipoEquipo'] or '',
+            a['Marca'] or '',
+            a['Modelo'] or '',
+            a['NumeroSerie'] or '',
+            a['Estado'],
+            a['Condicion'],
+            f"${a['Valor']:,.2f}" if a['Valor'] else '$0.00',
+            (a['AsignadoA'] or '').strip() or 'Sin asignar',
+            a['Ubicacion'] or '',
+            a['FechaAdquisicion'] or ''
+        ])
+    
+    output.seek(0)
+    
+    # Convertir a bytes con BOM para Excel (acentos)
+    csv_bytes = '\ufeff' + output.getvalue()
+    buffer = BytesIO(csv_bytes.encode('utf-8'))
+    
+    fecha_archivo = datetime.now().strftime('%Y%m%d')
+    nombre = f'auditoria_ti_{cond_filter or "todos"}_{fecha_archivo}.csv'
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=nombre,
+        mimetype='text/csv'
+    )
+ 
