@@ -18,6 +18,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.units import inch
+import json
 
 rh_bp = Blueprint('rh', __name__, url_prefix='/rh')
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -29,6 +30,17 @@ AREA_ROL_MAP = {
     'Recursos Humanos': 4,
     'Administrativo':   2,
     'Almacén':          3,
+}
+
+MAPEO_COLUMNAS = {
+    'Tipo': 'TipoEquipo',
+    'Nombre': 'Nombre',
+    'N° Serie': 'NumeroSerie',
+    'Estado': 'Estado',
+    'Condición': 'Condicion',
+    'Valor': 'Valor',
+    'Asignado a': 'AsignadoA',
+    'Ubicación': 'Ubicacion',
 }
 
 def _rol_por_area(nombre_area: str, tipo: str) -> int:
@@ -54,7 +66,6 @@ def _puede(accion='ver'):
         {'uid': current_user.IdUsuario}
     ).fetchone()
     return bool(row and row.ok)
-
 
 # ══════════════════════════════════════════════════════════════
 # GESTIÓN DE PERSONAL CORPORATIVO (todos los usuarios)
@@ -880,6 +891,41 @@ def _obtener_activos_filtrados(tipo_filter, cond_filter):
     
     result = db.session.execute(db.text(sql), params).fetchall()
     return [dict(row._mapping) for row in result]
+
+def _obtener_columnas_solicitadas():
+    """Lee el parámetro 'columnas' del request y devuelve la lista de columnas."""
+    columnas_param = request.args.get('columnas', '')
+    
+    if not columnas_param:
+        # Si no se envían columnas, devolver todas por defecto
+        return list(MAPEO_COLUMNAS.keys())
+    
+    try:
+        columnas = json.loads(columnas_param)
+        # Filtrar solo las que existen en el mapeo
+        return [c for c in columnas if c in MAPEO_COLUMNAS]
+    except (json.JSONDecodeError, TypeError):
+        return list(MAPEO_COLUMNAS.keys())
+
+def _obtener_valor_celda(activo, nombre_columna):
+    """Obtiene el valor formateado de una celda según el nombre de la columna."""
+    key = MAPEO_COLUMNAS.get(nombre_columna)
+    if not key:
+        return '—'
+    
+    valor = activo.get(key)
+    
+    # Formateos especiales
+    if nombre_columna == 'Tipo':
+        return '💻 TI' if activo.get('TipoActivo') == 'electronico' else '📦 General'
+    
+    if nombre_columna == 'Valor':
+        return f"${valor:,.2f}" if valor else '$0.00'
+    
+    if nombre_columna == 'Asignado a':
+        return (valor or '').strip() or 'Sin asignar'
+    
+    return valor or '—'
  
  
 # ── Reporte PDF ───────────────────────────────────────────────
@@ -887,10 +933,11 @@ def _obtener_activos_filtrados(tipo_filter, cond_filter):
 @login_required
 @requiere_permiso('Auditoria', 'ver')
 def auditoria_reporte_pdf():
-    """Genera reporte PDF de la auditoría con filtros aplicados."""
+    """Genera reporte PDF con SOLO las columnas seleccionadas."""
     
     tipo_filter = request.args.get('tipo', '')
     cond_filter = request.args.get('condicion', '')
+    columnas = _obtener_columnas_solicitadas()
     
     activos = _obtener_activos_filtrados(tipo_filter, cond_filter)
     
@@ -900,7 +947,6 @@ def auditoria_reporte_pdf():
     elements = []
     styles = getSampleStyleSheet()
     
-    # Título
     titulo_cond = {
         'bueno': 'En Buen Estado',
         'regular': 'En Estado Regular',
@@ -908,13 +954,12 @@ def auditoria_reporte_pdf():
     }.get(cond_filter, 'Todos los Equipos')
     
     title = Paragraph(
-        f"<b>Reporte de Auditoría - Activos TI</b><br/>{titulo_cond}", 
+        f"<b>Reporte de Auditoría - Activos TI</b><br/>{titulo_cond}",
         styles['Title']
     )
     elements.append(title)
     elements.append(Spacer(1, 0.2*inch))
     
-    # Info
     fecha_gen = datetime.now().strftime('%d/%m/%Y %H:%M')
     info = Paragraph(
         f"<b>Generado:</b> {fecha_gen}<br/><b>Total equipos:</b> {len(activos)}",
@@ -923,24 +968,22 @@ def auditoria_reporte_pdf():
     elements.append(info)
     elements.append(Spacer(1, 0.3*inch))
     
-    # Tabla
-    data = [['Equipo', 'Tipo', 'N° Serie', 'Estado', 'Condición', 'Valor', 'Asignado a', 'Ubicación']]
+    # ✅ Construir tabla DINÁMICAMENTE con columnas seleccionadas
+    data = [columnas]  # Encabezados = columnas seleccionadas
     
     for a in activos:
-        data.append([
-            a['Nombre'][:30],
-            a['TipoEquipo'] or '—',
-            a['NumeroSerie'] or '—',
-            a['Estado'],
-            a['Condicion'],
-            f"${a['Valor']:,.0f}" if a['Valor'] else '$0',
-            (a['AsignadoA'] or '—').strip() or '—',
-            a['Ubicacion'] or '—'
-        ])
+        fila = []
+        for col in columnas:
+            valor = _obtener_valor_celda(a, col)
+            # Recortar nombres muy largos
+            if col == 'Nombre' and isinstance(valor, str):
+                valor = valor[:30]
+            fila.append(str(valor))
+        data.append(fila)
     
     table = Table(data, repeatRows=1)
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9B2335')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -965,35 +1008,26 @@ def auditoria_reporte_pdf():
         mimetype='application/pdf'
     )
  
- 
 # ── Reporte Excel ─────────────────────────────────────────────
 @rh_bp.route("/auditoria/reporte/excel")
 @login_required
 @requiere_permiso('Auditoria', 'ver')
 def auditoria_reporte_excel():
-    """Genera reporte Excel de la auditoría con filtros aplicados."""
+    """Genera reporte Excel con SOLO las columnas seleccionadas."""
     
     tipo_filter = request.args.get('tipo', '')
     cond_filter = request.args.get('condicion', '')
+    columnas = _obtener_columnas_solicitadas()
     
     activos = _obtener_activos_filtrados(tipo_filter, cond_filter)
     
-    # Renombrar columnas para Excel
+    # ✅ Construir filas DINÁMICAMENTE con columnas seleccionadas
     activos_excel = []
     for a in activos:
-        activos_excel.append({
-            'Equipo': a['Nombre'],
-            'Tipo': a['TipoEquipo'],
-            'Marca': a['Marca'],
-            'Modelo': a['Modelo'],
-            'N° Serie': a['NumeroSerie'],
-            'Estado': a['Estado'],
-            'Condición': a['Condicion'],
-            'Valor': f"${a['Valor']:,.2f}" if a['Valor'] else '$0.00',
-            'Asignado a': (a['AsignadoA'] or '').strip() or 'Sin asignar',
-            'Ubicación': a['Ubicacion'] or '—',
-            'Fecha Adquisición': a['FechaAdquisicion'] or '—'
-        })
+        fila = {}
+        for col in columnas:
+            fila[col] = _obtener_valor_celda(a, col)
+        activos_excel.append(fila)
     
     df = pd.DataFrame(activos_excel)
     
@@ -1020,7 +1054,7 @@ def auditoria_reporte_excel():
         # Estilo header
         from openpyxl.styles import Font, PatternFill, Alignment
         
-        header_fill = PatternFill(start_color="2563eb", end_color="2563eb", fill_type="solid")
+        header_fill = PatternFill(start_color="9B2335", end_color="9B2335", fill_type="solid")
         header_font = Font(bold=True, color="FFFFFF")
         
         for cell in worksheet[1]:
@@ -1046,10 +1080,11 @@ def auditoria_reporte_excel():
 @login_required
 @requiere_permiso('Auditoria', 'ver')
 def auditoria_reporte_csv():
-    """Genera reporte CSV de la auditoría con filtros aplicados."""
+    """Genera reporte CSV con SOLO las columnas seleccionadas."""
     
     tipo_filter = request.args.get('tipo', '')
     cond_filter = request.args.get('condicion', '')
+    columnas = _obtener_columnas_solicitadas()
     
     activos = _obtener_activos_filtrados(tipo_filter, cond_filter)
     
@@ -1057,36 +1092,22 @@ def auditoria_reporte_csv():
     output = StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_ALL)
     
-    # Encabezados
-    writer.writerow([
-        'Equipo', 'Tipo', 'Marca', 'Modelo', 'N° Serie',
-        'Estado', 'Condición', 'Valor', 'Asignado a', 'Ubicación', 'Fecha Adquisición'
-    ])
+    # ✅ Encabezados = columnas seleccionadas
+    writer.writerow(columnas)
     
-    # Datos
+    # ✅ Datos solo con columnas seleccionadas
     for a in activos:
-        writer.writerow([
-            a['Nombre'],
-            a['TipoEquipo'] or '',
-            a['Marca'] or '',
-            a['Modelo'] or '',
-            a['NumeroSerie'] or '',
-            a['Estado'],
-            a['Condicion'],
-            f"${a['Valor']:,.2f}" if a['Valor'] else '$0.00',
-            (a['AsignadoA'] or '').strip() or 'Sin asignar',
-            a['Ubicacion'] or '',
-            a['FechaAdquisicion'] or ''
-        ])
+        fila = [_obtener_valor_celda(a, col) for col in columnas]
+        writer.writerow(fila)
     
     output.seek(0)
     
-    # Convertir a bytes con BOM para Excel (acentos)
+    # BOM para que Excel abra acentos correctamente
     csv_bytes = '\ufeff' + output.getvalue()
     buffer = BytesIO(csv_bytes.encode('utf-8'))
     
     fecha_archivo = datetime.now().strftime('%Y%m%d')
-    nombre = f'auditoria_ti_{cond_filter or "todos"}_{fecha_archivo}.csv'
+    nombre = f'auditoria_ti_{fecha_archivo}.csv'
     
     return send_file(
         buffer,

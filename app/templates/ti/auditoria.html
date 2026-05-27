@@ -688,7 +688,6 @@ body .main div.dataTables_wrapper::after {
 
 
 {% endblock %}
-
 {% block scripts %}
 <!-- jQuery + DataTables -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -697,7 +696,9 @@ body .main div.dataTables_wrapper::after {
 <script>
 // ── Inicializar DataTable ─────────────────────────────────────
 let tablaAuditoria;
+
 $(document).ready(function() {
+
   tablaAuditoria = $('#tabla-auditoria').DataTable({
     language: {
       lengthMenu: "Mostrar _MENU_ registros",
@@ -714,12 +715,17 @@ $(document).ready(function() {
         last: "»"
       }
     },
+
     pageLength: 10,
     lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
     order: [[1, 'asc']],
     responsive: true
   });
+
+  // Cargar columnas guardadas
+  cargarConfiguracionColumnas();
 });
+
 
 // ═══════════════════════════════════════════════════════════
 // CONFIGURACIÓN DE COLUMNAS
@@ -794,6 +800,35 @@ function restablecerColumnas() {
   guardarConfiguracionColumnas();
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// OBTENER COLUMNAS VISIBLES
+// ═══════════════════════════════════════════════════════════
+
+function obtenerColumnasVisibles() {
+
+  const columnas = [];
+
+  tablaAuditoria.columns().every(function(index) {
+
+    if (this.visible()) {
+
+      const nombre = $(this.header()).text().trim();
+
+      if (nombre) {
+        columnas.push(nombre);
+      }
+    }
+  });
+
+  return columnas;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// EVENTOS GENERALES
+// ═══════════════════════════════════════════════════════════
+
 // Cerrar modal al hacer click fuera
 window.addEventListener('click', function(e) {
 
@@ -804,57 +839,92 @@ window.addEventListener('click', function(e) {
   }
 });
 
-// Cargar configuración guardada
-$(document).ready(function() {
-  cargarConfiguracionColumnas();
-});
-
 
 // ── Toggle del menú de reportes ───────────────────────────────
 function toggleReportMenu(event) {
+
   event.stopPropagation();
+
   const menu = document.getElementById('report-menu');
-  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+
+  menu.style.display =
+    menu.style.display === 'none'
+      ? 'block'
+      : 'none';
 }
+
 
 // Cerrar el menú al hacer clic fuera
 document.addEventListener('click', function(event) {
+
   const menu = document.getElementById('report-menu');
-  if (menu && !event.target.closest('.report-dropdown') && !event.target.closest('button[onclick*="toggleReportMenu"]')) {
+
+  if (
+    menu &&
+    !event.target.closest('.report-dropdown') &&
+    !event.target.closest('button[onclick*="toggleReportMenu"]')
+  ) {
     menu.style.display = 'none';
   }
 });
 
-// ── Generar reporte con filtros activos ──────────────────────
+
+// ═══════════════════════════════════════════════════════════
+// GENERAR REPORTES
+// ═══════════════════════════════════════════════════════════
+
 function generarReporte(formato) {
+
   const params = new URLSearchParams(window.location.search);
+
   const tipo = params.get('tipo') || '';
   const condicion = params.get('condicion') || '';
-  
+
+  // Obtener columnas visibles
+  const columnas = obtenerColumnasVisibles();
+
   let url = '';
-  
+
   if (formato === 'print') {
     window.print();
     return;
   }
-  
+
   if (formato === 'pdf') {
+
     url = "{{ url_for('rh.auditoria_reporte_pdf') }}";
+
   } else if (formato === 'excel') {
+
     url = "{{ url_for('rh.auditoria_reporte_excel') }}";
+
   } else if (formato === 'csv') {
+
     url = "{{ url_for('rh.auditoria_reporte_csv') }}";
   }
-  
+
   const queryParams = new URLSearchParams();
-  if (tipo) queryParams.append('tipo', tipo);
-  if (condicion) queryParams.append('condicion', condicion);
-  
+
+  if (tipo) {
+    queryParams.append('tipo', tipo);
+  }
+
+  if (condicion) {
+    queryParams.append('condicion', condicion);
+  }
+
+  // ENVIAR COLUMNAS VISIBLES AL BACKEND
+  queryParams.append(
+    'columnas',
+    JSON.stringify(columnas)
+  );
+
   if (queryParams.toString()) {
     url += '?' + queryParams.toString();
   }
-  
+
   window.location.href = url;
+
   document.getElementById('report-menu').style.display = 'none';
 }
 </script>
