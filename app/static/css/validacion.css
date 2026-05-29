@@ -1,0 +1,137 @@
+/* ═══════════════════════════════════════════════════════
+   VALIDACIÓN DE FORMULARIOS (estilo Bootstrap, sin Bootstrap)
+═══════════════════════════════════════════════════════ */
+
+/* Campo inválido: borde rojo */
+.necesita-validacion input.is-invalid,
+.necesita-validacion select.is-invalid,
+.necesita-validacion textarea.is-invalid {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+  padding-right: calc(1.5em + 0.75rem) !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc2626'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc2626' stroke='none'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right calc(0.375em + 0.1875rem) center !important;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+}
+
+.necesita-validacion input.is-invalid:focus,
+.necesita-validacion select.is-invalid:focus,
+.necesita-validacion textarea.is-invalid:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+  outline: none !important;
+}
+
+/* Campo válido: borde verde (opcional) */
+.necesita-validacion input.is-valid,
+.necesita-validacion select.is-valid,
+.necesita-validacion textarea.is-valid {
+  border-color: #16a34a !important;
+}
+
+/* Mensaje de error debajo del campo */
+.invalid-feedback {
+  display: none;
+  width: 100%;
+  margin-top: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #dc2626;
+}
+
+/* Mostrar mensaje cuando el campo esté inválido */
+.necesita-validacion input.is-invalid ~ .invalid-feedback,
+.necesita-validacion select.is-invalid ~ .invalid-feedback,
+.necesita-validacion textarea.is-invalid ~ .invalid-feedback {
+  display: block;
+  animation: shakeError 0.3s ease;
+}
+
+/* Animación sutil al fallar la validación */
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* Label del campo requerido marcado con * rojo */
+.necesita-validacion label.requerido::after {
+  content: ' *';
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* =======================================================
+VALIDACIONES ESTILO BOOTSTRAP
+======================================================= */
+
+.field input,
+.field select,
+.field textarea{
+    transition:.2s ease;
+}
+
+/* =========================
+VALIDO
+========================= */
+
+.is-valid{
+    border:1px solid #198754 !important;
+    background:rgba(25,135,84,.08);
+}
+
+.is-valid:focus{
+    box-shadow:0 0 0 3px rgba(25,135,84,.2);
+}
+
+/* =========================
+INVALIDO
+========================= */
+
+.is-invalid{
+    border:1px solid #dc3545 !important;
+    background:rgba(220,53,69,.08);
+}
+
+.is-invalid:focus{
+    box-shadow:0 0 0 3px rgba(220,53,69,.2);
+}
+
+/* =========================
+MENSAJES
+========================= */
+
+.valid-feedback,
+.invalid-feedback{
+    display:none;
+    font-size:12px;
+    margin-top:4px;
+}
+
+.valid-feedback{
+    color:#198754;
+}
+
+.invalid-feedback{
+    color:#dc3545;
+}
+
+/* Mostrar mensajes */
+
+.is-valid ~ .valid-feedback{
+    display:block;
+}
+
+.is-invalid ~ .invalid-feedback{
+    display:block;
+}
+
+/* =========================
+INPUT FILE
+========================= */
+
+.input-file-ti{
+    color:var(--text);
+    font-size:13px;
+}

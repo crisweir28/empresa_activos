@@ -6,9 +6,8 @@ from sqlalchemy.exc import IntegrityError  # ✅ AGREGAR ESTA LÍNEA
 from ..extensions import db
 from ..models.activo import Activo
 from ..models.departamento import Departamento
-from ..views import VActivo, VDashboardStats, VActivoPorDepartamento
+from ..views import VActivo, VDashboardStats, VActivoPorDepartamento, VActivoUnificado
 from ..utils.permisos import es_admin, puede_editar_activo
-
 
 activos_bp = Blueprint("activos", __name__)
 
@@ -289,31 +288,30 @@ def dashboard():
         return _portal_empleado()
 
 
+# ── REEMPLAZA tu función lista() con esta ─────────────────────
 @activos_bp.route("/")
 @login_required
 def lista():
-    estado = request.args.get("estado", "")
-    query  = VActivo.query
-
+    estado_filtro = request.args.get("estado", "")
+ 
+    # ✅ Ahora usa el modelo VActivoUnificado (que mapea v_activos_unificado)
+    query = VActivoUnificado.query
+ 
+    # Filtro por departamento si NO es admin
     if not es_admin():
         query = query.filter_by(departamento_id=current_user.departamento_id)
-    if estado:
-        query = query.filter_by(estado=estado)
-
-    page        = request.args.get("page", 1, type=int)
-    per_page    = 15
-    total       = query.count()
-    total_pages = max(1, (total + per_page - 1) // per_page)
-    activos     = query.order_by(VActivo.creado_en.desc()) \
-                       .offset((page - 1) * per_page).limit(per_page).all()
-
+ 
+    # Filtro opcional por estado (?estado=activo|baja|mantenimiento)
+    if estado_filtro:
+        query = query.filter_by(estado=estado_filtro)
+ 
+    activos = query.order_by(VActivoUnificado.creado_en.desc()).all()
+ 
     tema = DEPTO_TEMAS.get(current_user.rol, DEPTO_TEMAS["ti"])
-
+ 
     return render_template("activos/lista.html",
         activos       = activos,
         departamentos = _get_departamentos(),
-        page          = page,
-        total_pages   = total_pages,
         es_admin      = es_admin(),
         tema          = tema,
     )

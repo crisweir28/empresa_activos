@@ -3,6 +3,7 @@
 {% block title %}Dashboard Vehicular{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/administrativo/administrativo.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/validacion_tooltip.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -196,5 +197,7 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/administrativo/administrativo.js') }}"></script>
-<script src="{{ url_for('static', filename='js/administrativo/administrativo/vehiculos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/administrativo/vehiculos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/administrativo/vehiculos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/validacion_tooltip.js') }}"></script>
 {% endblock %}

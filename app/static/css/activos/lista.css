@@ -559,6 +559,11 @@ select[disabled] {
   }
 }
 
+.categoria-badge.categoria-herramienta {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
 /* ══════════════════════════════════════════════════════════════ */
 /* ANIMACIONES */
 /* ══════════════════════════════════════════════════════════════ */
@@ -572,3 +577,4 @@ select[disabled] {
     transform: translateY(0);
   }
 }
+

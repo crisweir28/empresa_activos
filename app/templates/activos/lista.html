@@ -4,162 +4,360 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/activos/lista.css') }}">
-<!-- DataTables CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-<!-- DataTables Buttons CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
-
 <style>
-  /* ✅ FORZAR ESTILOS PARA METRIC-CARD ACTIVE */
+  /* ✅ METRIC-CARD ACTIVE */
   .metric-card.active {
     border: 3px solid var(--accent) !important;
     box-shadow: 0 8px 24px rgba(155, 35, 53, 0.15) !important;
     transform: translateY(0) !important;
     background: var(--card) !important;
   }
+  .metric-card.active .metric-icon { transform: scale(1.05) !important; }
+  .metric-card.active .metric-value { color: var(--accent) !important; font-weight: 800 !important; }
 
-  .metric-card.active .metric-icon {
-    transform: scale(1.05) !important;
-  }
-
-  .metric-card.active .metric-value {
-    color: var(--accent) !important;
-    font-weight: 800 !important;
-  }
-
-  /* DataTables Custom Styles */
-  .dataTables_wrapper {
-    padding: 0 !important;
-  }
-  
-  .dataTables_filter {
-    float: right;
-    margin-bottom: 16px;
-  }
-  
+  /* DataTables base */
+  .dataTables_wrapper { padding: 10px !important; }
+  .dataTables_filter { float: right; margin-bottom: 16px; }
   .dataTables_filter input {
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-left: 8px;
-    font-size: 13px;
-    width: 250px;
-    transition: all 0.2s;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; margin-left: 8px; font-size: 13px; width: 250px; transition: all 0.2s;
   }
-  
   .dataTables_filter input:focus {
-    outline: none;
-    border-color: var(--accent);
+    outline: none; border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(155, 35, 53, 0.1);
   }
-  
-  .dataTables_length {
-    float: left;
-    margin-bottom: 16px;
-  }
-  
+  .dataTables_length { float: left; margin-bottom: 16px; }
   .dataTables_length select {
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 32px 6px 12px;
-    margin: 0 8px;
-    font-size: 13px;
-    cursor: pointer;
-    background: var(--card);
-    color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 6px 32px 6px 12px; margin: 0 8px; font-size: 13px;
+    cursor: pointer; background: var(--card); color: var(--text);
   }
-  
-  .dataTables_info {
-    padding-top: 16px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  
-  .dataTables_paginate {
-    padding-top: 16px;
-    float: right;
-  }
-  
+  .dataTables_info { padding-top: 16px; font-size: 13px; color: var(--muted); }
+  .dataTables_paginate { padding-top: 16px; float: right; }
   .paginate_button {
-    padding: 6px 12px !important;
-    margin: 0 2px !important;
-    border-radius: 6px !important;
-    border: 1px solid var(--border) !important;
-    background: var(--card) !important;
-    color: var(--text) !important;
-    cursor: pointer;
+    padding: 6px 12px !important; margin: 0 2px !important; border-radius: 6px !important;
+    border: 1px solid var(--border) !important; background: var(--card) !important;
+    color: var(--text) !important; cursor: pointer; font-size: 13px; transition: all 0.2s;
+  }
+  .paginate_button:hover {
+    background: var(--surface) !important; border-color: var(--accent) !important; color: var(--accent) !important;
+  }
+  .paginate_button.current {
+    background: white !important; color: white !important; border-color: var(--accent) !important;
+  }
+  .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Ocultar el contenedor de botones DataTables */
+  .dt-buttons { display: none !important; }
+
+  /* ═══════════════════════════════════════════════════════
+     BOTONES HERO (Columnas + Descargar)
+  ═══════════════════════════════════════════════════════ */
+  .btn-hero-secundario {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    background: white;
+    color: var(--accent);
     font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
     transition: all 0.2s;
   }
-  
-  .paginate_button:hover {
-    background: var(--surface) !important;
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-  }
-  
-  .paginate_button.current {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
-  }
-  
-  .paginate_button.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  /* Botones de exportación */
-  .dt-buttons {
-    float: left;
-    margin-bottom: 16px;
-    margin-left: 16px;
-  }
-
-  .dt-button {
-    padding: 8px 16px !important;
-    margin: 0 4px !important;
-    border: 1.5px solid var(--border) !important;
-    border-radius: 8px !important;
-    background: var(--card) !important;
-    color: var(--text) !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-  }
-
-  .dt-button:hover {
-    background: var(--surface) !important;
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
+  .btn-hero-secundario:hover {
+    background: var(--accent);
+    color: white;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(155, 35, 53, 0.25);
   }
 
-  .dt-button:active {
-    transform: translateY(0);
+  .btn-descargar-manual {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-descargar-manual:hover {
+    background: #7a1c2a;
+    border-color: #7a1c2a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(155, 35, 53, 0.25);
+  }
+  .btn-descargar-manual i { font-size: 16px; }
+
+  /* Dropdown descargar */
+  .descargar-wrapper { position: relative; }
+
+  .descargar-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    min-width: 200px;
+    padding: 8px;
+    z-index: 2001;
+    animation: descSlide 0.18s ease-out;
   }
 
-  /* Iconos en los botones */
-  .buttons-pdf::before {
-    content: "📄 ";
-    margin-right: 4px;
+  @keyframes descSlide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .buttons-excel::before {
-    content: "📊 ";
-    margin-right: 4px;
+  .descargar-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+  .descargar-option:hover {
+    background: var(--surface);
+    transform: translateX(3px);
+    color: var(--accent);
   }
 
-  .buttons-csv::before {
-    content: "📋 ";
-    margin-right: 4px;
+  /* ═══════════════════════════════════════════════════════
+     MODAL COLUMNAS
+  ═══════════════════════════════════════════════════════ */
+  .modal-columnas-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    backdrop-filter: blur(4px);
   }
 
-  .buttons-print::before {
-    content: "🖨️ ";
-    margin-right: 4px;
+  .modal-columnas {
+    width: 420px;
+    max-width: 95%;
+    background: #ffffff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+    animation: modalFadeIn 0.2s ease;
   }
+
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(10px) scale(.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .modal-columnas-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-columnas-header h3 { margin: 0; font-size: 18px; font-weight: 800; }
+
+  .btn-cerrar-modal {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    color: #6b7280;
+  }
+
+  .modal-columnas-body {
+    padding: 22px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .check-columna {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .check-columna input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  .modal-columnas-footer {
+    padding: 18px 22px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .btn-modal-secundario {
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #374151;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-modal-guardar {
+    border: none;
+    background: linear-gradient(135deg, var(--accent) 0%, #7a1c2a 100%);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+/* ═══════════════════════════════════════════════════════
+   TABLA ACTIVOS - Diseño compacto y balanceado
+═══════════════════════════════════════════════════════ */
+
+/* Forzar layout fijo para que respete los anchos */
+#tabla-activos.dataTable {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+/* Encabezados */
+#tabla-activos.dataTable thead th {
+  padding: 14px 16px !important;
+  text-align: left !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #6b7280 !important;
+  background: #f9fafb !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+/* Celdas */
+#tabla-activos.dataTable tbody td {
+  padding: 14px 16px !important;
+  vertical-align: middle !important;
+  font-size: 13px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Primera y última columna con más aire */
+#tabla-activos.dataTable thead th:first-child,
+#tabla-activos.dataTable tbody td:first-child {
+  padding-left: 22px !important;
+}
+
+#tabla-activos.dataTable thead th:last-child,
+#tabla-activos.dataTable tbody td:last-child {
+  padding-right: 22px !important;
+}
+
+/* Icono + nombre del activo */
+#tabla-activos .activo-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 0;
+}
+
+#tabla-activos .activo-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+#tabla-activos .activo-nombre {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Serie en monospace */
+#tabla-activos .serie-cell {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* ✅ Descripción - SIEMPRE TRUNCADA con ellipsis + tooltip nativo */
+#tabla-activos .desc-cell {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  cursor: help;
+}
+
+/* Botones de acción */
+#tabla-activos .action-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+#tabla-activos .action-buttons .btn-sm {
+  white-space: nowrap;
+}
+
+/* Hover en filas */
+#tabla-activos.dataTable tbody tr:hover {
+  background-color: #fafafa !important;
+}
+
+/* Quitar scroll horizontal (table-layout:fixed se encarga) */
+.dataTables_scroll,
+.dataTables_scrollHead,
+.dataTables_scrollBody {
+  overflow: visible !important;
+}
 </style>
 {% endblock %}
 
@@ -173,9 +371,32 @@
     <h1 class="hero-title">📦 Inventario de Activos</h1>
     <p class="hero-subtitle">Gestión completa de recursos de la empresa</p>
   </div>
-  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">
-    + Nuevo activo
-  </button>
+
+  <div style="display:flex;align-items:center;gap:12px;">
+    <!-- ✅ Botón Columnas -->
+    <button class="btn-hero-secundario" onclick="abrirModalColumnas()">
+      ⚙️ Columnas
+    </button>
+
+    <!-- ✅ Botón Descargar con dropdown manual -->
+    <div class="descargar-wrapper">
+      <button class="btn-descargar-manual" onclick="toggleDescargarMenu(event)">
+        <i class="bi bi-download"></i> 
+      </button>
+
+      <div id="descargar-menu" class="descargar-dropdown" style="display:none;">
+        <a href="#" class="descargar-option" onclick="exportar('pdf'); return false;">
+          <span>📄</span> Descargar PDF
+        </a>
+        <a href="#" class="descargar-option" onclick="exportar('excel'); return false;">
+          <span>📊</span> Descargar Excel
+        </a>
+        <a href="#" class="descargar-option" onclick="exportar('csv'); return false;">
+          <span>📋</span> Descargar CSV
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -224,12 +445,11 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!-- TABLA CON DATATABLES + EXPORTACIÓN -->
+<!-- TABLA -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <div class="panel">
-  <div class="panel-header">
+  <div class="panel-header" style="display:flex;align-items:center;justify-content:space-between;">
     <h3 class="panel-title">📦 Listado de Activos</h3>
-    <div class="panel-info" id="contador-activos">{{ activos|length }} activos encontrados</div>
   </div>
 
   {% if activos %}
@@ -238,6 +458,8 @@
       <thead>
         <tr>
           <th>Activo</th>
+          <th>Serie</th>
+          <th>Descripción</th>
           <th>Categoría</th>
           <th>Estado</th>
           <th>Departamento</th>
@@ -248,30 +470,37 @@
         {% for a in activos %}
         <tr data-estado="{{ a.estado }}">
           <td>
-            <div class="activo-info">
+            <div class="activo-info" style="display:flex;align-items:center;gap:10px;">
               <div class="activo-icon">
                 {% if a.categoria == 'equipo' %}💻
                 {% elif a.categoria == 'mueble' %}🪑
                 {% elif a.categoria == 'vehiculo' %}🚗
                 {% elif a.categoria == 'software' %}📀
+                {% elif a.categoria == 'herramienta' %}🔧
                 {% else %}📦{% endif %}
               </div>
-              <div>
-                <div class="activo-nombre">{{ a.nombre }}</div>
-                {% if a.numero_serie %}
-                <div class="activo-serie">Serie: {{ a.numero_serie }}</div>
-                {% endif %}
-                {% if a.descripcion %}
-                <div class="activo-desc">{{ a.descripcion[:50] }}{% if a.descripcion|length > 50 %}...{% endif %}</div>
-                {% endif %}
-              </div>
+              <div class="activo-nombre" style="font-weight:600;">{{ a.nombre }}</div>
             </div>
           </td>
           <td>
-            {% if a.categoria %}
-            <span class="categoria-badge categoria-{{ a.categoria }}">{{ a.categoria|capitalize }}</span>
+            {% if a.numero_serie %}
+              <span class="serie-cell">{{ a.numero_serie }}</span>
             {% else %}
-            <span style="color:var(--muted);font-size:12px">—</span>
+              <span style="color:var(--muted);font-size:12px">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.descripcion %}
+              <span class="desc-cell" title="{{ a.descripcion }}">{{ a.descripcion }}</span>
+            {% else %}
+              <span style="color:var(--muted);font-size:12px">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if a.categoria %}
+              <span class="categoria-badge categoria-{{ a.categoria }}">{{ a.categoria|capitalize }}</span>
+            {% else %}
+              <span style="color:var(--muted);font-size:12px">—</span>
             {% endif %}
           </td>
           <td>
@@ -284,17 +513,17 @@
           </td>
           <td>
             {% if a.departamento_nombre %}
-            <span style="font-size:13px;color:var(--text2)">{{ a.departamento_nombre }}</span>
+              <span style="font-size:13px;color:var(--text2)">{{ a.departamento_nombre }}</span>
             {% else %}
-            <span style="color:var(--muted);font-size:12px">Sin asignar</span>
+              <span style="color:var(--muted);font-size:12px">Sin asignar</span>
             {% endif %}
           </td>
           <td>
             <div class="action-buttons">
-              <button class="btn-sm" 
+              <button class="btn-sm"
                 onclick='editarActivo({
-                  id: {{ a.id }}, 
-                  nombre: {{ a.nombre|tojson }}, 
+                  id: {{ a.id }},
+                  nombre: {{ a.nombre|tojson }},
                   numero_serie: {{ (a.numero_serie or "")|tojson }},
                   descripcion: {{ (a.descripcion or "")|tojson }},
                   categoria: {{ (a.categoria or "")|tojson }},
@@ -302,7 +531,7 @@
                   valor: {{ a.valor or 0 }},
                   fecha_adquisicion: {{ (a.fecha_adquisicion.isoformat() if a.fecha_adquisicion else "")|tojson }},
                   departamento_id: {{ a.departamento_id or "" }}
-                })' 
+                })'
                 title="Editar">
                 ✏️ Editar
               </button>
@@ -327,6 +556,55 @@
     </button>
   </div>
   {% endif %}
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL COLUMNAS (igual que auditoría) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="modal-columnas" class="modal-columnas-overlay" style="display:none;">
+  <div class="modal-columnas">
+    <div class="modal-columnas-header">
+      <h3>⚙️ Configurar columnas</h3>
+      <button type="button" class="btn-cerrar-modal" onclick="cerrarModalColumnas()">✕</button>
+    </div>
+
+    <div class="modal-columnas-body">
+      <label class="check-columna">
+        <input type="checkbox" value="0" checked>
+        Activo
+      </label>
+      <label class="check-columna">
+        <input type="checkbox" value="1" checked>
+        Serie
+      </label>
+      <label class="check-columna">
+        <input type="checkbox" value="2" checked>
+        Descripción
+      </label>
+      <label class="check-columna">
+        <input type="checkbox" value="3" checked>
+        Categoría
+      </label>
+      <label class="check-columna">
+        <input type="checkbox" value="4" checked>
+        Estado
+      </label>
+      <label class="check-columna">
+        <input type="checkbox" value="5" checked>
+        Departamento
+      </label>
+    </div>
+
+    <div class="modal-columnas-footer">
+      <button type="button" class="btn-modal-secundario" onclick="restablecerColumnas()">
+        Restablecer
+      </button>
+      <button type="button" class="btn-modal-guardar" onclick="guardarConfiguracionColumnas()">
+        Guardar cambios
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
@@ -474,143 +752,200 @@
 <script src="{{ url_for('static', filename='js/activos.js') }}"></script>
 
 <script>
-// Variable global para la tabla
 let tablaActivos;
+const STORAGE_KEY_COLUMNAS = 'activos_columnas_visibles';
+
+// ✅ REEMPLAZAR la inicialización del DataTable con esta versión
 
 $(document).ready(function() {
   tablaActivos = $('#tabla-activos').DataTable({
-    // Idioma en español
     language: {
       url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-MX.json'
     },
-    
-    // Configuración básica
     responsive: false,
     autoWidth: false,
     pageLength: 25,
     lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
     order: [[0, 'asc']],
-    
-    // Botones de exportación
+
     dom: 'Blfrtip',
     buttons: [
       {
         extend: 'pdfHtml5',
-        text: 'PDF',
         title: 'Inventario de Activos',
         orientation: 'landscape',
         pageSize: 'LETTER',
         exportOptions: {
-          columns: [0, 1, 2, 3], // Excluir columna "Acciones"
-          modifier: {
-            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
-            order: 'applied',
-            page: 'all'
+          columns: ':visible:not(:last-child)',
+          modifier: { search: 'applied', order: 'applied', page: 'all' },
+          // ✅ Limpiar emojis para que el PDF no muestre cuadritos
+          format: {
+            body: limpiarEmojis,
+            header: limpiarEmojis
           }
         },
         customize: function(doc) {
-          doc.styles.title = {
-            fontSize: 16,
-            bold: true,
-            alignment: 'center',
-            margin: [0, 0, 0, 10]
-          };
-          doc.styles.tableHeader = {
-            bold: true,
-            fontSize: 11,
-            fillColor: '#9B2335',
-            color: 'white',
-            alignment: 'left'
-          };
-          doc.content[1].table.widths = ['35%', '20%', '20%', '25%'];
+          doc.styles.title = { fontSize: 16, bold: true, alignment: 'center', margin: [0, 0, 0, 10] };
+          doc.styles.tableHeader = { bold: true, fontSize: 10, fillColor: '#9B2335', color: 'white', alignment: 'left' };
+          doc.defaultStyle = { fontSize: 9 };
         }
       },
       {
         extend: 'excelHtml5',
-        text: 'Excel',
         title: 'Inventario de Activos',
         exportOptions: {
-          columns: [0, 1, 2, 3],
-          modifier: {
-            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
-            order: 'applied',
-            page: 'all'
+          columns: ':visible:not(:last-child)',
+          modifier: { search: 'applied', order: 'applied', page: 'all' },
+          format: {
+            body: limpiarEmojis,
+            header: limpiarEmojis
           }
         }
       },
       {
         extend: 'csvHtml5',
-        text: 'CSV',
-        exportOptions: {
-          columns: [0, 1, 2, 3],
-          modifier: {
-            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
-            order: 'applied',
-            page: 'all'
-          }
-        }
-      },
-      {
-        extend: 'print',
-        text: 'Imprimir',
         title: 'Inventario de Activos',
         exportOptions: {
-          columns: [0, 1, 2, 3],
-          modifier: {
-            search: 'applied', // ✅ SOLO EXPORTA LAS FILAS VISIBLES/FILTRADAS
-            order: 'applied',
-            page: 'all'
+          columns: ':visible:not(:last-child)',
+          modifier: { search: 'applied', order: 'applied', page: 'all' },
+          format: {
+            body: limpiarEmojis,
+            header: limpiarEmojis
           }
         }
       }
     ],
-    
-    // Anchos de columna
+
     columnDefs: [
-      { orderable: false, targets: [4] },
-      { width: "35%", targets: 0 },
-      { width: "15%", targets: 1 },
-      { width: "15%", targets: 2 },
-      { width: "15%", targets: 3 },
-      { width: "20%", targets: 4 }
+      { orderable: false, targets: [6] },
+      { width: "20%", targets: 0 },
+      { width: "12%", targets: 1 },
+      { width: "24%", targets: 2 },
+      { width: "10%", targets: 3 },
+      { width: "12%", targets: 4 },
+      { width: "12%", targets: 5 },
+      { width: "10%", targets: 6 }
     ],
-    
-    // Scroll horizontal
-    scrollX: true
+    scrollX: false,
+
+    initComplete: function() {
+      cargarConfiguracionColumnas();
+    }
   });
 });
+
+// ✅ Helper: limpia emojis y símbolos para los exports
+function limpiarEmojis(data) {
+  if (typeof data !== 'string') return data;
+  
+  return data
+    .replace(/<[^>]*>/g, ' ')                 // ✅ Quitar TODAS las etiquetas HTML
+    .replace(/&nbsp;/g, ' ')                   // Espacios HTML
+    .replace(/&amp;/g, '&')                    // Ampersand
+    .replace(/&lt;/g, '<')                     // Menor que
+    .replace(/&gt;/g, '>')                     // Mayor que
+    .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')   // Emojis pictográficos
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')     // Símbolos
+    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')     // Variation selectors
+    .replace(/\s+/g, ' ')                      // Espacios múltiples
+    .trim();
+}
+
+// ══════════════════════════════════════════════════════════════
+// MODAL DE COLUMNAS
+// ══════════════════════════════════════════════════════════════
+function abrirModalColumnas() {
+  document.getElementById('modal-columnas').style.display = 'flex';
+}
+
+function cerrarModalColumnas() {
+  document.getElementById('modal-columnas').style.display = 'none';
+}
+
+function guardarConfiguracionColumnas() {
+  const checks = document.querySelectorAll('.check-columna input');
+  const columnasVisibles = [];
+
+  checks.forEach(check => {
+    const index = parseInt(check.value);
+    const visible = check.checked;
+    tablaActivos.column(index).visible(visible);
+    if (visible) columnasVisibles.push(index);
+  });
+
+  localStorage.setItem(STORAGE_KEY_COLUMNAS, JSON.stringify(columnasVisibles));
+  cerrarModalColumnas();
+}
+
+function cargarConfiguracionColumnas() {
+  const guardadas = localStorage.getItem(STORAGE_KEY_COLUMNAS);
+  if (!guardadas) return;
+
+  const columnasVisibles = JSON.parse(guardadas);
+  const checks = document.querySelectorAll('.check-columna input');
+
+  checks.forEach(check => {
+    const index = parseInt(check.value);
+    const visible = columnasVisibles.includes(index);
+    check.checked = visible;
+    tablaActivos.column(index).visible(visible);
+  });
+}
+
+function restablecerColumnas() {
+  const checks = document.querySelectorAll('.check-columna input');
+  checks.forEach(check => { check.checked = true; });
+  guardarConfiguracionColumnas();
+}
+
+// Cerrar modal al hacer click fuera
+window.addEventListener('click', function(e) {
+  const modal = document.getElementById('modal-columnas');
+  if (e.target === modal) cerrarModalColumnas();
+});
+
+// ══════════════════════════════════════════════════════════════
+// DROPDOWN DESCARGAR
+// ══════════════════════════════════════════════════════════════
+function toggleDescargarMenu(event) {
+  event.stopPropagation();
+  const menu = document.getElementById('descargar-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(event) {
+  const menu = document.getElementById('descargar-menu');
+  if (menu &&
+      !event.target.closest('.descargar-dropdown') &&
+      !event.target.closest('.btn-descargar-manual')) {
+    menu.style.display = 'none';
+  }
+});
+
+function exportar(formato) {
+  const indice = { pdf: 0, excel: 1, csv: 2 }[formato];
+  tablaActivos.button(indice).trigger();
+  document.getElementById('descargar-menu').style.display = 'none';
+}
 
 // ══════════════════════════════════════════════════════════════
 // FILTRAR ACTIVOS POR ESTADO (CARDS)
 // ══════════════════════════════════════════════════════════════
 function filtrarActivos(estado) {
-  // Quitar clase active de todas las cards
   document.querySelectorAll('.metric-card').forEach(card => {
     card.classList.remove('active');
   });
-  
-  // Agregar clase active a la card seleccionada
   document.getElementById('filtro-' + estado).classList.add('active');
-  
-  // Aplicar filtro a DataTables
-  if (estado === 'todos') {
-    tablaActivos.column(2).search('').draw(); // Limpiar filtro (columna 2 = Estado)
-  } else {
-    // Buscar por el texto exacto del estado
-    let textoEstado = estado === 'activo' ? '✓ Activo' : 
-                      estado === 'mantenimiento' ? '⚙️ Mantenimiento' : 
-                      '✗ Baja';
-    tablaActivos.column(2).search(textoEstado, false, false).draw();
-  }
-  
-  // Actualizar contador
-  actualizarContador();
-}
 
-// Actualizar contador de activos
-function actualizarContador() {
-  let total = tablaActivos.rows({ search: 'applied' }).count();
-  document.getElementById('contador-activos').textContent = total + ' activos encontrados';
+  // ✅ Estado ahora está en la columna 4 (índice)
+  if (estado === 'todos') {
+    tablaActivos.column(4).search('').draw();
+  } else {
+    let textoEstado = estado === 'activo' ? '✓ Activo' :
+                      estado === 'mantenimiento' ? '⚙️ Mantenimiento' :
+                      '✗ Baja';
+    tablaActivos.column(4).search(textoEstado, false, false).draw();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -618,7 +953,7 @@ function actualizarContador() {
 // ══════════════════════════════════════════════════════════════
 function confirmarEliminarActivo(event, nombreActivo, formElement) {
   event.preventDefault();
-  
+
   Swal.fire({
     title: '¿Eliminar activo?',
     html: `<p style="margin:0;color:#64748b;font-size:14px;">Esta acción no se puede deshacer.</p>
@@ -636,7 +971,7 @@ function confirmarEliminarActivo(event, nombreActivo, formElement) {
       formElement.submit();
     }
   });
-  
+
   return false;
 }
 </script>

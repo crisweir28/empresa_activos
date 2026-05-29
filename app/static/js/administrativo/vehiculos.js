@@ -34,26 +34,57 @@ function vAnio(input) {
 
 // ── Submit con validación del form de nuevo vehículo ────────
 function submitVehiculo() {
-  const form   = document.getElementById('form-vehiculo-nuevo');
-  const nombre = form.querySelector('[name="nombre"]');
-  const marca  = form.querySelector('[name="marca"]');
+  const form = document.getElementById('form-vehiculo-nuevo');
+ 
+  // ── PASO 1: Validar campos required con tooltips Bootstrap ──
+  if (!validarFormulario('form-vehiculo-nuevo')) {
+    // Ya se mostraron los tooltips rojos en los campos vacíos
+    return;
+  }
+ 
+  // ── PASO 2: Validar formato de campos opcionales con valor ──
   const placa  = form.querySelector('[name="matricula"]');
   const vin    = form.querySelector('[name="vin"]');
   const poliza = form.querySelector('[name="poliza_seguro"]');
-
-  const ok = [
-    vCampo(nombre, 'v-nombre'),
-    vCampo(marca,  'v-marca'),
-    vPlaca(placa),
-    vVin(vin),
-    vPoliza(poliza),
-  ].every(Boolean);
-
-  if (!ok) {
-    const primer = form.querySelector('.input-err');
-    if (primer) primer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+ 
+  const erroresFormato = [];
+ 
+  // Placa (es obligatoria pero también debe tener formato válido)
+  if (placa.value.trim() && !REGEX_PLACA.test(placa.value.trim())) {
+    erroresFormato.push('La placa no tiene un formato válido (Ej: ABC-1234)');
+    placa.classList.add('is-invalid');
+  }
+ 
+  // VIN: solo validar si tiene algo
+  if (vin.value.trim() && vin.value.trim().length !== 17) {
+    erroresFormato.push(`El VIN debe tener exactamente 17 caracteres (tiene ${vin.value.trim().length})`);
+    vin.classList.add('is-invalid');
+  }
+ 
+  // Póliza: solo validar si tiene algo
+  if (poliza.value.trim()) {
+    const len = poliza.value.trim().length;
+    if (len < 10 || len > 15) {
+      erroresFormato.push(`La póliza debe tener entre 10 y 15 caracteres (tiene ${len})`);
+      poliza.classList.add('is-invalid');
+    }
+  }
+ 
+  // ── PASO 3: Si hay errores de formato, mostrar SweetAlert ──
+  if (erroresFormato.length > 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Revisa los datos',
+      html: '<ul style="text-align:left;margin:0;padding-left:20px;font-size:14px">' +
+            erroresFormato.map(e => `<li>${e}</li>`).join('') +
+            '</ul>',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc2626'
+    });
     return;
   }
+ 
+  // ── PASO 4: Todo OK → enviar el formulario ─────────────────
   form.submit();
 }
 

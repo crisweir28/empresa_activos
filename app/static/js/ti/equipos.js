@@ -46,13 +46,64 @@ function editarEquipo(id, nombre, tipo, marca, modelo, serie, condicion, costo, 
 
 // ── Mostrar/ocultar campos según tipo de equipo ────────────
 // Celular → muestra IMEI; Monitor → oculta specs (procesador, ram, etc.)
+/* ═══════════════════════════════════════════════════════
+   ACTUALIZAR actualizarCampos() en app/static/js/ti/equipos.js
+═══════════════════════════════════════════════════════ */
+
+// Esta es la versión actualizada. Reemplaza tu actualizarCampos() actual.
+// Maneja: IMEI (solo celular), Cargador (solo laptop), y campos de specs.
+
 function actualizarCampos() {
-  const tipo        = document.getElementById('n-tipo').value;
-  const campoIMEI   = document.getElementById('campo-imei');
+  const tipo = document.getElementById('n-tipo').value;
+
+  // ── Campo IMEI: solo para celulares ──────────────────────
+  const campoImei = document.getElementById('campo-imei');
+  if (campoImei) {
+    if (tipo === 'celular') {
+      campoImei.style.display = '';
+    } else {
+      campoImei.style.display = 'none';
+      // Limpiar valor para que no se envíe basura
+      const inputImei = campoImei.querySelector('input[name="imei"]');
+      if (inputImei) inputImei.value = '';
+    }
+  }
+
+  // ── Campo Cargador: solo para laptops ────────────────────
+  const campoCargador = document.getElementById('campo-cargador');
+  if (campoCargador) {
+    const inputCargador = campoCargador.querySelector('input[name="serie_cargador"]');
+
+    if (tipo === 'laptop') {
+      campoCargador.style.display = '';
+      // ✅ Activar required dinámicamente
+      if (inputCargador) inputCargador.setAttribute('required', 'required');
+    } else {
+      campoCargador.style.display = 'none';
+      // ✅ Quitar required y limpiar para no bloquear el submit
+      if (inputCargador) {
+        inputCargador.removeAttribute('required');
+        inputCargador.value = '';
+        inputCargador.classList.remove('is-invalid');
+      }
+    }
+  }
+
+  // ── Campos de specs: ocultar para tipos sin sentido ──────
+  // (ajusta según tu lógica actual, esto es solo ejemplo)
   const camposSpecs = document.getElementById('campos-specs');
-  campoIMEI.style.display   = tipo === 'celular' ? 'block' : 'none';
-  camposSpecs.style.display = tipo === 'monitor' ? 'none'  : 'block';
+  if (camposSpecs) {
+    const tiposConSpecs = ['laptop', 'desktop'];
+    camposSpecs.style.display = tiposConSpecs.includes(tipo) ? '' : 'none';
+  }
 }
+
+// Ejecutar una vez al cargar para que el estado inicial sea correcto
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof actualizarCampos === 'function') {
+    actualizarCampos();
+  }
+});
 
 // ── Toggle de campos de arrendamiento ──────────────────────
 function toggleArrendamiento(cb) {

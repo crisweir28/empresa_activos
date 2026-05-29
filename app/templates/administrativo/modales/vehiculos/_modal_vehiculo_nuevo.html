@@ -1,44 +1,59 @@
-{#  app/templates/administrativo/partials/_modal_vehiculo_nuevo.html #}
+{#  app/templates/administrativo/partials/_modal_vehiculo_nuevo.html
+
+  Modal con validación tooltip Bootstrap.
+  Requiere:
+    - validacion_tooltip.css
+    - validacion_tooltip.js (validarFormulario)
+#}
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>🚗 Nuevo vehículo</h2>
-    <form method="POST" action="{{ url_for('administrativo.vehiculo_nuevo') }}"
-          enctype="multipart/form-data" id="form-vehiculo-nuevo">
 
+    <form method="POST" action="{{ url_for('administrativo.vehiculo_nuevo') }}"
+          enctype="multipart/form-data" id="form-vehiculo-nuevo"
+          class="necesita-validacion" novalidate>
+
+      <!-- ─── Nombre + Tipo ─────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
-          <label>Nombre *</label>
+          <label class="requerido">Nombre</label>
           <input name="nombre" required placeholder="Ej: Camioneta 01"
                  oninput="vCampo(this,'v-nombre')" onblur="vCampo(this,'v-nombre')">
+          <div class="invalid-tooltip">El nombre es obligatorio.</div>
           <div class="field-msg" id="msg-v-nombre"></div>
         </div>
         <div class="field">
-          <label>Tipo de vehículo</label>
-          <select name="tipo_vehiculo">
+          <label class="requerido">Tipo de vehículo</label>
+          <select name="tipo_vehiculo" required>
             <option value="">— Seleccionar —</option>
             <option value="Auto">Auto</option>
             <option value="Camioneta">Camioneta</option>
             <option value="Moto">Moto</option>
             <option value="Otro">Otro</option>
           </select>
+          <div class="invalid-tooltip">Selecciona el tipo de vehículo.</div>
         </div>
       </div>
 
+      <!-- ─── Marca + Modelo ────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
-          <label>Marca *</label>
+          <label class="requerido">Marca</label>
           <input name="marca" required placeholder="Nissan"
                  oninput="vCampo(this,'v-marca')" onblur="vCampo(this,'v-marca')">
+          <div class="invalid-tooltip">La marca es obligatoria.</div>
           <div class="field-msg" id="msg-v-marca"></div>
         </div>
         <div class="field">
-          <label>Modelo</label>
-          <input name="modelo" placeholder="NP300 2022"
+          <label class="requerido">Modelo</label>
+          <input name="modelo" required placeholder="NP300 2022"
                  oninput="vOpcional(this,'v-modelo')" onblur="vOpcional(this,'v-modelo')">
+          <div class="invalid-tooltip">El modelo es obligatorio.</div>
           <div class="field-msg" id="msg-v-modelo"></div>
         </div>
       </div>
 
+      <!-- ─── Año + Color ───────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Año</label>
@@ -54,21 +69,24 @@
         </div>
       </div>
 
+      <!-- ─── Placa + VIN ───────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
-          <label>Placa *</label>
+          <label class="requerido">Placa</label>
           <input name="matricula" required placeholder="ABC-1234"
                  oninput="vPlaca(this)" onblur="vPlaca(this)">
+          <div class="invalid-tooltip">La placa es obligatoria (Ej: ABC-1234).</div>
           <div class="field-msg" id="msg-v-placa"></div>
         </div>
         <div class="field">
           <label>Número de serie (VIN)</label>
-          <input name="vin" placeholder="17 caracteres"
+          <input name="vin" placeholder="17 caracteres" maxlength="17"
                  oninput="vVin(this)" onblur="vVin(this)">
           <div class="field-msg" id="msg-v-vin"></div>
         </div>
       </div>
 
+      <!-- ─── Kilometraje + Estado ──────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Kilometraje inicial</label>
@@ -86,6 +104,7 @@
         </div>
       </div>
 
+      <!-- ─── Tipo adquisición + Valor ──────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Tipo adquisición</label>
@@ -104,6 +123,7 @@
         </div>
       </div>
 
+      <!-- ─── Fecha + Ubicación ─────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Fecha adquisición</label>
@@ -122,6 +142,7 @@
         </div>
       </div>
 
+      <!-- ─── SEGURO ────────────────────────────────────────── -->
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
                     letter-spacing:.06em;margin-bottom:10px">Seguro</div>
@@ -155,6 +176,7 @@
         </div>
       </div>
 
+      <!-- ─── Accesorios + Comentarios ──────────────────────── -->
       <div class="field">
         <label>Accesorios</label>
         <input name="accesorios" placeholder="Ej: Refacción, gato, extintor..."
@@ -169,6 +191,7 @@
         <div class="field-msg" id="msg-v-com"></div>
       </div>
 
+      <!-- ─── Arrendamiento ─────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
@@ -194,6 +217,7 @@
         </div>
       </div>
 
+      <!-- ─── DOCUMENTOS ────────────────────────────────────── -->
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
                     letter-spacing:.06em;margin-bottom:10px">Documentos</div>
@@ -211,6 +235,7 @@
         </div>
       </div>
 
+      <!-- ─── EVIDENCIAS FOTOGRÁFICAS ───────────────────────── -->
       <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
                     letter-spacing:.06em;margin-bottom:10px">Evidencias fotográficas</div>

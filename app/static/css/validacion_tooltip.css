@@ -1,0 +1,91 @@
+/* ═══════════════════════════════════════════════════════
+   VALIDACIÓN CON TOOLTIPS (estilo Bootstrap)
+   Ubicación: app/static/css/validacion_tooltip.css
+═══════════════════════════════════════════════════════ */
+
+/* El contenedor del campo debe ser relative para anclar el tooltip */
+.necesita-validacion .field {
+  position: relative;
+}
+
+/* Campo inválido: borde rojo + fondo rosado */
+.necesita-validacion input.is-invalid,
+.necesita-validacion select.is-invalid,
+.necesita-validacion textarea.is-invalid {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2 !important;
+}
+
+.necesita-validacion input.is-invalid:focus,
+.necesita-validacion select.is-invalid:focus,
+.necesita-validacion textarea.is-invalid:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+  outline: none !important;
+}
+
+/* Tooltip de error - oculto por defecto */
+.invalid-tooltip {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  margin-top: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: rgba(220, 38, 38, 0.95);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+/* Flecha del tooltip apuntando hacia arriba */
+.invalid-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border: 5px solid transparent;
+  border-bottom-color: rgba(220, 38, 38, 0.95);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mostrar tooltip cuando el campo esté inválido */
+.necesita-validacion input.is-invalid ~ .invalid-tooltip,
+.necesita-validacion select.is-invalid ~ .invalid-tooltip,
+.necesita-validacion textarea.is-invalid ~ .invalid-tooltip {
+  display: block;
+}
+
+/* Label de campo requerido: asterisco rojo automático */
+.necesita-validacion label.requerido::after {
+  content: ' *';
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* Sacudida sutil cuando falla la validación */
+.necesita-validacion .is-invalid {
+  animation: shakeError 0.3s ease;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}

@@ -1,30 +1,35 @@
 {#
-  app/templates/ti/modales/modal-equipos/_modal_equipo_nuevo.html
+app/templates/ti/modales/modal-equipos/_modal_equipo_nuevo.html
 
-  Modal de alta de equipo TI.
-  Variables requeridas del contexto padre:
-    - ubicaciones: lista de objetos con IdUbicacion y Nombre
+Modal con validación tipo Bootstrap (tooltips rojos flotantes).
+Campo cargador aparece solo si se selecciona "Laptop".
 
-  JS requerido:
-    - ti.js           (vCampo, vOpcional, vFecha, vFechaFutura, vNumero, cerrarModal)
-    - ti/equipos.js   (vImei, submitEquipo, actualizarCampos, toggleArrendamiento, previewEv)
+Requiere:
+- validacion_tooltip.css
+- validacion_tooltip.js (provee validarFormulario(idForm))
+- submitEquipo() debe llamar a validarFormulario('form-nuevo-equipo') antes de enviar
 #}
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>💻 Nuevo equipo TI</h2>
-    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}"
-          enctype="multipart/form-data" id="form-nuevo-equipo">
 
+    <form method="POST" action="{{ url_for('ti.equipo_nuevo') }}" enctype="multipart/form-data" id="form-nuevo-equipo"
+      class="necesita-validacion" novalidate>
+
+      <!-- ─── Nombre + Tipo ─────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
-          <label>Nombre *</label>
-          <input name="nombre" required placeholder="Ej: Laptop Dell 01"
-                 oninput="vCampo(this,'ti-nombre')" onblur="vCampo(this,'ti-nombre')">
+          <label class="requerido">Nombre</label>
+          <input name="nombre" required placeholder="Ej: Laptop Dell 01" oninput="vCampo(this,'ti-nombre')"
+            onblur="vCampo(this,'ti-nombre')">
+          <div class="invalid-tooltip">El nombre es obligatorio.</div>
           <div class="field-msg" id="msg-ti-nombre"></div>
         </div>
+
         <div class="field">
-          <label>Tipo *</label>
+          <label class="requerido">Tipo</label>
           <select name="tipo_equipo" required id="n-tipo" onchange="actualizarCampos()">
+            <option value="">— Selecciona —</option>
             <option value="laptop">💻 Laptop</option>
             <option value="desktop">🖥️ Desktop</option>
             <option value="monitor">🖵 Monitor</option>
@@ -32,9 +37,11 @@
             <option value="red">🌐 Red</option>
             <option value="otro">📦 Otro</option>
           </select>
+          <div class="invalid-tooltip">Selecciona el tipo de equipo.</div>
         </div>
       </div>
 
+      <!-- ─── Gama + Estado ─────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Gama</label>
@@ -57,87 +64,102 @@
         </div>
       </div>
 
+      <!-- ─── Marca + Modelo ────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
-          <label>Marca *</label>
-          <input name="marca" placeholder="Dell"
-                 oninput="vCampo(this,'ti-marca')" onblur="vCampo(this,'ti-marca')">
+          <label class="requerido">Marca</label>
+          <input name="marca" required placeholder="Dell" oninput="vCampo(this,'ti-marca')"
+            onblur="vCampo(this,'ti-marca')">
+          <div class="invalid-tooltip">La marca es obligatoria.</div>
           <div class="field-msg" id="msg-ti-marca"></div>
         </div>
         <div class="field">
           <label>Modelo</label>
-          <input name="modelo" placeholder="Latitude 5520"
-                 oninput="vOpcional(this,'ti-modelo')" onblur="vOpcional(this,'ti-modelo')">
+          <input name="modelo" placeholder="Latitude 5520" oninput="vOpcional(this,'ti-modelo')"
+            onblur="vOpcional(this,'ti-modelo')">
           <div class="field-msg" id="msg-ti-modelo"></div>
         </div>
       </div>
 
+      <!-- ─── N° Serie + IMEI ───────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Número de serie</label>
-          <input name="numero_serie"
-                 oninput="vOpcional(this,'ti-serie')" onblur="vOpcional(this,'ti-serie')">
+          <input name="numero_serie" oninput="vOpcional(this,'ti-serie')" onblur="vOpcional(this,'ti-serie')">
           <div class="field-msg" id="msg-ti-serie"></div>
         </div>
+
+        <!-- IMEI: solo celulares -->
         <div class="field" id="campo-imei" style="display:none">
           <label>IMEI</label>
-          <input name="imei" placeholder="Solo celulares"
-                 oninput="vImei(this)" onblur="vImei(this)">
+          <input name="imei" placeholder="Solo celulares" oninput="vImei(this)" onblur="vImei(this)">
           <div class="field-msg" id="msg-ti-imei"></div>
+        </div>
+
+        <!-- ✅ Cargador: solo laptops (mismo slot que IMEI) -->
+        <div class="field" id="campo-cargador" style="display:none">
+          <label class="requerido">N° de serie del cargador</label>
+          <input name="serie_cargador" placeholder="Ej: CHG-DELL-2024-001" oninput="vCampo(this,'ti-cargador')"
+            onblur="vCampo(this,'ti-cargador')">
+          <div class="invalid-tooltip">El número de serie del cargador es obligatorio para laptops.</div>
+          <div class="field-msg" id="msg-ti-cargador"></div>
         </div>
       </div>
 
+      <!-- ─── Specs técnicas ────────────────────────────────── -->
       <div id="campos-specs">
         <div class="grid-2">
           <div class="field">
             <label>Procesador</label>
-            <input name="procesador" placeholder="Ej: Intel i7-12th"
-                   oninput="vOpcional(this,'ti-proc')" onblur="vOpcional(this,'ti-proc')">
+            <input name="procesador" placeholder="Ej: Intel i7-12th" oninput="vOpcional(this,'ti-proc')"
+              onblur="vOpcional(this,'ti-proc')">
             <div class="field-msg" id="msg-ti-proc"></div>
           </div>
           <div class="field">
             <label>Memoria RAM</label>
-            <input name="memoria_ram" placeholder="Ej: 16 GB DDR4"
-                   oninput="vOpcional(this,'ti-ram')" onblur="vOpcional(this,'ti-ram')">
+            <input name="memoria_ram" placeholder="Ej: 16 GB DDR4" oninput="vOpcional(this,'ti-ram')"
+              onblur="vOpcional(this,'ti-ram')">
             <div class="field-msg" id="msg-ti-ram"></div>
           </div>
         </div>
         <div class="grid-2">
           <div class="field">
             <label>Almacenamiento</label>
-            <input name="almacenamiento" placeholder="Ej: 512 GB SSD"
-                   oninput="vOpcional(this,'ti-alm')" onblur="vOpcional(this,'ti-alm')">
+            <input name="almacenamiento" placeholder="Ej: 512 GB SSD" oninput="vOpcional(this,'ti-alm')"
+              onblur="vOpcional(this,'ti-alm')">
             <div class="field-msg" id="msg-ti-alm"></div>
           </div>
           <div class="field">
             <label>Sistema operativo</label>
-            <input name="sistema_operativo" placeholder="Ej: Windows 11 Pro"
-                   oninput="vOpcional(this,'ti-so')" onblur="vOpcional(this,'ti-so')">
+            <input name="sistema_operativo" placeholder="Ej: Windows 11 Pro" oninput="vOpcional(this,'ti-so')"
+              onblur="vOpcional(this,'ti-so')">
             <div class="field-msg" id="msg-ti-so"></div>
           </div>
         </div>
       </div>
 
+      <!-- ─── Costo + Garantía ──────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Costo ($)</label>
-          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00"
-                 oninput="vNumero(this,'ti-costo')" onblur="vNumero(this,'ti-costo')">
+          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00" oninput="vNumero(this,'ti-costo')"
+            onblur="vNumero(this,'ti-costo')">
           <div class="field-msg" id="msg-ti-costo"></div>
         </div>
         <div class="field">
           <label>Garantía (fecha fin)</label>
-          <input name="garantia" type="date"
-                 onchange="vFechaFutura(this,'ti-garantia')" onblur="vFechaFutura(this,'ti-garantia')">
+          <input name="garantia" type="date" onchange="vFechaFutura(this,'ti-garantia')"
+            onblur="vFechaFutura(this,'ti-garantia')">
           <div class="field-msg" id="msg-ti-garantia"></div>
         </div>
       </div>
 
+      <!-- ─── Fecha + Ubicación ─────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Fecha adquisición</label>
-          <input name="fecha_adquisicion" type="date"
-                 onchange="vFecha(this,'ti-fecha')" onblur="vFecha(this,'ti-fecha')">
+          <input name="fecha_adquisicion" type="date" onchange="vFecha(this,'ti-fecha')"
+            onblur="vFecha(this,'ti-fecha')">
           <div class="field-msg" id="msg-ti-fecha"></div>
         </div>
         <div class="field">
@@ -151,13 +173,15 @@
         </div>
       </div>
 
+      <!-- ─── Accesorios ────────────────────────────────────── -->
       <div class="field">
         <label>Accesorios</label>
-        <input name="accesorios" placeholder="Ej: Cargador, mouse, docking"
-               oninput="vOpcional(this,'ti-acc')" onblur="vOpcional(this,'ti-acc')">
+        <input name="accesorios" placeholder="Ej: Cargador, mouse, docking" oninput="vOpcional(this,'ti-acc')"
+          onblur="vOpcional(this,'ti-acc')">
         <div class="field-msg" id="msg-ti-acc"></div>
       </div>
 
+      <!-- ─── Arrendamiento ─────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label style="display:inline-flex;align-items:stretch;gap:15px;cursor:pointer">
@@ -170,26 +194,28 @@
         <div class="grid-2">
           <div class="field">
             <label>Fecha de renovación</label>
-            <input name="fecha_renovacion" type="date"
-                   onchange="vFechaFutura(this,'ti-renov')" onblur="vFechaFutura(this,'ti-renov')">
+            <input name="fecha_renovacion" type="date" onchange="vFechaFutura(this,'ti-renov')"
+              onblur="vFechaFutura(this,'ti-renov')">
             <div class="field-msg" id="msg-ti-renov"></div>
           </div>
           <div class="field">
             <label>Proveedor</label>
-            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor"
-                   oninput="vOpcional(this,'ti-prov')" onblur="vOpcional(this,'ti-prov')">
+            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor" oninput="vOpcional(this,'ti-prov')"
+              onblur="vOpcional(this,'ti-prov')">
             <div class="field-msg" id="msg-ti-prov"></div>
           </div>
         </div>
       </div>
 
+      <!-- ─── Comentarios ───────────────────────────────────── -->
       <div class="field">
         <label>Comentarios</label>
-        <textarea name="comentarios" placeholder="Notas adicionales..."
-                  oninput="vOpcional(this,'ti-com')" onblur="vOpcional(this,'ti-com')"></textarea>
+        <textarea name="comentarios" placeholder="Notas adicionales..." oninput="vOpcional(this,'ti-com')"
+          onblur="vOpcional(this,'ti-com')"></textarea>
         <div class="field-msg" id="msg-ti-com"></div>
       </div>
 
+      <!-- ─── Archivos ──────────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
           <label>Hoja de asignacion</label>
@@ -197,19 +223,22 @@
         </div>
         <div class="field">
           <label>Evidencia fotográfica (opcional)</label>
-          <input type="file" name="evidencia" accept=".png,.jpg,.jpeg"
-                 onchange="previewEv(this)" style="color:var(--text);font-size:13px">
+          <input type="file" name="evidencia" accept=".png,.jpg,.jpeg" onchange="previewEv(this)"
+            style="color:var(--text);font-size:13px">
         </div>
       </div>
       <div id="ev-preview" style="display:none;margin-top:8px;text-align:center">
-        <img id="ev-img" src="" alt="preview"
-             style="max-width:100%;max-height:120px;border-radius:8px;
+        <img id="ev-img" src="" alt="preview" style="max-width:100%;max-height:120px;border-radius:8px;
                     border:1px solid var(--border);object-fit:contain">
       </div>
 
+      <!-- ─── Botones ───────────────────────────────────────── -->
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-nuevo')">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="submitEquipo()">Guardar</button>
+        <button type="button" class="btn btn-primary"
+          onclick="if(validarFormulario('form-nuevo-equipo')) submitEquipo()">
+          Guardar
+        </button>
       </div>
     </form>
   </div>

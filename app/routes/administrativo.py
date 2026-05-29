@@ -123,7 +123,7 @@ def vehiculo_nuevo():
         db.session.rollback()
         flash(f"Error: {str(ex)}", "error")
 
-    return redirect(url_for("administrativo.vehiculos"))
+    return redirect(url_for("administrativo.dashboard"))
 
 
 @administrativo_bp.route("/vehiculos/<int:id>/editar", methods=["POST"])
@@ -145,7 +145,7 @@ def vehiculo_editar(id):
     v.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
     db.session.commit()
     flash("Vehículo actualizado.", "success")
-    return redirect(url_for("administrativo.vehiculos"))
+    return redirect(url_for("administrativo.dashboard"))
 
 @administrativo_bp.route("/vehiculos/<int:id>")
 @login_required
@@ -410,7 +410,7 @@ def vehiculo_baja(id):
     ))
     db.session.commit()
     flash(f"'{v.Nombre}' dado de baja.", "success")
-    return redirect(url_for("administrativo.vehiculos"))
+    return redirect(url_for("administrativo.dashboard"))
 
 # ── API ───────────────────────────────────────────────────────
 @administrativo_bp.route("/api/vehiculo/<int:id>")
