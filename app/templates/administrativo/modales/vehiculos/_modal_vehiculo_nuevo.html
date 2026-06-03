@@ -5,7 +5,8 @@
     - validacion_tooltip.css
     - validacion_tooltip.js (validarFormulario)
 #}
-<div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="overlay" id="modal-nuevo"
+     onclick="if(event.target===this)cerrarModal('modal-nuevo')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>🚗 Nuevo vehículo</h2>
 

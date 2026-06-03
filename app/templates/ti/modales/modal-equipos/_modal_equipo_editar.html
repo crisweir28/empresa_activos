@@ -1,18 +1,31 @@
-{#
-  app/templates/ti/modales/modal-equipos/_modal_equipo_editar.html
+{#app/templates/ti/modales/modal-equipos/_modal_equipo_editar.html#}
+<style>
+  input[readonly],
+select[disabled] {
+    background: #f3f4f6 !important;
+    color: #6b7280 !important;
+    cursor: not-allowed;
+}
+</style>
+<div class="overlay" id="modal-editar" onclick="if(event.target===this)cerrarModal('modal-editar')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
+    <h2>✏️ Editar equipo TI</h2>
 
-  Modal de edición de equipo.
-  El form action se asigna por JS con editarEquipo(...).
-  JS requerido: ti/equipos.js (editarEquipo, cerrarModal)
-#}
-<div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>✏️ Editar equipo</h2>
-    <form method="POST" id="form-editar">
+    <form method="POST" id="form-editar" enctype="multipart/form-data" class="necesita-validacion" novalidate>
+
+      <!-- ─── Nombre + Tipo ─────────────────────────────────── -->
       <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
-        <div class="field"><label>Tipo</label>
-          <select id="e-tipo" name="tipo_equipo">
+        <div class="field">
+          <label class="requerido">Nombre</label>
+          <input id="e-nombre" name="nombre" required readonly placeholder="Ej: Laptop Dell 01">
+          <div class="invalid-tooltip">El nombre es obligatorio.</div>
+        </div>
+
+        <div class="field">
+          <label class="requerido">Tipo</label>
+          <select id="e-tipo" name="tipo_equipo" required disabled>
+            <!--<select id="e-tipo" name="tipo_equipo" required style="pointer-events:none;background:#f5f5f5">-->
+            <option value="">— Selecciona —</option>
             <option value="laptop">💻 Laptop</option>
             <option value="desktop">🖥️ Desktop</option>
             <option value="monitor">🖵 Monitor</option>
@@ -20,15 +33,36 @@
             <option value="red">🌐 Red</option>
             <option value="otro">📦 Otro</option>
           </select>
+          <div class="invalid-tooltip">Selecciona el tipo de equipo.</div>
         </div>
       </div>
+
+      <!-- ─── Gama + Estado + Condición ─────────────────────── -->
       <div class="grid-2">
-        <div class="field"><label>Marca</label><input id="e-marca" name="marca"></div>
-        <div class="field"><label>Modelo</label><input id="e-modelo" name="modelo"></div>
+        <div class="field">
+          <label>Gama</label>
+          <select id="e-gama" name="gama" disabled>
+            <option value="">— Sin gama —</option>
+            <option value="Baja">Baja</option>
+            <option value="Media">Media</option>
+            <option value="Alta">Alta</option>
+            <option value="Gamer">Gamer</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <select id="e-estado" name="estado">
+            <option value="almacen">En almacén</option>
+            <option value="asignado">Asignado</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>N° Serie</label><input id="e-serie" name="numero_serie"></div>
-        <div class="field"><label>Condición</label>
+        <div class="field">
+          <label>Condición</label>
           <select id="e-condicion" name="condicion">
             <option value="bueno">Bueno</option>
             <option value="regular">Regular</option>
@@ -36,18 +70,134 @@
             <option value="dañado">Dañado</option>
           </select>
         </div>
+        <div class="field">
+          <label class="requerido">Marca</label>
+          <input id="e-marca" name="marca" required readonly>
+          <div class="invalid-tooltip">La marca es obligatoria.</div>
+        </div>
       </div>
+
+      <!-- ─── Modelo + N° Serie ─────────────────────────────── -->
       <div class="grid-2">
-        <div class="field"><label>Costo ($)</label>
-          <input id="e-costo" name="costo" type="number" step="0.01">
+        <div class="field">
+          <label>Modelo</label>
+          <input id="e-modelo" name="modelo" readonly>
         </div>
-        <div class="field"><label>Fecha adquisición</label>
-          <input id="e-fecha" name="fecha_adquisicion" type="date">
+        <div class="field">
+          <label>Número de serie</label>
+          <input id="e-serie" name="numero_serie" readonly>
         </div>
       </div>
+
+      <!-- ─── IMEI / Cargador (dinámicos según tipo) ────────── -->
+      <div class="grid-2">
+        <div class="field" id="e-campo-imei" style="display:none">
+          <label>IMEI</label>
+          <input id="e-imei" name="imei" placeholder="Solo celulares">
+        </div>
+
+        <div class="field" id="e-campo-cargador" style="display:none">
+          <label class="requerido">N° de serie del cargador</label>
+          <input id="e-serie-cargador" name="serie_cargador" placeholder="Ej: CHG-DELL-2024-001">
+          <div class="invalid-tooltip">El número de serie del cargador es obligatorio para laptops.</div>
+        </div>
+      </div>
+
+      <!-- ─── Specs técnicas ────────────────────────────────── -->
+      <div id="e-campos-specs">
+        <div class="grid-2">
+          <div class="field">
+            <label>Procesador</label>
+            <input id="e-procesador" name="procesador" placeholder="Ej: Intel i7-12th">
+          </div>
+          <div class="field">
+            <label>Memoria RAM</label>
+            <input id="e-ram" name="memoria_ram" placeholder="Ej: 16 GB DDR4">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Almacenamiento</label>
+            <input id="e-almacenamiento" name="almacenamiento" placeholder="Ej: 512 GB SSD">
+          </div>
+          <div class="field">
+            <label>Sistema operativo</label>
+            <input id="e-so" name="sistema_operativo" placeholder="Ej: Windows 11 Pro">
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Costo + Garantía ──────────────────────────────── -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Costo ($)</label>
+          <input id="e-costo" name="costo" type="number" step="0.01" min="0" readonly>
+        </div>
+        <div class="field">
+          <label>Garantía (fecha fin)</label>
+          <input id="e-garantia" name="garantia" type="date" readonly>
+        </div>
+      </div>
+
+      <!-- ─── Fecha + Ubicación ─────────────────────────────── -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Fecha adquisición</label>
+          <input id="e-fecha" name="fecha_adquisicion" type="date" readonly>
+        </div>
+        <div class="field">
+          <label>Ubicación</label>
+          <select id="e-ubicacion" name="ubicacion_id">
+            <option value="">— Sin ubicación —</option>
+            {% for u in ubicaciones %}
+            <option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- ─── Accesorios ────────────────────────────────────── -->
+      <div class="field">
+        <label>Accesorios</label>
+        <input id="e-accesorios" name="accesorios" placeholder="Ej: Cargador, mouse, docking">
+      </div>
+
+      <!-- ─── Arrendamiento ─────────────────────────────────── -->
+      <div class="grid-2">
+        <div class="field">
+          <label style="display:inline-flex;align-items:stretch;gap:15px;cursor:pointer">
+            <input type="checkbox" id="e-arrendamiento" name="arrendamiento" value="1"
+              onchange="toggleArrendamientoEdit(this)">
+            ¿Es arrendado?
+          </label>
+        </div>
+      </div>
+      <div id="e-campos-arrendamiento" style="display:none">
+        <div class="grid-2">
+          <div class="field">
+            <label>Fecha de renovación</label>
+            <input id="e-fecha-renovacion" name="fecha_renovacion" type="date">
+          </div>
+          <div class="field">
+            <label>Proveedor</label>
+            <input id="e-proveedor" name="proveedor_arrendamiento" placeholder="Nombre del proveedor">
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Comentarios ───────────────────────────────────── -->
+      <div class="field">
+        <label>Comentarios</label>
+        <textarea id="e-comentarios" name="comentarios" placeholder="Notas adicionales..."></textarea>
+      </div>
+
+      <!-- ─── Botones ───────────────────────────────────────── -->
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-primary"
+          onclick="if(validarFormulario('form-editar')) document.getElementById('form-editar').submit()">
+          Guardar cambios
+        </button>
       </div>
     </form>
   </div>

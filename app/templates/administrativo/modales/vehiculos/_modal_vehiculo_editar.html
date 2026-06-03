@@ -1,23 +1,125 @@
-{#
-  app/templates/administrativo/partials/_modal_vehiculo_editar.html
-#}
+{# app/templates/administrativo/partials/_modal_vehiculo_editar.html #}
+
+<style>
+  input[readonly],
+  textarea[readonly],
+  select[disabled] {
+    background-color: #f5f5f5;
+    color: #6c757d;
+    cursor: not-allowed;
+    border-color: #dcdcdc;
+  }
+
+  .archivo-preview {
+    margin-bottom: 8px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+    font-size: 13px;
+  }
+
+  .archivo-preview a {
+    text-decoration: none;
+  }
+
+  .archivo-preview a:hover {
+    text-decoration: underline;
+  }
+  hr {
+    margin: 20px 0;
+    border: none;
+    border-top: 3px solid #eee;
+  }
+</style>
+
 <div class="overlay" id="modal-editar" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" onclick="event.stopPropagation()">
+
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
+
     <h2>✏️ Editar vehículo</h2>
-    <form method="POST" id="form-editar">
+
+    <form method="POST" id="form-editar" enctype="multipart/form-data">
+
+      <!-- Nombre + Tipo -->
       <div class="grid-2">
-        <div class="field"><label>Nombre *</label><input id="e-nombre" name="nombre" required></div>
-        <div class="field"><label>Placa *</label><input id="e-matricula" name="matricula" required></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Marca</label><input id="e-marca" name="marca"></div>
-        <div class="field"><label>Modelo</label><input id="e-modelo" name="modelo"></div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Kilometraje</label>
-          <input id="e-km" name="kilometraje" type="number" min="0">
+        <div class="field">
+          <label>Nombre *</label>
+          <input id="e-nombre" name="nombre" readonly>
         </div>
-        <div class="field"><label>Tipo adquisición</label>
+
+        <div class="field">
+          <label>Tipo de vehículo</label>
+          <select id="e-tipo-vehiculo" name="tipo_vehiculo" disabled>
+            <option value="">— Seleccionar —</option>
+            <option value="Auto">Auto</option>
+            <option value="Camioneta">Camioneta</option>
+            <option value="Moto">Moto</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Marca + Modelo -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Marca</label>
+          <input id="e-marca" name="marca" readonly>
+        </div>
+
+        <div class="field">
+          <label>Modelo</label>
+          <input id="e-modelo" name="modelo" readonly>
+        </div>
+      </div>
+
+      <!-- Año + Color -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Año</label>
+          <input id="e-anio" name="anio" type="number" readonly>
+        </div>
+
+        <div class="field">
+          <label>Color</label>
+          <input id="e-color" name="color" readonly>
+        </div>
+      </div>
+
+      <!-- Placa + VIN -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Placa *</label>
+          <input id="e-matricula" name="matricula" readonly>
+        </div>
+
+        <div class="field">
+          <label>VIN</label>
+          <input id="e-vin" name="vin" readonly>
+        </div>
+      </div>
+
+      <!-- KM + Estado -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Kilometraje</label>
+          <input id="e-km" name="kilometraje" type="number" min="0" readonly>
+        </div>
+
+        <div class="field">
+          <label>Estado</label>
+          <select id="e-estado" name="estado">
+            <option value="activo">Activo</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tipo adquisición + Valor -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Tipo adquisición</label>
           <select id="e-tipo" name="tipo_adquisicion">
             <option value="">— Seleccionar —</option>
             <option value="propio">Propio</option>
@@ -25,34 +127,183 @@
             <option value="rentado">Rentado</option>
           </select>
         </div>
-      </div>
-      <div class="grid-2">
-        <div class="field"><label>Estado</label>
-          <select id="e-estado" name="estado">
-            <option value="activo">Activo</option>
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="baja">Baja</option>
-          </select>
-        </div>
-        <div class="field"><label>Valor ($)</label>
-          <input id="e-valor" name="valor" type="number" step="0.01" min="0">
+
+        <div class="field">
+          <label>Valor ($)</label>
+          <input id="e-valor" name="valor" type="number" step="0.01" readonly>
         </div>
       </div>
+
+      <!-- Fecha + Ubicación -->
       <div class="grid-2">
-        <div class="field"><label>Fecha adquisición</label>
-          <input id="e-fecha" name="fecha_adquisicion" type="date">
+        <div class="field">
+          <label>Fecha adquisición</label>
+          <input id="e-fecha" name="fecha_adquisicion" type="date" readonly>
         </div>
-        <div class="field"><label>Ubicación</label>
+
+        <div class="field">
+          <label>Ubicación</label>
           <select id="e-ubicacion" name="ubicacion_id">
             <option value="">— Sin ubicación —</option>
-            {% for u in ubicaciones %}<option value="{{ u.IdUbicacion }}">{{ u.Nombre }}</option>{% endfor %}
+
+            {% for u in ubicaciones %}
+            <option value="{{ u.IdUbicacion }}">
+              {{ u.Nombre }}
+            </option>
+            {% endfor %}
           </select>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+
+      <!-- Seguro -->
+      <hr>
+       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Seguro</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Póliza</label>
+          <input id="e-poliza" name="poliza_seguro">
+        </div>
+
+        <div class="field">
+          <label>Aseguradora</label>
+          <input id="e-aseguradora" name="aseguradora">
+        </div>
       </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Vigencia seguro</label>
+          <input id="e-vigencia" name="vigencia_seguro" type="date">
+        </div>
+
+        <div class="field">
+          <label>Última verificación</label>
+          <input id="e-verificacion" name="ultima_verificacion" type="date">
+        </div>
+      </div>
+
+      <!-- Accesorios -->
+      <div class="field">
+        <label>Accesorios</label>
+        <input id="e-accesorios" name="accesorios">
+      </div>
+
+      <!-- Comentarios -->
+      <div class="field">
+        <label>Comentarios</label>
+        <textarea id="e-comentarios" name="comentarios"></textarea>
+      </div>
+
+      <!-- Arrendamiento -->
+
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Fecha renovación</label>
+          <input id="e-renovacion" name="fecha_renovacion" type="date">
+        </div>
+
+        <div class="field">
+          <label>Proveedor arrendamiento</label>
+          <input id="e-proveedor" name="proveedor_arrendamiento">
+        </div>
+      </div>
+
+      <!-- DOCUMENTOS -->
+      <hr>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Documentos</div>
+      <h4>📄 Documentos</h4>
+
+      <div class="grid-2">
+
+        <div class="field">
+          <label>Tarjeta de circulación actual</label>
+
+          <div id="e-tarjeta-preview" class="archivo-preview">
+            <a id="e-tarjeta-link" href="#" target="_blank">
+              📄 Ver documento actual
+            </a>
+          </div>
+
+          <input type="file" name="tarjeta_circulacion" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+
+        <div class="field">
+          <label>Certificado de verificación</label>
+
+          <div id="e-certificado-preview" class="archivo-preview">
+            <a id="e-certificado-link" href="#" target="_blank">
+              📄 Ver documento actual
+            </a>
+          </div>
+
+          <input type="file" name="certificado_verificacion" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+
+      </div>
+
+      <!-- EVIDENCIAS -->
+      <hr>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:10px">Evidencias fotográficas</div>
+      <h4>📷 Evidencias fotográficas</h4>
+
+      <div style="display:grid;
+                  grid-template-columns:1fr 1fr 1fr;
+                  gap:12px">
+
+        <div class="field">
+          <label>Frente</label>
+
+          <div id="e-frente-preview">
+            <img id="e-frente-img" style="max-width:100%;
+                        max-height:100px;
+                        border-radius:6px">
+          </div>
+
+          <input type="file" name="evidencia_frente" accept=".jpg,.jpeg,.png">
+        </div>
+
+        <div class="field">
+          <label>Lateral</label>
+
+          <div id="e-lateral-preview">
+            <img id="e-lateral-img" style="max-width:100%;
+                        max-height:100px;
+                        border-radius:6px">
+          </div>
+
+          <input type="file" name="evidencia_lateral" accept=".jpg,.jpeg,.png">
+        </div>
+
+        <div class="field">
+          <label>Interior</label>
+
+          <div id="e-interior-preview">
+            <img id="e-interior-img" style="max-width:100%;
+                        max-height:100px;
+                        border-radius:6px">
+          </div>
+
+          <input type="file" name="evidencia_interior" accept=".jpg,.jpeg,.png">
+        </div>
+
+      </div>
+
+      <!-- BOTONES -->
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">
+          Cancelar
+        </button>
+
+        <button type="button" class="btn btn-primary" onclick="submitEditarVehiculo()">
+          Guardar cambios
+        </button>
+      </div>
+
     </form>
+
   </div>
 </div>

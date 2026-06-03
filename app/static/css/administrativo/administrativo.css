@@ -390,6 +390,113 @@
   }
 }
 
+/* ═══════════════════════════════════════ */
+/* MANTENIMIENTO */
+/* ═══════════════════════════════════════ */
+
+.alertas-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:12px;
+    margin-bottom:24px;
+}
+
+.alerta-card{
+    background:var(--card);
+    border-radius:14px;
+    padding:16px;
+    border:1px solid rgba(251,191,36,.25);
+    transition:.2s;
+}
+
+.alerta-card:hover{
+    transform:translateY(-2px);
+    box-shadow:var(--shadow-md);
+}
+
+.alerta-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+}
+
+.alerta-vehiculo{
+    font-weight:700;
+    font-size:14px;
+}
+
+.alerta-matricula{
+    font-size:11px;
+    color:var(--muted);
+    font-family:monospace;
+}
+
+.filtros-toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+.filtro-btn{
+    padding:8px 16px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--card);
+    text-decoration:none;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:600;
+    transition:.2s;
+}
+
+.filtro-btn:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.filtro-btn.active{
+    background:var(--accent-light);
+    border-color:var(--accent);
+    color:var(--accent);
+}
+
+.panel-dashboard{
+    background:var(--card);
+    border-radius:16px;
+    border:1px solid var(--border);
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;
+}
+
+.panel-header{
+    padding:18px 24px;
+    border-bottom:1px solid var(--border);
+    font-weight:700;
+}
+
+.table-dashboard{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table-dashboard th{
+    font-size:12px;
+    text-transform:uppercase;
+    color:var(--muted);
+    padding:14px 20px;
+}
+
+.table-dashboard td{
+    padding:16px 20px;
+    border-top:1px solid var(--border);
+}
+
+.table-dashboard tbody tr:hover{
+    background:rgba(0,0,0,.02);
+}
+
 /* ══════════════════════════════════════════════════════════════ */
 /* ANIMACIONES */
 /* ══════════════════════════════════════════════════════════════ */

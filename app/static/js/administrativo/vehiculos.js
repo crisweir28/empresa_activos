@@ -32,36 +32,46 @@ function vAnio(input) {
   return setMsg(input, 'v-anio', true, 'Se ve bien');
 }
 
-// ── Submit con validación del form de nuevo vehículo ────────
-function submitVehiculo() {
+// ═══════════════════════════════════════════════════════════
+// Helper: marcar campo duplicado en rojo
+// Acepta selectores dentro del modal por name="..."
+// ═══════════════════════════════════════════════════════════
+function marcarCampoDuplicado(modal, nameCampo) {
+  const el = modal.querySelector(`[name="${nameCampo}"]`);
+  if (el) {
+    el.classList.add('is-invalid');
+    el.focus();
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUBMIT NUEVO VEHÍCULO (AJAX con validación de duplicados)
+// ═══════════════════════════════════════════════════════════
+async function submitVehiculo() {
   const form = document.getElementById('form-vehiculo-nuevo');
- 
-  // ── PASO 1: Validar campos required con tooltips Bootstrap ──
+  const modal = document.getElementById('modal-nuevo');
+
+  // ── Validar campos required con tooltips Bootstrap ──
   if (!validarFormulario('form-vehiculo-nuevo')) {
-    // Ya se mostraron los tooltips rojos en los campos vacíos
     return;
   }
- 
-  // ── PASO 2: Validar formato de campos opcionales con valor ──
+
+  // ── Validar formato de campos opcionales ──
   const placa  = form.querySelector('[name="matricula"]');
   const vin    = form.querySelector('[name="vin"]');
   const poliza = form.querySelector('[name="poliza_seguro"]');
- 
+
   const erroresFormato = [];
- 
-  // Placa (es obligatoria pero también debe tener formato válido)
+
   if (placa.value.trim() && !REGEX_PLACA.test(placa.value.trim())) {
     erroresFormato.push('La placa no tiene un formato válido (Ej: ABC-1234)');
     placa.classList.add('is-invalid');
   }
- 
-  // VIN: solo validar si tiene algo
   if (vin.value.trim() && vin.value.trim().length !== 17) {
     erroresFormato.push(`El VIN debe tener exactamente 17 caracteres (tiene ${vin.value.trim().length})`);
     vin.classList.add('is-invalid');
   }
- 
-  // Póliza: solo validar si tiene algo
   if (poliza.value.trim()) {
     const len = poliza.value.trim().length;
     if (len < 10 || len > 15) {
@@ -69,38 +79,231 @@ function submitVehiculo() {
       poliza.classList.add('is-invalid');
     }
   }
- 
-  // ── PASO 3: Si hay errores de formato, mostrar SweetAlert ──
+
   if (erroresFormato.length > 0) {
     Swal.fire({
       icon: 'warning',
       title: 'Revisa los datos',
       html: '<ul style="text-align:left;margin:0;padding-left:20px;font-size:14px">' +
-            erroresFormato.map(e => `<li>${e}</li>`).join('') +
-            '</ul>',
+        erroresFormato.map(e => `<li>${e}</li>`).join('') +
+        '</ul>',
       confirmButtonText: 'Entendido',
       confirmButtonColor: '#dc2626'
     });
     return;
   }
- 
-  // ── PASO 4: Todo OK → enviar el formulario ─────────────────
-  form.submit();
+
+  // ── Enviar vía AJAX para recibir respuesta JSON ──
+  try {
+    const formData = new FormData(form);
+    const response = await fetch(form.action, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+
+    if (data.ok) {
+      // Éxito → recargar para mostrar el flash y la lista actualizada
+      Swal.fire({
+        icon: 'success',
+        title: '✅ Registrado',
+        text: 'Vehículo registrado correctamente.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      setTimeout(() => location.reload(), 1500);
+    } else if (data.campo) {
+      // Duplicado → marcar campo en rojo y mostrar alerta SIN cerrar modal
+      marcarCampoDuplicado(modal, data.campo);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Dato duplicado',
+        html: data.mensaje,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc2626'
+      });
+    } else {
+      // Otro error
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: data.mensaje || 'No se pudo guardar el vehículo'
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de red',
+      text: 'No se pudo conectar con el servidor'
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SUBMIT EDITAR VEHÍCULO (AJAX con validación de duplicados)
+// ═══════════════════════════════════════════════════════════
+
+async function editarVehiculo(id) {
+  try {
+    const response = await fetch(`/administrativo/api/vehiculo/${id}`);
+    const data = await response.json();
+
+    document.getElementById('form-editar').action = `/administrativo/vehiculos/${id}/editar`;
+
+    // ── Campos de texto ─────────────────────────────────────
+    document.getElementById('e-nombre').value         = data.nombre || '';
+    document.getElementById('e-tipo-vehiculo').value  = data.tipo_vehiculo || '';
+    document.getElementById('e-marca').value          = data.marca || '';
+    document.getElementById('e-modelo').value         = data.modelo || '';
+    document.getElementById('e-anio').value           = data.anio || '';
+    document.getElementById('e-color').value          = data.color || '';
+    document.getElementById('e-matricula').value      = data.matricula || '';
+    document.getElementById('e-vin').value            = data.vin || '';
+    document.getElementById('e-km').value             = data.kilometraje || '';
+    document.getElementById('e-tipo').value           = data.tipo_adquisicion || '';
+    document.getElementById('e-estado').value         = data.estado || '';
+    document.getElementById('e-valor').value          = data.valor || '';
+    document.getElementById('e-fecha').value          = data.fecha_adquisicion || '';
+    document.getElementById('e-ubicacion').value      = data.ubicacion_id || '';
+    document.getElementById('e-poliza').value         = data.poliza_seguro || '';
+    document.getElementById('e-aseguradora').value    = data.aseguradora || '';
+    document.getElementById('e-vigencia').value       = data.vigencia_seguro || '';
+    document.getElementById('e-verificacion').value   = data.ultima_verificacion || '';
+    document.getElementById('e-accesorios').value     = data.accesorios || '';
+    document.getElementById('e-comentarios').value    = data.comentarios || '';
+    document.getElementById('e-renovacion').value     = data.fecha_renovacion || '';
+    document.getElementById('e-proveedor').value      = data.proveedor_arrendamiento || '';
+
+    // ── DOCUMENTOS: tarjeta de circulación ──────────────────
+    const tarjetaPreview = document.getElementById('e-tarjeta-preview');
+    const tarjetaLink    = document.getElementById('e-tarjeta-link');
+    if (data.tarjeta_circulacion_url) {
+      tarjetaLink.href = data.tarjeta_circulacion_url;
+      tarjetaLink.textContent = '📄 Ver documento actual';
+      tarjetaPreview.style.display = 'block';
+    } else {
+      tarjetaPreview.style.display = 'none';
+    }
+
+    // ── DOCUMENTOS: certificado de verificación ─────────────
+    const certPreview = document.getElementById('e-certificado-preview');
+    const certLink    = document.getElementById('e-certificado-link');
+    if (data.certificado_verificacion_url) {
+      certLink.href = data.certificado_verificacion_url;
+      certLink.textContent = '📄 Ver documento actual';
+      certPreview.style.display = 'block';
+    } else {
+      certPreview.style.display = 'none';
+    }
+
+    // ── EVIDENCIAS fotográficas ─────────────────────────────
+    function precargarEvidencia(idImg, url) {
+      const img = document.getElementById(idImg);
+      if (!img) return;
+      if (url) {
+        img.src = url;
+        img.style.display = 'block';
+      } else {
+        img.src = '';
+        img.style.display = 'none';
+      }
+    }
+    precargarEvidencia('e-frente-img',   data.evidencia_frente_url);
+    precargarEvidencia('e-lateral-img',  data.evidencia_lateral_url);
+    precargarEvidencia('e-interior-img', data.evidencia_interior_url);
+
+    abrirModal('modal-editar');
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo cargar la información del vehículo'
+    });
+  }
 }
 
 // ── Abrir modal editar con datos precargados ────────────────
-function editarVehiculo(id, nombre, matricula, marca, modelo, km, tipo, estado, valor, fecha) {
-  document.getElementById('form-editar').action = `/administrativo/vehiculos/${id}/editar`;
-  document.getElementById('e-nombre').value     = nombre;
-  document.getElementById('e-matricula').value  = matricula;
-  document.getElementById('e-marca').value      = marca;
-  document.getElementById('e-modelo').value     = modelo;
-  document.getElementById('e-km').value         = km;
-  document.getElementById('e-tipo').value       = tipo;
-  document.getElementById('e-estado').value     = estado;
-  document.getElementById('e-valor').value      = valor;
-  document.getElementById('e-fecha').value      = fecha;
-  abrirModal('modal-editar');
+// ── Abrir modal editar con datos precargados ────────────────
+async function editarVehiculo(id) {
+  try {
+    const response = await fetch(`/administrativo/api/vehiculo/${id}`);
+    const data = await response.json();
+
+    document.getElementById('form-editar').action = `/administrativo/vehiculos/${id}/editar`;
+
+    // ── Campos de texto ─────────────────────────────────────
+    document.getElementById('e-nombre').value         = data.nombre || '';
+    document.getElementById('e-tipo-vehiculo').value  = data.tipo_vehiculo || '';
+    document.getElementById('e-marca').value          = data.marca || '';
+    document.getElementById('e-modelo').value         = data.modelo || '';
+    document.getElementById('e-anio').value           = data.anio || '';
+    document.getElementById('e-color').value          = data.color || '';
+    document.getElementById('e-matricula').value      = data.matricula || '';
+    document.getElementById('e-vin').value            = data.vin || '';
+    document.getElementById('e-km').value             = data.kilometraje || '';
+    document.getElementById('e-tipo').value           = data.tipo_adquisicion || '';
+    document.getElementById('e-estado').value         = data.estado || '';
+    document.getElementById('e-valor').value          = data.valor || '';
+    document.getElementById('e-fecha').value          = data.fecha_adquisicion || '';
+    document.getElementById('e-ubicacion').value      = data.ubicacion_id || '';
+    document.getElementById('e-poliza').value         = data.poliza_seguro || '';
+    document.getElementById('e-aseguradora').value    = data.aseguradora || '';
+    document.getElementById('e-vigencia').value       = data.vigencia_seguro || '';
+    document.getElementById('e-verificacion').value   = data.ultima_verificacion || '';
+    document.getElementById('e-accesorios').value     = data.accesorios || '';
+    document.getElementById('e-comentarios').value    = data.comentarios || '';
+    document.getElementById('e-renovacion').value     = data.fecha_renovacion || '';
+    document.getElementById('e-proveedor').value      = data.proveedor_arrendamiento || '';
+
+    // ── DOCUMENTOS: tarjeta de circulación ──────────────────
+    const tarjetaPreview = document.getElementById('e-tarjeta-preview');
+    const tarjetaLink    = document.getElementById('e-tarjeta-link');
+    if (data.tarjeta_circulacion_url) {
+      tarjetaLink.href = data.tarjeta_circulacion_url;
+      tarjetaLink.textContent = '📄 Ver documento actual';
+      tarjetaPreview.style.display = 'block';
+    } else {
+      tarjetaPreview.style.display = 'none';
+    }
+
+    // ── DOCUMENTOS: certificado de verificación ─────────────
+    const certPreview = document.getElementById('e-certificado-preview');
+    const certLink    = document.getElementById('e-certificado-link');
+    if (data.certificado_verificacion_url) {
+      certLink.href = data.certificado_verificacion_url;
+      certLink.textContent = '📄 Ver documento actual';
+      certPreview.style.display = 'block';
+    } else {
+      certPreview.style.display = 'none';
+    }
+
+    // ── EVIDENCIAS fotográficas ─────────────────────────────
+    function precargarEvidencia(idImg, url) {
+      const img = document.getElementById(idImg);
+      if (!img) return;
+      if (url) {
+        img.src = url;
+        img.style.display = 'block';
+      } else {
+        img.src = '';
+        img.style.display = 'none';
+      }
+    }
+    precargarEvidencia('e-frente-img',   data.evidencia_frente_url);
+    precargarEvidencia('e-lateral-img',  data.evidencia_lateral_url);
+    precargarEvidencia('e-interior-img', data.evidencia_interior_url);
+
+    abrirModal('modal-editar');
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo cargar la información del vehículo'
+    });
+  }
 }
 
 // ── Toggle de campos de arrendamiento ───────────────────────
@@ -111,7 +314,7 @@ function toggleArrendamiento(cb) {
 async function validarYAsignarConductor(idVehiculo) {
   const select = document.querySelector('#form-asignar-conductor select[name="personal_id"]');
   const idPersonal = select.value;
-  
+
   if (!idPersonal) {
     Swal.fire({
       icon: 'warning',
@@ -120,7 +323,7 @@ async function validarYAsignarConductor(idVehiculo) {
     });
     return;
   }
-  
+
   // Mostrar loading
   Swal.fire({
     title: 'Verificando documentos...',
@@ -130,28 +333,28 @@ async function validarYAsignarConductor(idVehiculo) {
       Swal.showLoading();
     }
   });
-  
+
   try {
     // Verificar documentos del conductor
     const response = await fetch(`/administrativo/api/verificar-documentos-conductor/${idPersonal}`);
     const data = await response.json();
-    
+
     if (!data.ok) {
       throw new Error(data.error || 'Error al verificar documentos');
     }
-    
+
     // Cerrar loading
     Swal.close();
-    
+
     // Si todo está OK, asignar directo sin preguntar
     if (data.estado === 'ok') {
       asignarConductorDirecto(idVehiculo);
       return;
     }
-    
+
     // Si hay advertencias o está bloqueado, SIEMPRE mostrar confirmación
     mostrarConfirmacionAsignacion(data, idVehiculo);
-    
+
   } catch (error) {
     Swal.fire({
       icon: 'error',
@@ -166,7 +369,7 @@ async function validarYAsignarConductor(idVehiculo) {
 async function validarYAsignarConductor(idVehiculo) {
   const select = document.querySelector('#form-asignar-conductor select[name="personal_id"]');
   const idPersonal = select.value;
-  
+
   if (!idPersonal) {
     Swal.fire({
       icon: 'warning',
@@ -175,7 +378,7 @@ async function validarYAsignarConductor(idVehiculo) {
     });
     return;
   }
-  
+
   // Mostrar loading
   Swal.fire({
     title: 'Verificando documentos...',
@@ -185,28 +388,28 @@ async function validarYAsignarConductor(idVehiculo) {
       Swal.showLoading();
     }
   });
-  
+
   try {
     // Verificar documentos del conductor
     const response = await fetch(`/administrativo/api/verificar-documentos-conductor/${idPersonal}`);
     const data = await response.json();
-    
+
     if (!data.ok) {
       throw new Error(data.error || 'Error al verificar documentos');
     }
-    
+
     // Cerrar loading
     Swal.close();
-    
+
     // Si todo está OK, asignar directo sin preguntar
     if (data.estado === 'ok') {
       asignarConductorDirecto(idVehiculo);
       return;
     }
-    
+
     // Si hay advertencias o está bloqueado, SIEMPRE mostrar confirmación
     mostrarConfirmacionAsignacion(data, idVehiculo);
-    
+
   } catch (error) {
     Swal.fire({
       icon: 'error',
@@ -219,9 +422,9 @@ async function validarYAsignarConductor(idVehiculo) {
 // Mostrar confirmación con advertencias (SIEMPRE se puede asignar con confirmación)
 function mostrarConfirmacionAsignacion(data, idVehiculo) {
   const { detalles, riesgos, resumen } = data;
-  
+
   let htmlContent = '<div style="text-align:left;max-height:400px;overflow-y:auto">';
-  
+
   // Documentos vencidos
   if (detalles.vencidos && detalles.vencidos.length > 0) {
     htmlContent += '<div style="margin-bottom:16px"><strong style="color:#dc2626">📋 Documentos vencidos:</strong><ul style="margin:8px 0;padding-left:20px;font-size:13px">';
@@ -231,7 +434,7 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
     });
     htmlContent += '</ul></div>';
   }
-  
+
   // Documentos faltantes críticos
   if (detalles.faltantes_criticos && detalles.faltantes_criticos.length > 0) {
     htmlContent += '<div style="margin-bottom:16px"><strong style="color:#dc2626">⚠️ Documentos críticos faltantes:</strong><ul style="margin:8px 0;padding-left:20px;font-size:13px">';
@@ -241,7 +444,7 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
     });
     htmlContent += '</ul></div>';
   }
-  
+
   // Documentos por vencer
   if (detalles.por_vencer && detalles.por_vencer.length > 0) {
     htmlContent += '<div style="margin-bottom:16px"><strong style="color:#d97706">📅 Documentos por vencer:</strong><ul style="margin:8px 0;padding-left:20px;font-size:13px">';
@@ -251,7 +454,7 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
     });
     htmlContent += '</ul></div>';
   }
-  
+
   // Documentos recomendados faltantes
   if (detalles.faltantes_recomendados && detalles.faltantes_recomendados.length > 0) {
     htmlContent += '<div style="margin-bottom:16px"><strong style="color:#d97706">📄 Documentos recomendados faltantes:</strong><ul style="margin:8px 0;padding-left:20px;font-size:13px">';
@@ -261,7 +464,7 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
     });
     htmlContent += '</ul></div>';
   }
-  
+
   // Riesgos
   if (riesgos.conductor && riesgos.conductor.length > 0) {
     htmlContent += '<div style="margin-bottom:12px"><strong style="color:#dc2626">🚫 Riesgos para el conductor:</strong><ul style="margin:8px 0;padding-left:20px;font-size:12px">';
@@ -270,7 +473,7 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
     });
     htmlContent += '</ul></div>';
   }
-  
+
   if (riesgos.empresa && riesgos.empresa.length > 0) {
     htmlContent += '<div><strong style="color:#dc2626">🏢 Riesgos para la empresa:</strong><ul style="margin:8px 0;padding-left:20px;font-size:12px">';
     riesgos.empresa.forEach(riesgo => {
@@ -278,9 +481,9 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
     });
     htmlContent += '</ul></div>';
   }
-  
+
   htmlContent += '</div>';
-  
+
   Swal.fire({
     title: "⚠️ Advertencias de documentación",
     html: htmlContent,
@@ -303,7 +506,7 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
         timer: 2000,
         showConfirmButton: false
       });
-      
+
       // Cerrar modal y enviar formulario
       cerrarModal('modal-conductor');
       setTimeout(() => {
@@ -317,4 +520,124 @@ function mostrarConfirmacionAsignacion(data, idVehiculo) {
 // Asignar conductor directamente (sin validación adicional)
 function asignarConductorDirecto(idVehiculo) {
   document.getElementById('form-asignar-conductor').submit();
+}
+
+function cerrarModal(idModal) {
+  const modal = document.getElementById(idModal);
+  if (!modal) return;
+ 
+  // Cerrar modal
+  modal.classList.remove('open');
+ 
+  // Buscar formulario dentro del modal
+  const form = modal.querySelector('form');
+  if (!form) return;
+ 
+  // Resetear valores del formulario
+  form.reset();
+  form.classList.remove('was-validated');
+ 
+  // ── Limpiar TODAS las clases de validación de los campos ──
+  form.querySelectorAll('input, select, textarea').forEach(el => {
+    // Bootstrap-style
+    el.classList.remove('is-valid', 'is-invalid');
+    // Sistema legacy (setMsg de administrativo.js)
+    el.classList.remove('input-ok', 'input-err');
+ 
+    // Limpiar validez personalizada y estilos inline
+    if (el.setCustomValidity) el.setCustomValidity('');
+    el.style.borderColor = '';
+    el.style.boxShadow = '';
+    el.style.background = '';
+    el.style.backgroundColor = '';
+ 
+    el.blur();
+  });
+ 
+  // ── Limpiar mensajes de validación ──
+  form.querySelectorAll('.field-msg').forEach(msg => {
+    msg.textContent = '';
+    msg.className = 'field-msg';  // ← Quitar clases 'ok' / 'err'
+  });
+ 
+  // Limpiar previews de imágenes
+  form.querySelectorAll('[id^="prev-"]').forEach(prev => {
+    prev.style.display = 'none';
+    const img = prev.querySelector('img');
+    if (img) img.src = '';
+  });
+ 
+  // Ocultar sección de arrendamiento
+  const arr = document.getElementById('campos-arrendamiento');
+  if (arr) arr.style.display = 'none';
+ 
+  // Quitar focus
+  if (document.activeElement) document.activeElement.blur();
+}
+
+async function submitEditarVehiculo() {
+
+    const form = document.getElementById('form-editar');
+
+    const formData = new FormData(form);
+
+    try {
+
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.ok)  {
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Vehículo actualizado',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                location.reload();
+            });
+
+            return;
+        }
+
+        // Limpiar errores previos
+        ['e-matricula', 'e-vin', 'e-poliza'].forEach(id => {
+            const campo = document.getElementById(id);
+            if (campo) campo.classList.remove('input-err');
+        });
+
+        // Marcar campos duplicados
+        if (data.campo === 'matricula') {
+            document.getElementById('e-matricula')?.classList.add('input-err');
+        }
+
+        if (data.campo === 'vin') {
+            document.getElementById('e-vin')?.classList.add('input-err');
+        }
+
+        if (data.campo === 'poliza') {
+            document.getElementById('e-poliza')?.classList.add('input-err');
+        }
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Dato duplicado',
+            text: data.mensaje
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No fue posible actualizar el vehículo'
+        });
+
+    }
 }

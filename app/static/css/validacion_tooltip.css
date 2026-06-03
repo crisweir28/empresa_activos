@@ -84,6 +84,19 @@
   animation: shakeError 0.3s ease;
 }
 
+/* Reset visual al limpiar formularios */
+.necesita-validacion input,
+.necesita-validacion select,
+.necesita-validacion textarea {
+  box-shadow: none !important;
+}
+
+.necesita-validacion input:focus,
+.necesita-validacion select:focus,
+.necesita-validacion textarea:focus {
+  box-shadow: none;
+}
+
 @keyframes shakeError {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-3px); }

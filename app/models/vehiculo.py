@@ -79,7 +79,7 @@ class Vehiculo(db.Model):
 
     IdVehiculo      = db.Column(db.Integer, primary_key=True)
     Nombre          = db.Column(db.String(120), nullable=False)
-    TipoVehiculo    = db.Column(db.String(20),  nullable=True)   # Auto | Camioneta | Moto
+    TipoVehiculo    = db.Column(db.String(20),  nullable=True)
     Marca           = db.Column(db.String(100))
     Modelo          = db.Column(db.String(100))
     Anio            = db.Column(db.SmallInteger, nullable=True)
@@ -92,19 +92,15 @@ class Vehiculo(db.Model):
     Valor           = db.Column(db.Float, nullable=False, default=0)
     FechaAdquisicion = db.Column(db.Date)
     IdUbicacion     = db.Column(db.Integer, db.ForeignKey("Ubicacion.IdUbicacion"))
-    # ── Seguro ────────────────────────────────────────────────
     PolizaSeguro    = db.Column(db.String(100), nullable=True)
     Aseguradora     = db.Column(db.String(100), nullable=True)
     VigenciaSeguro  = db.Column(db.Date,        nullable=True)
-    # ── Verificación ──────────────────────────────────────────
     UltimaVerificacion = db.Column(db.Date,     nullable=True)
-    # ── Extras ────────────────────────────────────────────────
     Accesorios      = db.Column(db.String(255), nullable=True)
     Comentarios     = db.Column(db.Text,        nullable=True)
     Arrendamiento   = db.Column(db.Boolean,     nullable=False, default=False)
     FechaRenovacion = db.Column(db.Date,        nullable=True)
     ProveedorArrendamiento = db.Column(db.String(150), nullable=True)
-    # ─────────────────────────────────────────────────────────
     CreadoEn        = db.Column(db.DateTime, default=datetime.now)
     ActualizadoEn   = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -112,6 +108,24 @@ class Vehiculo(db.Model):
     conductores    = db.relationship("ConductorVehiculo",    backref="vehiculo",  lazy="dynamic")
     permisos       = db.relationship("PermisosVehiculo",     backref="vehiculo",  lazy="dynamic")
     mantenimientos = db.relationship("MantenimientoVehiculo", backref="vehiculo", lazy="dynamic")
+    archivos       = db.relationship("VehiculoArchivo",      backref="vehiculo",  lazy="dynamic", cascade="all, delete-orphan")
+    evidencias     = db.relationship("EvidenciaVehiculo",    backref="vehiculo",  lazy="dynamic", cascade="all, delete-orphan")
+
+    def _ultimo_archivo(self, tipo):
+        """Devuelve la URL del último archivo subido de un tipo dado, o None."""
+        a = (VehiculoArchivo.query
+             .filter_by(IdVehiculo=self.IdVehiculo, TipoArchivo=tipo)
+             .order_by(VehiculoArchivo.FechaSubida.desc())
+             .first())
+        return a.ArchivoUrl if a else None
+
+    def _ultima_evidencia(self, tipo):
+        """Devuelve la URL de la última evidencia subida de un tipo dado, o None."""
+        e = (EvidenciaVehiculo.query
+             .filter_by(IdVehiculo=self.IdVehiculo, Tipo=tipo)
+             .order_by(EvidenciaVehiculo.CreadoEn.desc())
+             .first())
+        return e.ArchivoUrl if e else None
 
     def to_dict(self):
         return {
@@ -133,12 +147,42 @@ class Vehiculo(db.Model):
             "poliza_seguro":    self.PolizaSeguro,
             "aseguradora":      self.Aseguradora,
             "vigencia_seguro":  str(self.VigenciaSeguro) if self.VigenciaSeguro else None,
+            "ultima_verificacion": str(self.UltimaVerificacion) if self.UltimaVerificacion else None,
             "accesorios":       self.Accesorios,
             "comentarios":      self.Comentarios,
             "arrendamiento":    self.Arrendamiento,
             "fecha_renovacion": str(self.FechaRenovacion) if self.FechaRenovacion else None,
             "proveedor_arrendamiento": self.ProveedorArrendamiento,
+            # ── Archivos (documentos) ────────────────────────────
+            "tarjeta_circulacion_url":     self._ultimo_archivo("tarjeta_circulacion"),
+            "certificado_verificacion_url": self._ultimo_archivo("certificado_verificacion"),
+            # ── Evidencias (fotos) ───────────────────────────────
+            "evidencia_frente_url":   self._ultima_evidencia("frente"),
+            "evidencia_lateral_url":  self._ultima_evidencia("lateral"),
+            "evidencia_interior_url": self._ultima_evidencia("interior"),
         }
+
+
+class VehiculoArchivo(db.Model):
+    __tablename__ = "VehiculoArchivo"
+
+    IdArchivo     = db.Column(db.Integer, primary_key=True)
+    IdVehiculo    = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"), nullable=False)
+    TipoArchivo   = db.Column(db.String(50), nullable=False)
+    NombreArchivo = db.Column(db.String(255))
+    ArchivoUrl    = db.Column(db.String(255), nullable=False)
+    MimeType      = db.Column(db.String(100))
+    FechaSubida   = db.Column(db.DateTime, default=datetime.now)
+
+
+class EvidenciaVehiculo(db.Model):
+    __tablename__ = "EvidenciaVehiculo"
+
+    IdEvidencia = db.Column(db.Integer, primary_key=True)
+    IdVehiculo  = db.Column(db.Integer, db.ForeignKey("Vehiculo.IdVehiculo"), nullable=False)
+    Tipo        = db.Column(db.String(50))
+    ArchivoUrl  = db.Column(db.String(255))
+    CreadoEn    = db.Column(db.DateTime, default=datetime.now)
 
 
 class ConductorVehiculo(db.Model):

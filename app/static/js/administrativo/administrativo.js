@@ -139,7 +139,7 @@ function filtrarVehiculos(filtro) {
   let visibles = 0;
   
   filas.forEach(fila => {
-    const estado = fila.dataset.estado;
+    const estado = fila.dataset.estado; 
     if (filtro === 'todos' || estado === filtro) {
       fila.style.display = '';
       visibles++;

@@ -74,7 +74,7 @@ def guardar_archivo(archivo, prefijo: str, carpeta: str = "documents") -> dict:
     # Ruta de destino
     if carpeta == "documents":
         dest_dir = os.path.join(current_app.root_path, "documents")
-        url_rel  = f"/documents/{filename}"
+        url_rel  = f"/administrativo/documents/{filename}"
     else:
         dest_dir = os.path.join(current_app.root_path, "static", "evidencias")
         url_rel  = f"/static/evidencias/{filename}"

@@ -192,6 +192,11 @@ def equipo_nuevo():
 
 
 # ── Editar equipo ─────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════
+# REEMPLAZA tu función equipo_editar() en app/routes/ti.py
+# Ahora maneja TODOS los campos del modal expandido.
+# ════════════════════════════════════════════════════════════════
+
 @ti_bp.route("/equipos/<int:id>/editar", methods=["POST"])
 @login_required
 @requiere_permiso('Equipos TI', 'editar')
@@ -199,20 +204,55 @@ def equipo_editar(id):
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
-    e = Electronico.query.get_or_404(id)
-    e.Nombre           = request.form.get("nombre", "").strip()
-    e.Marca            = request.form.get("marca", "").strip() or None
-    e.Modelo           = request.form.get("modelo", "").strip() or None
-    e.NumeroSerie      = request.form.get("numero_serie", "").strip() or None
-    e.TipoEquipo       = request.form.get("tipo_equipo", "otro")
-    e.Costo            = float(request.form.get("costo") or 0)
-    e.FechaAdquisicion = request.form.get("fecha_adquisicion") or None
-    e.Descripcion      = request.form.get("descripcion", "").strip() or None
-    e.Condicion        = request.form.get("condicion", "bueno")
-    e.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
-    db.session.commit()
-    _emit_actualizar()
-    flash("Equipo actualizado.", "success")
+    try:
+        e = Electronico.query.get_or_404(id)
+
+        # ── Campos básicos ──────────────────────────────────────
+        e.Nombre           = request.form.get("nombre", "").strip()
+        e.TipoEquipo       = request.form.get("tipo_equipo", "otro")
+        e.Gama             = request.form.get("gama") or None
+        e.Estado           = request.form.get("estado", e.Estado)
+        e.Condicion        = request.form.get("condicion", "bueno")
+        e.Marca            = request.form.get("marca", "").strip() or None
+        e.Modelo           = request.form.get("modelo", "").strip() or None
+        e.NumeroSerie      = request.form.get("numero_serie", "").strip() or None
+
+        # ── Campos dinámicos según tipo ─────────────────────────
+        e.IMEI             = request.form.get("imei", "").strip() or None
+        # ⚠️ Solo guardar serie_cargador si tu tabla electronico tiene esa columna.
+        # Si todavía no le agregaste, comenta esta línea.
+        if hasattr(e, "SerieCargador"):
+            e.SerieCargador = request.form.get("serie_cargador", "").strip() or None
+
+        # ── Specs técnicas ──────────────────────────────────────
+        e.Procesador       = request.form.get("procesador", "").strip() or None
+        e.MemoriaRAM       = request.form.get("memoria_ram", "").strip() or None
+        e.Almacenamiento   = request.form.get("almacenamiento", "").strip() or None
+        e.SistemaOperativo = request.form.get("sistema_operativo", "").strip() or None
+
+        # ── Costo + fechas ──────────────────────────────────────
+        e.Costo            = float(request.form.get("costo") or 0)
+        e.Garantia         = request.form.get("garantia") or None
+        e.FechaAdquisicion = request.form.get("fecha_adquisicion") or None
+        e.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
+
+        # ── Otros ───────────────────────────────────────────────
+        e.Accesorios       = request.form.get("accesorios", "").strip() or None
+        e.Comentarios      = request.form.get("comentarios", "").strip() or None
+
+        # ── Arrendamiento ───────────────────────────────────────
+        e.Arrendamiento          = bool(request.form.get("arrendamiento"))
+        e.FechaRenovacion        = request.form.get("fecha_renovacion") or None
+        e.ProveedorArrendamiento = request.form.get("proveedor_arrendamiento", "").strip() or None
+
+        db.session.commit()
+        _emit_actualizar()
+        flash(f"Equipo '{e.Nombre}' actualizado correctamente.", "success")
+
+    except Exception as ex:
+        db.session.rollback()
+        flash(f"Error al actualizar: {str(ex)}", "error")
+
     return redirect(url_for("ti.equipos"))
 
 

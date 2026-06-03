@@ -6,7 +6,9 @@
 <div class="hero-header">
   <div class="hero-content">
     <h1 class="hero-title">🔧 Mantenimiento Vehicular</h1>
-    <p class="hero-subtitle">Registro y seguimiento de mantenimientos preventivos y correctivos</p>
+    <p class="hero-subtitle">
+      Registro y seguimiento de mantenimientos preventivos y correctivos
+    </p>
   </div>
 </div>
 
@@ -42,16 +44,23 @@
 {% endif %}
 
 <!-- Filtros -->
-<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-  <a href="{{ url_for('administrativo.mantenimiento_lista') }}"
-     class="btn-sm {% if not request.args.get('estatus') %}active{% endif %}"
-     style="{% if not request.args.get('estatus') %}border-color:var(--accent);color:#a78bfa{% endif %}">Todos</a>
-  <a href="{{ url_for('administrativo.mantenimiento_lista', estatus='en_proceso') }}"
-     class="btn-sm {% if request.args.get('estatus')=='en_proceso' %}active{% endif %}"
-     style="{% if request.args.get('estatus')=='en_proceso' %}border-color:var(--yellow);color:var(--yellow){% endif %}">En proceso</a>
-  <a href="{{ url_for('administrativo.mantenimiento_lista', estatus='completado') }}"
-     class="btn-sm {% if request.args.get('estatus')=='completado' %}active{% endif %}"
-     style="{% if request.args.get('estatus')=='completado' %}border-color:var(--green);color:var(--green){% endif %}">Completados</a>
+<div class="filtros-toolbar">
+
+<a href="{{ url_for('administrativo.mantenimiento_lista') }}"
+   class="filtro-btn {% if not request.args.get('estatus') %}active{% endif %}">
+   📋 Todos
+</a>
+
+<a href="{{ url_for('administrativo.mantenimiento_lista', estatus='en_proceso') }}"
+   class="filtro-btn {% if request.args.get('estatus')=='en_proceso' %}active{% endif %}">
+   🔧 En proceso
+</a>
+
+<a href="{{ url_for('administrativo.mantenimiento_lista', estatus='completado') }}"
+   class="filtro-btn {% if request.args.get('estatus')=='completado' %}active{% endif %}">
+   ✅ Completados
+</a>
+
 </div>
 
 <div class="panel">
@@ -74,7 +83,8 @@
             <br><span style="font-size:11px;color:var(--muted);font-family:monospace">{{ m.matricula }}</span>
           </td>
           <td>
-            <span class="badge" style="background:{% if 'reventivo' in m.tipo_servicio %}rgba(34,211,165,.12);color:var(--green){% else %}rgba(248,113,113,.12);color:var(--red){% endif %}">
+            <span class="badge"
+                style="background:{% if 'preventivo' in m.tipo_servicio|lower %}rgba(34,211,165,.12);color:var(--green){% else %}rgba(248,113,113,.12);color:var(--red){% endif %}">
               {{ m.tipo_servicio }}
             </span>
           </td>
@@ -106,7 +116,7 @@
           </td>
           <td>
             {% if m.estatus == 'en_proceso' %}
-            <button class="btn-sm" onclick="completarMant({{ m.id }})">✅ Completar</button>
+            <button class="btn-sm btn-completar" onclick="completarMant({{ m.id }})">✅ Completar</button>
             {% endif %}
           </td>
         </tr>
