@@ -458,9 +458,9 @@
             'proveedor_arrendamiento': (e|attr('ProveedorArrendamiento')) or ''
             } %}
 
-            <button class="btn-sm" onclick='editarEquipo({{ datos_equipo|tojson }})'>
-              ✏️
-            </button>
+            {% if tiene_permiso('Equipos TI', 'editar') %}
+<button class="btn-sm" onclick="editarEquipo({{ e.IdElectronico }})" title="Editar">✏️</button>
+{% endif %}
 
             {% if e.Estado != 'baja' and tiene_permiso('Equipos TI', 'eliminar') %}
             <form method="POST" action="/ti/equipos/{{ e.IdElectronico }}/baja" style="display:inline"

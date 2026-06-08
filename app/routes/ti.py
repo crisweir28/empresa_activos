@@ -1,7 +1,7 @@
 # app/routes/ti.py
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, current_app, send_file
 from flask_login import login_required, current_user
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy import text as sqla_text
 from ..extensions import db, socketio
 from ..models.electronico import Electronico, MantenimientoElectronico
@@ -12,12 +12,10 @@ from ..views.ti_vistas import VEquiposTI, VEstadisticasTI, VMantenimientoElectro
 from ..utils.permisos import requiere_rol, requiere_permiso
 from ..utils.archivos import guardar_archivo
 from ..models.baja_activo import BajaActivo
-
-from flask import send_file
 from io import BytesIO
-from datetime import datetime
+import os
 import pandas as pd
-from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -120,8 +118,6 @@ def equipos():
         estado_filtro = estado,
     )
 
-
-# ── Alta equipo ───────────────────────────────────────────────
 # ── Alta equipo ───────────────────────────────────────────────
 @ti_bp.route("/equipos/nuevo", methods=["POST"])
 @login_required
@@ -249,13 +245,12 @@ def validar_serie():
     })
     
 # ── Editar equipo ─────────────────────────────────────────────
-
 @ti_bp.route("/equipos/<int:id>/editar", methods=["POST"])
 @login_required
 @requiere_permiso('Equipos TI', 'editar')
 def equipo_editar(id):
     if not _check_acceso():
-        return redirect(url_for("activos.dashboard"))
+        return jsonify({'ok': False, 'mensaje': 'No tienes acceso al módulo TI.'}), 403
 
     try:
         e = Electronico.query.get_or_404(id)
@@ -271,29 +266,20 @@ def equipo_editar(id):
 
         # ── Validar número de serie único ───────────────────────
         nueva_serie = request.form.get("numero_serie", "").strip()
-
         if nueva_serie:
             duplicado = Electronico.query.filter(
                 Electronico.NumeroSerie == nueva_serie,
                 Electronico.IdElectronico != id
             ).first()
-
             if duplicado:
-                flash(
-                    f"El número de serie '{nueva_serie}' ya está registrado.",
-                    "error"
-                )
-                return redirect(url_for("ti.equipos"))
+                return jsonify({'ok': False, 'mensaje': f"El número de serie '{nueva_serie}' ya está registrado."}), 400
 
         e.NumeroSerie = nueva_serie or None
 
         # ── Campos dinámicos según tipo ─────────────────────────
         e.IMEI = request.form.get("imei", "").strip() or None
-
         if hasattr(e, "SerieCargador"):
-            e.SerieCargador = (
-                request.form.get("serie_cargador", "").strip() or None
-            )
+            e.SerieCargador = request.form.get("serie_cargador", "").strip() or None
 
         # ── Specs técnicas ──────────────────────────────────────
         e.Procesador       = request.form.get("procesador", "").strip() or None
@@ -305,36 +291,74 @@ def equipo_editar(id):
         e.Costo            = float(request.form.get("costo") or 0)
         e.Garantia         = request.form.get("garantia") or None
         e.FechaAdquisicion = request.form.get("fecha_adquisicion") or None
-        e.IdUbicacion      = (
-            int(request.form.get("ubicacion_id"))
-            if request.form.get("ubicacion_id")
-            else None
-        )
+        e.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
 
         # ── Otros ───────────────────────────────────────────────
         e.Accesorios  = request.form.get("accesorios", "").strip() or None
         e.Comentarios = request.form.get("comentarios", "").strip() or None
 
         # ── Arrendamiento ───────────────────────────────────────
-        e.Arrendamiento = bool(request.form.get("arrendamiento"))
-        e.FechaRenovacion = request.form.get("fecha_renovacion") or None
-        e.ProveedorArrendamiento = (
-            request.form.get("proveedor_arrendamiento", "").strip() or None
-        )
+        e.Arrendamiento          = bool(request.form.get("arrendamiento"))
+        e.FechaRenovacion        = request.form.get("fecha_renovacion") or None
+        e.ProveedorArrendamiento = request.form.get("proveedor_arrendamiento", "").strip() or None
+
+        # ── Eliminar evidencias marcadas ────────────────────────
+        ids_eliminar = request.form.getlist("eliminar_evidencia")
+        for id_ev in ids_eliminar:
+            ev = EvidenciaEquipo.query.get(int(id_ev))
+            if ev:
+                ruta = os.path.join(current_app.root_path, ev.ArchivoUrl.lstrip('/'))
+                if os.path.exists(ruta):
+                    os.remove(ruta)
+                db.session.delete(ev)
+
+        # ── Nuevos archivos: facturas ───────────────────────────
+        facturas = request.files.getlist("factura")
+        for factura in facturas:
+            if factura and factura.filename:
+                info = guardar_archivo(
+                    archivo=factura,
+                    prefijo=f"equipo_{e.IdElectronico}_factura",
+                    carpeta="documents"
+                )
+                db.session.add(EvidenciaEquipo(
+                    IdElectronico = e.IdElectronico,
+                    ArchivoUrl    = info["url"],
+                    NombreArchivo = info["filename"],
+                    Tipo          = "factura",
+                    TipoArchivo   = "documento",
+                    MimeType      = info["mime_type"],
+                    Descripcion   = "Hoja de asignación",
+                    CreadoPor     = current_user.id,
+                ))
+
+        # ── Nuevos archivos: evidencias ─────────────────────────
+        evidencias_nuevas = request.files.getlist("evidencia")
+        for evidencia in evidencias_nuevas:
+            if evidencia and evidencia.filename:
+                info = guardar_archivo(
+                    archivo=evidencia,
+                    prefijo=f"equipo_{e.IdElectronico}_foto",
+                    carpeta="static/evidencias"
+                )
+                db.session.add(EvidenciaEquipo(
+                    IdElectronico = e.IdElectronico,
+                    ArchivoUrl    = info["url"],
+                    NombreArchivo = info["filename"],
+                    Tipo          = "entrega",
+                    TipoArchivo   = "imagen",
+                    MimeType      = info["mime_type"],
+                    Descripcion   = "Evidencia fotográfica",
+                    CreadoPor     = current_user.id,
+                ))
 
         db.session.commit()
         _emit_actualizar()
-
-        flash(
-            f"Equipo '{e.Nombre}' actualizado correctamente.",
-            "success"
-        )
+        return jsonify({'ok': True, 'mensaje': f"Equipo '{e.Nombre}' actualizado correctamente."})
 
     except Exception as ex:
         db.session.rollback()
-        flash(f"Error al actualizar: {str(ex)}", "error")
-
-    return redirect(url_for("ti.equipos"))
+        return jsonify({'ok': False, 'mensaje': str(ex)}), 400
 
 
 # ── Asignar equipo ────────────────────────────────────────────
@@ -465,23 +489,25 @@ def equipo_detalle(id):
     usuarios = Usuario.query.filter_by(Estatus=True).order_by(Usuario.Nombre).all()
     
     # Iconos para evidencias
+    iconos_evidencia = {}
     for ev in evidencias:
         if ev.TipoArchivo == 'imagen':
-            ev.icono = '🖼️'
+            iconos_evidencia[ev.IdEvidencia] = '🖼️'
         else:
             ext = ev.NombreArchivo.rsplit('.', 1)[-1].lower() if ev.NombreArchivo else ''
-            ev.icono = {
+            iconos_evidencia[ev.IdEvidencia] = {
                 'pdf': '📄', 'doc': '📝', 'docx': '📝',
                 'xls': '📊', 'xlsx': '📊', 'csv': '📊',
                 'txt': '📃', 'zip': '📦', 'rar': '📦'
             }.get(ext, '📎')
-    
+
     return render_template(
         "ti/equipo_detalle.html",
         equipo=equipo,
         mantenimientos=mantenimientos,
         evidencias=evidencias,
-        historial_asignaciones=historial_asignaciones,  # ✅ CON DATOS REALES
+        iconos_evidencia=iconos_evidencia,
+        historial_asignaciones=historial_asignaciones,
         usuarios=usuarios,
         now=datetime.utcnow()
     )
@@ -639,7 +665,22 @@ def equipo_baja(id):
 @login_required
 def api_equipo(id):
     e = Electronico.query.get_or_404(id)
-    return jsonify(e.to_dict())
+    data = e.to_dict()
+
+    # Agregar evidencias
+    evidencias = EvidenciaEquipo.query.filter_by(IdElectronico=id).all()
+    data['evidencias'] = [
+        {
+            'id':       ev.IdEvidencia,
+            'url':      ev.ArchivoUrl,
+            'nombre':   ev.NombreArchivo,
+            'tipo':     ev.Tipo,
+            'tipo_archivo': ev.TipoArchivo,
+            'mime':     ev.MimeType,
+        }
+        for ev in evidencias
+    ]
+    return jsonify(data)
 
 
 # ── Reporte PDF ───────────────────────────────────────────────

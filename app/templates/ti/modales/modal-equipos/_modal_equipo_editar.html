@@ -1,11 +1,11 @@
 {#app/templates/ti/modales/modal-equipos/_modal_equipo_editar.html#}
 <style>
   input[readonly],
-select[disabled] {
+  select[disabled] {
     background: #f3f4f6 !important;
     color: #6b7280 !important;
     cursor: not-allowed;
-}
+  }
 </style>
 <div class="overlay" id="modal-editar" onclick="if(event.target===this)cerrarModal('modal-editar')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
@@ -191,11 +191,41 @@ select[disabled] {
         <textarea id="e-comentarios" name="comentarios" placeholder="Notas adicionales..."></textarea>
       </div>
 
+      <!-- ─── Archivos existentes + nuevos ─────────────────────── -->
+      <div class="grid-2">
+        <div class="field">
+          <label>Hojas de asignación</label>
+          <!-- Archivos existentes -->
+          <div id="e-lista-existentes-facturas" class="lista-archivos"></div>
+          <!-- Nuevos archivos -->
+          <input type="file" id="e-input-facturas" name="factura" accept=".pdf,.doc,.docx" multiple
+            style="color:var(--text);font-size:13px;margin-top:8px"
+            onchange="agregarArchivos(this, 'e-lista-facturas', 'documentos')">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+            <i class="bi bi-info-circle"></i> Puedes seleccionar varios archivos
+          </div>
+          <div id="e-lista-facturas" class="lista-archivos"></div>
+        </div>
+
+        <div class="field">
+          <label>Evidencia fotográfica</label>
+          <!-- Archivos existentes -->
+          <div id="e-lista-existentes-evidencias" class="lista-archivos"></div>
+          <!-- Nuevos archivos -->
+          <input type="file" id="e-input-evidencias" name="evidencia" accept=".png,.jpg,.jpeg" multiple
+            style="color:var(--text);font-size:13px;margin-top:8px"
+            onchange="agregarArchivos(this, 'e-lista-evidencias', 'imagenes')">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+            <i class="bi bi-info-circle"></i> Puedes seleccionar varias imágenes
+          </div>
+          <div id="e-lista-evidencias" class="lista-archivos"></div>
+        </div>
+      </div>
+
       <!-- ─── Botones ───────────────────────────────────────── -->
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
-        <button type="button" class="btn btn-primary"
-          onclick="if(validarFormulario('form-editar')) document.getElementById('form-editar').submit()">
+        <button type="button" class="btn btn-primary" onclick="submitEditar()">
           Guardar cambios
         </button>
       </div>

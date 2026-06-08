@@ -109,42 +109,183 @@ async function submitEquipo() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// SUBMIT — EDITAR EQUIPO
+// ══════════════════════════════════════════════════════════════
+async function submitEditar() {
+  if (!validarFormulario('form-editar')) return;
+
+  const form = document.getElementById('form-editar');
+  const formData = new FormData(form);
+
+  try {
+    const resp = await fetch(form.action, {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: formData
+    });
+
+    const data = await resp.json();
+
+    if (data.ok) {
+      cerrarModal('modal-editar');
+      Swal.fire({
+        icon: 'success',
+        title: '¡Guardado!',
+        text: data.mensaje,
+        timer: 2000,
+        showConfirmButton: false,
+        timerProgressBar: true
+      }).then(() => location.reload());
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: data.mensaje || 'No se pudo guardar el equipo.'
+      });
+    }
+
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Ocurrió un error al guardar.'
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
 // ABRIR MODAL EDITAR — Precarga TODOS los campos
 // ══════════════════════════════════════════════════════════════
-function editarEquipo(data) {
-  document.getElementById('form-editar').action = `/ti/equipos/${data.id}/editar`;
+async function editarEquipo(id) {
+  try {
+    const resp = await fetch(`/ti/api/equipo/${id}`, {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
 
-  setVal('e-nombre',         data.nombre);
-  setVal('e-tipo',           data.tipo);
-  setVal('e-gama',           data.gama);
-  setVal('e-estado',         data.estado);
-  setVal('e-condicion',      data.condicion);
-  setVal('e-marca',          data.marca);
-  setVal('e-modelo',         data.modelo);
-  setVal('e-serie',          data.numero_serie);
-  setVal('e-imei',           data.imei);
-  setVal('e-serie-cargador', data.serie_cargador);
-  setVal('e-procesador',     data.procesador);
-  setVal('e-ram',            data.memoria_ram);
-  setVal('e-almacenamiento', data.almacenamiento);
-  setVal('e-so',             data.sistema_operativo);
-  setVal('e-costo',          data.costo);
-  setVal('e-garantia',       data.garantia);
-  setVal('e-fecha',          data.fecha_adquisicion);
-  setVal('e-ubicacion',      data.ubicacion_id);
-  setVal('e-accesorios',     data.accesorios);
-  setVal('e-comentarios',    data.comentarios);
+    if (!resp.ok) {
+      const texto = await resp.text();
+      console.error('Respuesta del servidor:', resp.status, texto.substring(0, 300));
+      throw new Error(`HTTP ${resp.status}`);
+    }
 
-  const cbArr = document.getElementById('e-arrendamiento');
-  cbArr.checked = !!data.arrendamiento;
-  document.getElementById('e-campos-arrendamiento').style.display =
-    cbArr.checked ? 'block' : 'none';
+    const data = await resp.json();
 
-  setVal('e-fecha-renovacion', data.fecha_renovacion);
-  setVal('e-proveedor',        data.proveedor_arrendamiento);
+    document.getElementById('form-editar').action = `/ti/equipos/${data.id}/editar`;
 
-  actualizarCamposEdit();
-  abrirModal('modal-editar');
+    setVal('e-nombre',           data.nombre);
+    setVal('e-tipo',             data.tipo_equipo);
+    setVal('e-gama',             data.gama);
+    setVal('e-estado',           data.estado);
+    setVal('e-condicion',        data.condicion);
+    setVal('e-marca',            data.marca);
+    setVal('e-modelo',           data.modelo);
+    setVal('e-serie',            data.numero_serie);
+    setVal('e-imei',             data.imei);
+    setVal('e-serie-cargador',   data.serie_cargador);
+    setVal('e-procesador',       data.procesador);
+    setVal('e-ram',              data.memoria_ram);
+    setVal('e-almacenamiento',   data.almacenamiento);
+    setVal('e-so',               data.sistema_operativo);
+    setVal('e-costo',            data.costo);
+    setVal('e-garantia',         data.garantia);
+    setVal('e-fecha',            data.fecha_adquisicion);
+    setVal('e-ubicacion',        data.ubicacion_id);
+    setVal('e-accesorios',       data.accesorios);
+    setVal('e-comentarios',      data.comentarios);
+
+    const cbArr = document.getElementById('e-arrendamiento');
+    cbArr.checked = !!data.arrendamiento;
+    document.getElementById('e-campos-arrendamiento').style.display =
+      cbArr.checked ? 'block' : 'none';
+
+    setVal('e-fecha-renovacion', data.fecha_renovacion);
+    setVal('e-proveedor',        data.proveedor_arrendamiento);
+
+    _renderEvidenciasExistentes(data.evidencias || [], 'e-lista-existentes-facturas', ['factura'], 'documentos');
+    _renderEvidenciasExistentes(data.evidencias || [], 'e-lista-existentes-evidencias', ['entrega'], 'imagenes');
+
+    actualizarCamposEdit();
+    abrirModal('modal-editar');
+
+  } catch (error) {
+    console.error('Error completo:', error);
+    Swal.fire({ icon: 'error', title: 'Error', text: `No se pudo cargar el equipo: ${error.message}` });
+  }
+}
+
+function _renderEvidenciasExistentes(evidencias, idLista, tipos, modo) {
+  const lista = document.getElementById(idLista);
+  if (!lista) return;
+  lista.innerHTML = '';
+
+  const filtradas = evidencias.filter(ev => tipos.includes(ev.tipo));
+  if (filtradas.length === 0) return;
+
+  filtradas.forEach(ev => {
+    const item = document.createElement('div');
+    item.className = 'archivo-item';
+
+    if (modo === 'imagenes') {
+      item.innerHTML = `
+        <div class="archivo-preview-img">
+          <img src="${ev.url}" alt="${ev.nombre}"
+               style="display:block;width:100%;height:100%;object-fit:cover;">
+          <button type="button" class="archivo-eliminar"
+                  onclick="_eliminarEvidenciaExistente(${ev.id}, this)"
+                  title="Eliminar">
+            <i class="bi bi-trash3-fill"></i>
+          </button>
+        </div>
+        <div class="archivo-nombre">${ev.nombre}</div>
+      `;
+    } else {
+      const esPdf = ev.mime === 'application/pdf' || ev.nombre.toLowerCase().endsWith('.pdf');
+
+      if (esPdf) {
+        item.innerHTML = `
+          <div class="archivo-preview-doc">
+            <embed src="${ev.url}" type="application/pdf">
+            <button type="button" class="archivo-eliminar"
+                    onclick="_eliminarEvidenciaExistente(${ev.id}, this)"
+                    title="Eliminar">
+              <i class="bi bi-trash3-fill"></i>
+            </button>
+          </div>
+          <div class="archivo-nombre">${ev.nombre}</div>
+        `;
+      } else {
+        item.innerHTML = `
+          <div class="archivo-preview-doc archivo-generico">
+            <i class="bi bi-file-earmark-text"></i>
+            <button type="button" class="archivo-eliminar"
+                    onclick="_eliminarEvidenciaExistente(${ev.id}, this)"
+                    title="Eliminar">
+              <i class="bi bi-trash3-fill"></i>
+            </button>
+          </div>
+          <div class="archivo-nombre">${ev.nombre}</div>
+        `;
+      }
+    }
+
+    lista.appendChild(item);
+  });
+}
+
+function _eliminarEvidenciaExistente(idEvidencia, btn) {
+  // Elimina visualmente y marca para borrar en el servidor
+  const item = btn.closest('.archivo-item');
+  if (item) item.remove();
+
+  // Agregar input hidden para que el backend sepa cuáles borrar
+  const form = document.getElementById('form-editar');
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.name = 'eliminar_evidencia';
+  hidden.value = idEvidencia;
+  form.appendChild(hidden);
 }
 
 function setVal(id, valor) {
@@ -261,6 +402,8 @@ function cerrarModal(idModal) {
 
   // Limpiar listas de archivos y acumulados
   modal.querySelectorAll('.lista-archivos').forEach(l => l.innerHTML = '');
+  modal.querySelectorAll('[id^="e-lista-existentes"]').forEach(l => l.innerHTML = '');
+  modal.querySelectorAll('input[name="eliminar_evidencia"]').forEach(el => el.remove());
   modal.querySelectorAll('input[type="file"]').forEach(inp => {
     const key = inp.id || inp.name;
     if (_archivosAcumulados[key]) delete _archivosAcumulados[key];

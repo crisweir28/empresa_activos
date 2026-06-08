@@ -8,365 +8,375 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
 
 <style>
-/* ═══════════════════════════════════════════════════════════
+  /* ═══════════════════════════════════════════════════════════
    DATATABLES - ESPECIFICIDAD MÁXIMA
    ═══════════════════════════════════════════════════════════ */
 
-body .main .panel div#tabla-equipos_wrapper {
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable {
-  width: 100% !important;
-  border-collapse: collapse !important;
-}
-
-/* ENCABEZADOS */
-body .main .panel table#tabla-equipos.dataTable thead th {
-  background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%) !important;
-  border-bottom: 2px solid #e5e7eb !important;
-  padding: 16px 18px !important;
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
-  font-weight: 800 !important;
-  font-size: 11px !important;
-  color: #6b7280 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  text-align: left !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
-  position: relative !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable thead th:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 25%;
-  height: 50%;
-  width: 1px;
-  background: #e5e7eb;
-}
-
-body .main .panel table#tabla-equipos.dataTable thead th.sorting:hover,
-body .main .panel table#tabla-equipos.dataTable thead th.sorting_asc:hover,
-body .main .panel table#tabla-equipos.dataTable thead th.sorting_desc:hover {
-  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%) !important;
-  color: #374151 !important;
-}
-
-/* CUERPO */
-body .main .panel table#tabla-equipos.dataTable tbody td {
-  padding: 14px 18px !important;
-  border-bottom: 1px solid #f3f4f6 !important;
-  vertical-align: middle !important;
-  font-size: 13px !important;
-  color: var(--text2) !important;
-  background: white !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable tbody tr:nth-child(even) {
-  background-color: #fafafa !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable tbody tr:nth-child(even) td {
-  background-color: #fafafa !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable tbody tr {
-  transition: all 0.15s ease !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable tbody tr:hover td {
-  background: #f0f9ff !important;
-  box-shadow: inset 0 0 0 1px #e0f2fe !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable tbody tr:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-}
-
-body .main .panel table#tabla-equipos.dataTable tbody tr:last-child td {
-  border-bottom: none !important;
-}
-
-/* CONTROLES */
-body .main .panel div.dataTables_wrapper {
-  padding: 0 !important;
-  margin-top: 20px !important;
-}
-
-body .main .panel div.dataTables_filter {
-  float: right !important;
-  margin-bottom: 20px !important;
-}
-
-body .main .panel div.dataTables_filter label {
-  font-size: 13px !important;
-  color: var(--text) !important;
-  font-weight: 600 !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-}
-
-body .main .panel div.dataTables_filter input {
-  border: 1.5px solid var(--border) !important;
-  border-radius: 10px !important;
-  padding: 10px 16px 10px 40px !important;
-  margin-left: 0 !important;
-  font-size: 13px !important;
-  width: 280px !important;
-  outline: none !important;
-  transition: all 0.2s ease !important;
-  background: white url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b7280" viewBox="0 0 16 16"%3e%3cpath d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/%3e%3c/svg%3e') no-repeat 14px center !important;
-  font-family: 'Inter', sans-serif !important;
-}
-
-body .main .panel div.dataTables_filter input:focus {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
-}
-
-body .main .panel div.dataTables_length {
-  float: left !important;
-  margin-bottom: 20px !important;
-}
-
-body .main .panel div.dataTables_length label {
-  font-size: 13px !important;
-  color: var(--text) !important;
-  font-weight: 600 !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-}
-
-body .main .panel div.dataTables_length select {
-  border: 1.5px solid var(--border) !important;
-  border-radius: 10px !important;
-  padding: 10px 40px 10px 16px !important;
-  margin: 0 !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  background: white !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-  appearance: none !important;
-  background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%236b7280" viewBox="0 0 16 16"%3e%3cpath d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/%3e%3c/svg%3e') !important;
-  background-repeat: no-repeat !important;
-  background-position: right 14px center !important;
-  color: var(--text) !important;
-  font-family: 'Inter', sans-serif !important;
-}
-
-body .main .panel div.dataTables_length select:focus {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
-  outline: none !important;
-}
-
-body .main .panel div.dataTables_info {
-  padding-top: 20px !important;
-  font-size: 13px !important;
-  color: var(--muted) !important;
-  font-weight: 500 !important;
-  float: left !important;
-}
-
-body .main .panel div.dataTables_paginate {
-  padding-top: 20px !important;
-  float: right !important;
-}
-
-body .main .panel .dataTables_paginate .paginate_button {
-  padding: 8px 14px !important;
-  margin: 0 3px !important;
-  border-radius: 8px !important;
-  border: 1.5px solid var(--border) !important;
-  background: white !important;
-  color: var(--text) !important;
-  cursor: pointer !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
-}
-
-body .main .panel .dataTables_paginate .paginate_button:hover {
-  background: #f9fafb !important;
-  border-color: #2563eb !important;
-  color: #2563eb !important;
-}
-
-body .main .panel .dataTables_paginate .paginate_button.current {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-  color: white !important;
-  border-color: #2563eb !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
-}
-
-body .main .panel .dataTables_paginate .paginate_button.disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-}
-
-body .main .panel div.dataTables_wrapper::after {
-  content: "";
-  display: table;
-  clear: both;
-}
-
-/* STATS */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stats-grid .stat-card {
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.stats-grid .stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-  transform-origin: left;
-}
-
-.stats-grid .stat-card:hover::before {
-  transform: scaleX(1);
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+  body .main .panel div#tabla-equipos_wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  
-  body .main .panel div.dataTables_filter input {
-    width: 200px !important;
+
+  body .main .panel table#tabla-equipos.dataTable {
+    width: 100% !important;
+    border-collapse: collapse !important;
   }
-  
-  body .main .panel div.dataTables_length,
+
+  /* ENCABEZADOS */
+  body .main .panel table#tabla-equipos.dataTable thead th {
+    background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%) !important;
+    border-bottom: 2px solid #e5e7eb !important;
+    padding: 16px 18px !important;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 11px !important;
+    color: #6b7280 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    text-align: left !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+    position: relative !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable thead th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 25%;
+    height: 50%;
+    width: 1px;
+    background: #e5e7eb;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable thead th.sorting:hover,
+  body .main .panel table#tabla-equipos.dataTable thead th.sorting_asc:hover,
+  body .main .panel table#tabla-equipos.dataTable thead th.sorting_desc:hover {
+    background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+    color: #374151 !important;
+  }
+
+  /* CUERPO */
+  body .main .panel table#tabla-equipos.dataTable tbody td {
+    padding: 14px 18px !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    vertical-align: middle !important;
+    font-size: 13px !important;
+    color: var(--text2) !important;
+    background: white !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable tbody tr:nth-child(even) {
+    background-color: #fafafa !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable tbody tr:nth-child(even) td {
+    background-color: #fafafa !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable tbody tr {
+    transition: all 0.15s ease !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable tbody tr:hover td {
+    background: #f0f9ff !important;
+    box-shadow: inset 0 0 0 1px #e0f2fe !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable tbody tr:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  body .main .panel table#tabla-equipos.dataTable tbody tr:last-child td {
+    border-bottom: none !important;
+  }
+
+  /* CONTROLES */
+  body .main .panel div.dataTables_wrapper {
+    padding: 0 !important;
+    margin-top: 20px !important;
+  }
+
   body .main .panel div.dataTables_filter {
-    float: none !important;
-    text-align: center !important;
-    margin-bottom: 16px !important;
+    float: right !important;
+    margin-bottom: 20px !important;
   }
-  
-  body .main .panel div.dataTables_info,
-  body .main .panel div.dataTables_paginate {
-    float: none !important;
-    text-align: center !important;
-  }
-}
 
-/* ═══════════════════════════════════════════════════════
+  body .main .panel div.dataTables_filter label {
+    font-size: 13px !important;
+    color: var(--text) !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  body .main .panel div.dataTables_filter input {
+    border: 1.5px solid var(--border) !important;
+    border-radius: 10px !important;
+    padding: 10px 16px 10px 40px !important;
+    margin-left: 0 !important;
+    font-size: 13px !important;
+    width: 280px !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    background: white url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b7280" viewBox="0 0 16 16"%3e%3cpath d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/%3e%3c/svg%3e') no-repeat 14px center !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  body .main .panel div.dataTables_filter input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+  }
+
+  body .main .panel div.dataTables_length {
+    float: left !important;
+    margin-bottom: 20px !important;
+  }
+
+  body .main .panel div.dataTables_length label {
+    font-size: 13px !important;
+    color: var(--text) !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  body .main .panel div.dataTables_length select {
+    border: 1.5px solid var(--border) !important;
+    border-radius: 10px !important;
+    padding: 10px 40px 10px 16px !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    background: white !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    appearance: none !important;
+    background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="%236b7280" viewBox="0 0 16 16"%3e%3cpath d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/%3e%3c/svg%3e') !important;
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    color: var(--text) !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  body .main .panel div.dataTables_length select:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+    outline: none !important;
+  }
+
+  body .main .panel div.dataTables_info {
+    padding-top: 20px !important;
+    font-size: 13px !important;
+    color: var(--muted) !important;
+    font-weight: 500 !important;
+    float: left !important;
+  }
+
+  body .main .panel div.dataTables_paginate {
+    padding-top: 20px !important;
+    float: right !important;
+  }
+
+  body .main .panel .dataTables_paginate .paginate_button {
+    padding: 8px 14px !important;
+    margin: 0 3px !important;
+    border-radius: 8px !important;
+    border: 1.5px solid var(--border) !important;
+    background: white !important;
+    color: var(--text) !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+  }
+
+  body .main .panel .dataTables_paginate .paginate_button:hover {
+    background: #f9fafb !important;
+    border-color: #2563eb !important;
+    color: #2563eb !important;
+  }
+
+  body .main .panel .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: white !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+  }
+
+  body .main .panel .dataTables_paginate .paginate_button.disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+  }
+
+  body .main .panel div.dataTables_wrapper::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stats-grid .stat-card {
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stats-grid .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #2563eb, #1d4ed8);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+    transform-origin: left;
+  }
+
+  .stats-grid .stat-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    body .main .panel div.dataTables_filter input {
+      width: 200px !important;
+    }
+
+    body .main .panel div.dataTables_length,
+    body .main .panel div.dataTables_filter {
+      float: none !important;
+      text-align: center !important;
+      margin-bottom: 16px !important;
+    }
+
+    body .main .panel div.dataTables_info,
+    body .main .panel div.dataTables_paginate {
+      float: none !important;
+      text-align: center !important;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════
    VALIDACIÓN CON TOOLTIPS (estilo Bootstrap)
 ═══════════════════════════════════════════════════════ */
 
-/* El contenedor del campo debe ser relative para anclar el tooltip */
-.necesita-validacion .field {
-  position: relative;
-}
-
-/* Campo inválido: borde rojo */
-.necesita-validacion input.is-invalid,
-.necesita-validacion select.is-invalid,
-.necesita-validacion textarea.is-invalid {
-  border-color: #dc2626 !important;
-  background-color: #fef2f2 !important;
-}
-
-.necesita-validacion input.is-invalid:focus,
-.necesita-validacion select.is-invalid:focus,
-.necesita-validacion textarea.is-invalid:focus {
-  border-color: #dc2626 !important;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
-  outline: none !important;
-}
-
-/* Tooltip de error - oculto por defecto */
-.invalid-tooltip {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 100;
-  margin-top: 4px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #ffffff;
-  background-color: rgba(220, 38, 38, 0.95);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
-  white-space: nowrap;
-  pointer-events: none;
-  animation: tooltipFadeIn 0.2s ease;
-}
-
-/* Flecha del tooltip apuntando hacia arriba */
-.invalid-tooltip::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 12px;
-  border: 5px solid transparent;
-  border-bottom-color: rgba(220, 38, 38, 0.95);
-}
-
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
+  /* El contenedor del campo debe ser relative para anclar el tooltip */
+  .necesita-validacion .field {
+    position: relative;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  /* Campo inválido: borde rojo */
+  .necesita-validacion input.is-invalid,
+  .necesita-validacion select.is-invalid,
+  .necesita-validacion textarea.is-invalid {
+    border-color: #dc2626 !important;
+    background-color: #fef2f2 !important;
   }
-}
 
-/* Mostrar tooltip cuando el campo esté inválido */
-.necesita-validacion input.is-invalid ~ .invalid-tooltip,
-.necesita-validacion select.is-invalid ~ .invalid-tooltip,
-.necesita-validacion textarea.is-invalid ~ .invalid-tooltip {
-  display: block;
-}
+  .necesita-validacion input.is-invalid:focus,
+  .necesita-validacion select.is-invalid:focus,
+  .necesita-validacion textarea.is-invalid:focus {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+    outline: none !important;
+  }
 
-/* Label de campo requerido: asterisco rojo */
-.necesita-validacion label.requerido::after {
-  content: ' *';
-  color: #dc2626;
-  font-weight: 700;
-}
+  /* Tooltip de error - oculto por defecto */
+  .invalid-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    margin-top: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: rgba(220, 38, 38, 0.95);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+    white-space: nowrap;
+    pointer-events: none;
+    animation: tooltipFadeIn 0.2s ease;
+  }
 
-/* Sacudida sutil cuando falla la validación */
-.necesita-validacion .is-invalid {
-  animation: shakeError 0.3s ease;
-}
+  /* Flecha del tooltip apuntando hacia arriba */
+  .invalid-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 12px;
+    border: 5px solid transparent;
+    border-bottom-color: rgba(220, 38, 38, 0.95);
+  }
 
-@keyframes shakeError {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-3px); }
-  75% { transform: translateX(3px); }
-}
+  @keyframes tooltipFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
 
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Mostrar tooltip cuando el campo esté inválido */
+  .necesita-validacion input.is-invalid~.invalid-tooltip,
+  .necesita-validacion select.is-invalid~.invalid-tooltip,
+  .necesita-validacion textarea.is-invalid~.invalid-tooltip {
+    display: block;
+  }
+
+  /* Label de campo requerido: asterisco rojo */
+  .necesita-validacion label.requerido::after {
+    content: ' *';
+    color: #dc2626;
+    font-weight: 700;
+  }
+
+  /* Sacudida sutil cuando falla la validación */
+  .necesita-validacion .is-invalid {
+    animation: shakeError 0.3s ease;
+  }
+
+  @keyframes shakeError {
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    25% {
+      transform: translateX(-3px);
+    }
+
+    75% {
+      transform: translateX(3px);
+    }
+  }
 </style>
 {% endblock %}
 
@@ -380,37 +390,48 @@ body .main .panel div.dataTables_wrapper::after {
 
 <div class="stats-grid" style="margin-bottom:22px">
   <div class="stat-card" id="filtro-todos" style="animation-delay:.0s;cursor:pointer" onclick="filtrarEquipos('todos')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Total equipos</span><span style="font-size:22px">💻</span></div>
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Total equipos</span><span
+        style="font-size:22px">💻</span></div>
     <div class="stat-val" style="color:var(--accent)">{{ stats.TotalEquipos if stats else 0 }}</div>
   </div>
-  
-  <div class="stat-card" id="filtro-almacen" style="animation-delay:.07s;cursor:pointer" onclick="filtrarEquipos('almacen')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">En almacén</span><span style="font-size:22px">📦</span></div>
+
+  <div class="stat-card" id="filtro-almacen" style="animation-delay:.07s;cursor:pointer"
+    onclick="filtrarEquipos('almacen')">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">En almacén</span><span
+        style="font-size:22px">📦</span></div>
     <div class="stat-val" style="color:var(--green)">{{ stats.EnAlmacen if stats else 0 }}</div>
   </div>
-  
-  <div class="stat-card" id="filtro-asignado" style="animation-delay:.14s;cursor:pointer" onclick="filtrarEquipos('asignado')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignados</span><span style="font-size:22px">👤</span></div>
+
+  <div class="stat-card" id="filtro-asignado" style="animation-delay:.14s;cursor:pointer"
+    onclick="filtrarEquipos('asignado')">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Asignados</span><span
+        style="font-size:22px">👤</span></div>
     <div class="stat-val" style="color:var(--accent)">{{ stats.Asignados if stats else 0 }}</div>
   </div>
-  
-  <div class="stat-card" id="filtro-bueno" style="animation-delay:.21s;cursor:pointer" onclick="filtrarEquipos('bueno')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Buen estado</span><span style="font-size:22px">✅</span></div>
+
+  <div class="stat-card" id="filtro-bueno" style="animation-delay:.21s;cursor:pointer"
+    onclick="filtrarEquipos('bueno')">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Buen estado</span><span
+        style="font-size:22px">✅</span></div>
     <div class="stat-val" style="color:var(--green)">{{ stats.EnBuenEstado if stats else 0 }}</div>
   </div>
-  
+
   <div class="stat-card" id="filtro-malo" style="animation-delay:.28s;cursor:pointer" onclick="filtrarEquipos('malo')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Mal estado</span><span style="font-size:22px">⚠️</span></div>
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Mal estado</span><span
+        style="font-size:22px">⚠️</span></div>
     <div class="stat-val" style="color:var(--red)">{{ stats.EnMalEstado if stats else 0 }}</div>
   </div>
-  
-  <div class="stat-card" id="filtro-mantenimiento" style="animation-delay:.35s;cursor:pointer" onclick="filtrarEquipos('mantenimiento')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Mantenimiento</span><span style="font-size:22px">🔧</span></div>
+
+  <div class="stat-card" id="filtro-mantenimiento" style="animation-delay:.35s;cursor:pointer"
+    onclick="filtrarEquipos('mantenimiento')">
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Mantenimiento</span><span
+        style="font-size:22px">🔧</span></div>
     <div class="stat-val" style="color:var(--yellow)">{{ stats.EnMantenimiento if stats else 0 }}</div>
   </div>
-  
+
   <div class="stat-card" id="filtro-baja" style="animation-delay:.42s;cursor:pointer" onclick="filtrarEquipos('baja')">
-    <div style="display:flex;justify-content:space-between"><span class="stat-label">Dados de baja</span><span style="font-size:22px">🗑️</span></div>
+    <div style="display:flex;justify-content:space-between"><span class="stat-label">Dados de baja</span><span
+        style="font-size:22px">🗑️</span></div>
     <div class="stat-val" style="color:var(--muted)">{{ bajas }}</div>
   </div>
 </div>
@@ -422,14 +443,19 @@ body .main .panel div.dataTables_wrapper::after {
       <span id="contador-equipos">{{ equipos|length }}</span> equipos
     </span>
   </div>
-  
+
   {% if equipos %}
   <div style="overflow-x:auto">
     <table id="tabla-equipos" class="display" style="width:100%">
       <thead>
         <tr>
-          <th>Equipo</th><th>Tipo</th><th>N° Serie</th><th>Estado</th>
-          <th>Condición</th><th>Asignado a</th><th>Acciones</th>
+          <th>Equipo</th>
+          <th>Tipo</th>
+          <th>N° Serie</th>
+          <th>Estado</th>
+          <th>Condición</th>
+          <th>Asignado a</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -445,14 +471,16 @@ body .main .panel div.dataTables_wrapper::after {
           </td>
           <td style="font-family:monospace;color:var(--muted);font-size:12px">{{ e.NumeroSerie or '—' }}</td>
           <td>
-            {% set colores = {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja'} %}
+            {% set colores =
+            {'almacen':'badge-activo','asignado':'','mantenimiento':'badge-mantenimiento','baja':'badge-baja'} %}
             <span class="badge {{ colores.get(e.Estado,'') }}"
-                  style="{% if e.Estado=='asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
+              style="{% if e.Estado=='asignado' %}background:rgba(99,102,241,.12);color:#6366f1{% endif %}">
               {{ e.Estado }}
             </span>
           </td>
           <td>
-            {% set cond_color = {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
+            {% set cond_color =
+            {'bueno':'var(--green)','regular':'var(--yellow)','malo':'var(--red)','dañado':'var(--red)'} %}
             <span style="color:{{ cond_color.get(e.Condicion,'var(--muted)') }};font-size:12px">{{ e.Condicion }}</span>
           </td>
           <td style="color:var(--muted)">{{ e.UsuarioNombre or '—' }}</td>
@@ -460,42 +488,15 @@ body .main .panel div.dataTables_wrapper::after {
             {% if tiene_permiso('Equipos TI', 'ver') %}
             <a href="{{ url_for('ti.equipo_detalle', id=e.IdElectronico) }}" class="btn-sm">👁 Ver</a>
             {% endif %}
-            
+
             {% if tiene_permiso('Equipos TI', 'editar') %}
-{% set datos_equipo = {
-  'id':                      e.IdElectronico,
-  'nombre':                  e.Nombre or '',
-  'tipo':                    e.TipoEquipo or '',
-  'gama':                    e.Gama or '',
-  'estado':                  e.Estado or 'almacen',
-  'condicion':               e.Condicion or 'bueno',
-  'marca':                   e.Marca or '',
-  'modelo':                  e.Modelo or '',
-  'numero_serie':            e.NumeroSerie or '',
-  'imei':                    (e|attr('IMEI')) or '',
-  'serie_cargador':          (e|attr('SerieCargador')) or '',
-  'procesador':              (e|attr('Procesador')) or '',
-  'memoria_ram':             (e|attr('MemoriaRAM')) or '',
-  'almacenamiento':          (e|attr('Almacenamiento')) or '',
-  'sistema_operativo':       (e|attr('SistemaOperativo')) or '',
-  'costo':                   e.Costo or 0,
-  'garantia':                (e.Garantia.isoformat() if e.Garantia else ''),
-  'fecha_adquisicion':       (e.FechaAdquisicion.isoformat() if e.FechaAdquisicion else ''),
-  'ubicacion_id':            (e|attr('IdUbicacion')) or '',
-  'accesorios':              (e|attr('Accesorios')) or '',
-  'comentarios':             (e|attr('Comentarios')) or '',
-  'arrendamiento':           (e|attr('Arrendamiento')) is true or (e|attr('Arrendamiento')) == 1,
-  'fecha_renovacion':        (e.FechaRenovacion.isoformat() if (e|attr('FechaRenovacion')) else ''),
-  'proveedor_arrendamiento': (e|attr('ProveedorArrendamiento')) or ''
-} %}
-<button class="btn-sm" onclick="editarEquipo({{ datos_equipo|tojson }})" title="Editar">✏️</button>
+<button class="btn-sm" onclick="editarEquipo({{ e.IdElectronico }})" title="Editar">✏️</button>
 {% endif %}
-            
+
             {% if e.Estado != 'baja' and tiene_permiso('Equipos TI', 'eliminar') %}
-            <form method="POST" action="/ti/equipos/{{ e.IdElectronico }}/baja"
-                  style="display:inline" id="baja-eq-{{ e.IdElectronico }}"></form>
-            <button class="btn-sm btn-del"
-                    onclick="confirmarBaja('{{ e.Nombre }}','baja-eq-{{ e.IdElectronico }}')">
+            <form method="POST" action="/ti/equipos/{{ e.IdElectronico }}/baja" style="display:inline"
+              id="baja-eq-{{ e.IdElectronico }}"></form>
+            <button class="btn-sm btn-del" onclick="confirmarBaja('{{ e.Nombre }}','baja-eq-{{ e.IdElectronico }}')">
               🗑️
             </button>
             {% endif %}
@@ -508,39 +509,6 @@ body .main .panel div.dataTables_wrapper::after {
   {% else %}
   <p style="color:var(--muted);font-size:13px;text-align:center;padding:40px">Sin equipos registrados.</p>
   {% endif %}
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-top:16px">
-  <div class="panel">
-    <div class="panel-title">📊 Por tipo</div>
-    {% if por_tipo %}
-      {% for tipo, count in por_tipo.items() %}
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span style="color:var(--muted)">
-          {% set iconos = {'laptop':'💻','desktop':'🖥️','monitor':'🖵','celular':'📱','red':'🌐','otro':'📦'} %}
-          {{ iconos.get(tipo,'📦') }} {{ tipo }}
-        </span>
-        <strong style="color:var(--accent)">{{ count }}</strong>
-      </div>
-      {% endfor %}
-    {% else %}
-    <p style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Sin equipos registrados</p>
-    {% endif %}
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">🔧 En mantenimiento</div>
-    {% if mantenimientos %}
-      {% for m in mantenimientos %}
-      <div style="background:var(--bg);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 14px;margin-bottom:8px">
-        <div style="font-size:13px;font-weight:500">{{ m.EquipoNombre }}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:3px">{{ m.Tipo }} · {{ m.FechaInicio }}</div>
-      </div>
-      {% endfor %}
-    {% else %}
-      <p style="color:var(--green);font-size:13px;text-align:center;padding:16px">✅ Sin mantenimientos activos</p>
-    {% endif %}
-  </div>
 </div>
 
 {% include "ti/modales/modal-equipos/_modal_equipo_nuevo.html" %}

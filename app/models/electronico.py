@@ -22,6 +22,7 @@ class Electronico(db.Model):
     Descripcion      = db.Column(db.Text)
     # ── Campos técnicos ───────────────────────────────────────
     IMEI                  = db.Column(db.String(50),  nullable=True)
+    SerieCargador = db.Column(db.String(100), nullable=True)
     Procesador            = db.Column(db.String(100), nullable=True)
     MemoriaRAM            = db.Column(db.String(50),  nullable=True)
     Almacenamiento        = db.Column(db.String(50),  nullable=True)
@@ -90,6 +91,8 @@ class Electronico(db.Model):
             "fecha_adquisicion":     str(self.FechaAdquisicion) if self.FechaAdquisicion else None,
             "descripcion":           self.Descripcion,
             "imei":                  self.IMEI,
+            "serie_cargador": self.SerieCargador,
+            "ubicacion_id":   self.IdUbicacion,
             "procesador":            self.Procesador,
             "memoria_ram":           self.MemoriaRAM,
             "almacenamiento":        self.Almacenamiento,
