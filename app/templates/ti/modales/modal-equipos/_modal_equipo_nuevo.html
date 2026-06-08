@@ -1,14 +1,45 @@
-{#
-app/templates/ti/modales/modal-equipos/_modal_equipo_nuevo.html
+{#app/templates/ti/modales/modal-equipos/_modal_equipo_nuevo.html#}
 
-Modal con validación tipo Bootstrap (tooltips rojos flotantes).
-Campo cargador aparece solo si se selecciona "Laptop".
+<style>
+  .swal-sobre-modal {
+    position: absolute !important;
+    z-index: 99999 !important;
+  }
+  .archivo-preview-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  }
 
-Requiere:
-- validacion_tooltip.css
-- validacion_tooltip.js (provee validarFormulario(idForm))
-- submitEquipo() debe llamar a validarFormulario('form-nuevo-equipo') antes de enviar
-#}
+  /* ── Botón agregar más archivos ── */
+.archivo-agregar-mas {
+  width: 100px;
+  height: 90px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #9ca3af;
+}
+
+.archivo-agregar-mas i {
+  font-size: 28px;
+}
+
+.archivo-agregar-mas:hover {
+  border-color: var(--primary, #9B2335);
+  color: var(--primary, #9B2335);
+  background: rgba(155, 35, 53, 0.04);
+}
+
+</style>
+
 <div class="overlay" id="modal-nuevo" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:720px">
     <h2>💻 Nuevo equipo TI</h2>
@@ -83,27 +114,32 @@ Requiere:
 
       <!-- ─── N° Serie + IMEI ───────────────────────────────── -->
       <div class="grid-2">
+
         <div class="field">
           <label>Número de serie</label>
-          <input name="numero_serie" oninput="vOpcional(this,'ti-serie')" onblur="vOpcional(this,'ti-serie')">
+          <input name="numero_serie" id="numero_serie" oninput="validarSerieUnica(this)"
+            onblur="validarSerieUnica(this)">
           <div class="field-msg" id="msg-ti-serie"></div>
         </div>
 
-        <!-- IMEI: solo celulares -->
+        <!-- IMEI -->
         <div class="field" id="campo-imei" style="display:none">
           <label>IMEI</label>
           <input name="imei" placeholder="Solo celulares" oninput="vImei(this)" onblur="vImei(this)">
           <div class="field-msg" id="msg-ti-imei"></div>
         </div>
 
-        <!-- ✅ Cargador: solo laptops (mismo slot que IMEI) -->
+        <!-- Cargador -->
         <div class="field" id="campo-cargador" style="display:none">
           <label class="requerido">N° de serie del cargador</label>
           <input name="serie_cargador" placeholder="Ej: CHG-DELL-2024-001" oninput="vCampo(this,'ti-cargador')"
             onblur="vCampo(this,'ti-cargador')">
-          <div class="invalid-tooltip">El número de serie del cargador es obligatorio para laptops.</div>
+          <div class="invalid-tooltip">
+            El número de serie del cargador es obligatorio para laptops.
+          </div>
           <div class="field-msg" id="msg-ti-cargador"></div>
         </div>
+
       </div>
 
       <!-- ─── Specs técnicas ────────────────────────────────── -->
@@ -142,8 +178,8 @@ Requiere:
       <div class="grid-2">
         <div class="field">
           <label>Costo ($)</label>
-          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00" oninput="vNumero(this,'ti-costo')"
-            onblur="vNumero(this,'ti-costo')">
+          <input name="costo" type="number" step="0.01" min="0" placeholder="0.00"
+            oninput="vNumero(this,'ti-costo')" onblur="vNumero(this,'ti-costo')">
           <div class="field-msg" id="msg-ti-costo"></div>
         </div>
         <div class="field">
@@ -200,8 +236,8 @@ Requiere:
           </div>
           <div class="field">
             <label>Proveedor</label>
-            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor" oninput="vOpcional(this,'ti-prov')"
-              onblur="vOpcional(this,'ti-prov')">
+            <input name="proveedor_arrendamiento" placeholder="Nombre del proveedor"
+              oninput="vOpcional(this,'ti-prov')" onblur="vOpcional(this,'ti-prov')">
             <div class="field-msg" id="msg-ti-prov"></div>
           </div>
         </div>
@@ -218,25 +254,28 @@ Requiere:
       <!-- ─── Archivos ──────────────────────────────────────── -->
       <div class="grid-2">
         <div class="field">
-          <label>Hoja de asignacion</label>
-          <input type="file" name="factura" accept=".pdf,.doc,.docx" style="color:var(--text);font-size:13px">
+          <label>Hoja de asignación</label>
+          <input type="file" id="input-facturas" name="factura"
+                 accept=".pdf,.doc,.docx" multiple
+                 style="color:var(--text);font-size:13px"
+                 onchange="agregarArchivos(this, 'lista-facturas', 'documentos')">
+          <div id="lista-facturas" class="lista-archivos"></div>
         </div>
+
         <div class="field">
           <label>Evidencia fotográfica (opcional)</label>
-          <input type="file" name="evidencia" accept=".png,.jpg,.jpeg" onchange="previewEv(this)"
-            style="color:var(--text);font-size:13px">
+          <input type="file" id="input-evidencias" name="evidencia"
+                 accept=".png,.jpg,.jpeg" multiple
+                 style="color:var(--text);font-size:13px"
+                 onchange="agregarArchivos(this, 'lista-evidencias', 'imagenes')">
+          <div id="lista-evidencias" class="lista-archivos"></div>
         </div>
-      </div>
-      <div id="ev-preview" style="display:none;margin-top:8px;text-align:center">
-        <img id="ev-img" src="" alt="preview" style="max-width:100%;max-height:120px;border-radius:8px;
-                    border:1px solid var(--border);object-fit:contain">
       </div>
 
       <!-- ─── Botones ───────────────────────────────────────── -->
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-nuevo')">Cancelar</button>
-        <button type="button" class="btn btn-primary"
-          onclick="if(validarFormulario('form-nuevo-equipo')) submitEquipo()">
+        <button type="button" class="btn btn-primary" onclick="submitEquipo()">
           Guardar
         </button>
       </div>

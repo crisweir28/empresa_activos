@@ -5,6 +5,12 @@
  */
 
 // ══════════════════════════════════════════════════════════════
+// GESTOR DE ARCHIVOS — acumulado global
+// Debe declararse primero porque cerrarModal lo usa
+// ══════════════════════════════════════════════════════════════
+const _archivosAcumulados = {};
+
+// ══════════════════════════════════════════════════════════════
 // VALIDADORES ESPECÍFICOS
 // ══════════════════════════════════════════════════════════════
 function vImei(input) {
@@ -14,36 +20,100 @@ function vImei(input) {
   return setMsg(input, 'ti-imei', true, 'Se ve bien');
 }
 
+async function validarSerieUnica(input) {
+  const serie = input.value.trim();
+
+  if (!serie) {
+    input.classList.remove('is-invalid', 'is-valid');
+    limpiar(input, 'ti-serie');
+    return true;
+  }
+
+  try {
+    const resp = await fetch(`/ti/equipos/validar-serie?serie=${encodeURIComponent(serie)}`);
+
+    if (!resp.ok) throw new Error('Error del servidor');
+
+    const data = await resp.json();
+
+    if (data.existe) {
+      input.classList.add('is-invalid');
+      input.classList.remove('is-valid');
+      setMsg(input, 'ti-serie', false, 'Este número de serie ya existe');
+      return false;
+    }
+
+    input.classList.remove('is-invalid');
+    input.classList.add('is-valid');
+    setMsg(input, 'ti-serie', true, 'Número de serie disponible');
+    return true;
+
+  } catch (error) {
+    console.error(error);
+    input.classList.add('is-invalid');
+    input.classList.remove('is-valid');
+    setMsg(input, 'ti-serie', false, 'Error validando serie');
+    return false;
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 // SUBMIT — NUEVO EQUIPO
 // ══════════════════════════════════════════════════════════════
-function submitEquipo() {
+async function submitEquipo() {
   const form = document.getElementById('form-nuevo-equipo');
 
-  // Validar campos required con tooltips Bootstrap
-  if (!validarFormulario('form-nuevo-equipo')) {
+  if (!validarFormulario('form-nuevo-equipo')) return;
+
+  const inputSerie = form.querySelector('[name="numero_serie"]');
+  const serie = inputSerie.value.trim();
+
+  if (!serie) {
+    form.submit();
     return;
   }
 
-  form.submit();
+  try {
+    const response = await fetch(`/ti/equipos/validar-serie?serie=${encodeURIComponent(serie)}`);
+
+    if (!response.ok) throw new Error('Error del servidor');
+
+    const data = await response.json();
+
+    if (data.existe) {
+      inputSerie.classList.add('is-invalid');
+      inputSerie.classList.remove('is-valid');
+      setMsg(inputSerie, 'ti-serie', false, 'Este número de serie ya está registrado.');
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Serie duplicada',
+        text: 'Debes capturar un número de serie único.',
+        target: document.getElementById('modal-nuevo'),
+        customClass: { container: 'swal-sobre-modal' }
+      });
+
+      return;
+    }
+
+    form.submit();
+
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No fue posible validar el número de serie.'
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
 // ABRIR MODAL EDITAR — Precarga TODOS los campos
 // ══════════════════════════════════════════════════════════════
 function editarEquipo(data) {
-  // `data` es un objeto con todos los campos del equipo
-  // (más limpio que pasar 20 parámetros sueltos)
-
-  console.log('DATOS EQUIPO:', data);
-  console.log('NOMBRE:', data.nombre);
-
-  document.getElementById('form-editar').action =
-    `/ti/equipos/${data.id}/editar`;
-
   document.getElementById('form-editar').action = `/ti/equipos/${data.id}/editar`;
 
-  // ── Campos básicos ────────────────────────────────────────
   setVal('e-nombre',         data.nombre);
   setVal('e-tipo',           data.tipo);
   setVal('e-gama',           data.gama);
@@ -52,28 +122,19 @@ function editarEquipo(data) {
   setVal('e-marca',          data.marca);
   setVal('e-modelo',         data.modelo);
   setVal('e-serie',          data.numero_serie);
-
-  // ── Campos dinámicos (IMEI / Cargador) ────────────────────
   setVal('e-imei',           data.imei);
   setVal('e-serie-cargador', data.serie_cargador);
-
-  // ── Specs ─────────────────────────────────────────────────
   setVal('e-procesador',     data.procesador);
   setVal('e-ram',            data.memoria_ram);
   setVal('e-almacenamiento', data.almacenamiento);
   setVal('e-so',             data.sistema_operativo);
-
-  // ── Costo + fechas ────────────────────────────────────────
   setVal('e-costo',          data.costo);
   setVal('e-garantia',       data.garantia);
   setVal('e-fecha',          data.fecha_adquisicion);
   setVal('e-ubicacion',      data.ubicacion_id);
-
-  // ── Otros ─────────────────────────────────────────────────
   setVal('e-accesorios',     data.accesorios);
   setVal('e-comentarios',    data.comentarios);
 
-  // ── Arrendamiento (checkbox + sección dinámica) ───────────
   const cbArr = document.getElementById('e-arrendamiento');
   cbArr.checked = !!data.arrendamiento;
   document.getElementById('e-campos-arrendamiento').style.display =
@@ -82,13 +143,10 @@ function editarEquipo(data) {
   setVal('e-fecha-renovacion', data.fecha_renovacion);
   setVal('e-proveedor',        data.proveedor_arrendamiento);
 
-  // ── Mostrar/ocultar IMEI o Cargador según tipo ────────────
   actualizarCamposEdit();
-
   abrirModal('modal-editar');
 }
 
-// Helper interno: setear valor sin romper si el campo no existe
 function setVal(id, valor) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -97,7 +155,6 @@ function setVal(id, valor) {
 
 // ══════════════════════════════════════════════════════════════
 // CAMPOS DINÁMICOS — MODAL NUEVO
-// IMEI solo en celular, Cargador solo en laptop
 // ══════════════════════════════════════════════════════════════
 function actualizarCampos() {
   const tipo = document.getElementById('n-tipo').value;
@@ -137,12 +194,11 @@ function actualizarCampos() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// CAMPOS DINÁMICOS — MODAL EDITAR (versión espejo)
+// CAMPOS DINÁMICOS — MODAL EDITAR
 // ══════════════════════════════════════════════════════════════
 function actualizarCamposEdit() {
   const tipo = document.getElementById('e-tipo').value;
 
-  // IMEI
   const campoImei = document.getElementById('e-campo-imei');
   if (campoImei) {
     if (tipo === 'celular') {
@@ -154,7 +210,6 @@ function actualizarCamposEdit() {
     }
   }
 
-  // Cargador
   const campoCargador = document.getElementById('e-campo-cargador');
   if (campoCargador) {
     const inputCargador = document.getElementById('e-serie-cargador');
@@ -171,7 +226,6 @@ function actualizarCamposEdit() {
     }
   }
 
-  // Specs
   const camposSpecs = document.getElementById('e-campos-specs');
   if (camposSpecs) {
     const tiposConSpecs = ['laptop', 'desktop'];
@@ -179,15 +233,14 @@ function actualizarCamposEdit() {
   }
 }
 
-// Estado inicial del modal nuevo al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   if (typeof actualizarCampos === 'function' && document.getElementById('n-tipo')) {
     actualizarCampos();
   }
 });
 
 // ══════════════════════════════════════════════════════════════
-// TOGGLE ARRENDAMIENTO (nuevo + editar)
+// TOGGLE ARRENDAMIENTO
 // ══════════════════════════════════════════════════════════════
 function toggleArrendamiento(cb) {
   document.getElementById('campos-arrendamiento').style.display = cb.checked ? 'block' : 'none';
@@ -198,26 +251,7 @@ function toggleArrendamientoEdit(cb) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// PREVIEW EVIDENCIA FOTOGRÁFICA (modal nuevo)
-// ══════════════════════════════════════════════════════════════
-function previewEv(input) {
-  const wrap = document.getElementById('ev-preview');
-  const img  = document.getElementById('ev-img');
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = e => { img.src = e.target.result; wrap.style.display = 'block'; };
-    reader.readAsDataURL(input.files[0]);
-  } else {
-    wrap.style.display = 'none';
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
 // CERRAR MODAL + LIMPIEZA TOTAL
-// Limpia todos los sistemas de validación:
-//   - is-valid / is-invalid  (Bootstrap-style)
-//   - input-ok / input-err   (sistema legacy de setMsg)
-//   - .field-msg.ok / .field-msg.err (mensajes "Se ve bien")
 // ══════════════════════════════════════════════════════════════
 function cerrarModal(idModal) {
   const modal = document.getElementById(idModal);
@@ -225,17 +259,21 @@ function cerrarModal(idModal) {
 
   modal.classList.remove('open');
 
+  // Limpiar listas de archivos y acumulados
+  modal.querySelectorAll('.lista-archivos').forEach(l => l.innerHTML = '');
+  modal.querySelectorAll('input[type="file"]').forEach(inp => {
+    const key = inp.id || inp.name;
+    if (_archivosAcumulados[key]) delete _archivosAcumulados[key];
+  });
+
   const form = modal.querySelector('form');
   if (!form) return;
 
-  // Reset valores
   form.reset();
   form.classList.remove('was-validated');
 
-  // Limpiar TODAS las clases de validación
   form.querySelectorAll('input, select, textarea').forEach(el => {
-    el.classList.remove('is-valid', 'is-invalid');
-    el.classList.remove('input-ok', 'input-err');
+    el.classList.remove('is-valid', 'is-invalid', 'input-ok', 'input-err');
     if (el.setCustomValidity) el.setCustomValidity('');
     el.style.borderColor = '';
     el.style.boxShadow = '';
@@ -244,27 +282,132 @@ function cerrarModal(idModal) {
     el.blur();
   });
 
-  // Limpiar mensajes "✓ Se ve bien"
   form.querySelectorAll('.field-msg').forEach(msg => {
     msg.textContent = '';
     msg.className = 'field-msg';
   });
 
-  // Limpiar previews de imágenes
-  form.querySelectorAll('[id^="prev-"], #ev-preview').forEach(prev => {
-    prev.style.display = 'none';
-    const img = prev.querySelector('img');
-    if (img) img.src = '';
-  });
-
-  // Ocultar sección de arrendamiento (nuevo Y editar)
   ['campos-arrendamiento', 'e-campos-arrendamiento'].forEach(id => {
     const sec = document.getElementById(id);
     if (sec) sec.style.display = 'none';
   });
 
-  // Quitar focus
   if (document.activeElement) document.activeElement.blur();
+}
+
+// ══════════════════════════════════════════════════════════════
+// GESTOR DE ARCHIVOS MÚLTIPLES CON PREVIEW Y ELIMINAR
+// ══════════════════════════════════════════════════════════════
+function agregarArchivos(input, idLista, modo) {
+  const key = input.id || input.name;
+
+  if (!_archivosAcumulados[key]) {
+    _archivosAcumulados[key] = new DataTransfer();
+  }
+
+  const nombresExistentes = new Set(
+    Array.from(_archivosAcumulados[key].files).map(f => f.name)
+  );
+
+  Array.from(input.files).forEach(file => {
+    if (!nombresExistentes.has(file.name)) {
+      _archivosAcumulados[key].items.add(file);
+    }
+  });
+
+  input.files = _archivosAcumulados[key].files;
+  _renderLista(input, idLista, modo, key);
+}
+
+function _renderLista(input, idLista, modo, key) {
+  const lista = document.getElementById(idLista);
+  if (!lista) return;
+
+  lista.innerHTML = '';
+
+  const archivos = Array.from(_archivosAcumulados[key]?.files || []);
+  if (archivos.length === 0) return;
+
+  archivos.forEach((file, idx) => {
+    const item = document.createElement('div');
+    item.className = 'archivo-item';
+
+    if (modo === 'imagenes' && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        item.innerHTML = `
+          <div class="archivo-preview-img">
+            <img src="${e.target.result}" alt="${file.name}" style="display:block;width:100%;height:100%;object-fit:cover;">
+            <button type="button" class="archivo-eliminar"
+                    onclick="_eliminarArchivo('${key}', '${idLista}', '${modo}', ${idx})"
+                    title="Eliminar">
+              <i class="bi bi-trash3-fill"></i>
+            </button>
+          </div>
+          <div class="archivo-nombre">${file.name}</div>
+        `;
+      };
+      reader.readAsDataURL(file);
+
+    } else if (file.type === 'application/pdf') {
+      const url = URL.createObjectURL(file);
+      item.innerHTML = `
+        <div class="archivo-preview-doc">
+          <embed src="${url}" type="application/pdf">
+          <button type="button" class="archivo-eliminar"
+                  onclick="_eliminarArchivo('${key}', '${idLista}', '${modo}', ${idx})"
+                  title="Eliminar">
+            <i class="bi bi-trash3-fill"></i>
+          </button>
+        </div>
+        <div class="archivo-nombre">${file.name} · ${(file.size / 1024).toFixed(1)} KB</div>
+      `;
+
+    } else {
+      item.innerHTML = `
+        <div class="archivo-preview-doc archivo-generico">
+          <i class="bi bi-file-earmark-text"></i>
+          <button type="button" class="archivo-eliminar"
+                  onclick="_eliminarArchivo('${key}', '${idLista}', '${modo}', ${idx})"
+                  title="Eliminar">
+            <i class="bi bi-trash3-fill"></i>
+          </button>
+        </div>
+        <div class="archivo-nombre">${file.name} · ${(file.size / 1024).toFixed(1)} KB</div>
+      `;
+    }
+
+    lista.appendChild(item);
+  });
+
+  // ── Botón "Agregar más" ──────────────────────────────────
+  const btnMas = document.createElement('div');
+  btnMas.className = 'archivo-item';
+  btnMas.innerHTML = `
+    <button type="button" class="archivo-agregar-mas"
+            onclick="document.getElementById('${input.id}').click()"
+            title="Agregar más archivos">
+      <i class="bi bi-plus-lg"></i>
+    </button>
+    <div class="archivo-nombre">Agregar</div>
+  `;
+  lista.appendChild(btnMas);
+}
+
+function _eliminarArchivo(key, idLista, modo, idx) {
+  if (!_archivosAcumulados[key]) return;
+
+  const dt = new DataTransfer();
+  Array.from(_archivosAcumulados[key].files).forEach((f, i) => {
+    if (i !== idx) dt.items.add(f);
+  });
+  _archivosAcumulados[key] = dt;
+
+  const input = document.querySelector(`#${key}, [name="${key}"]`);
+  if (input) {
+    input.files = dt.files;
+    _renderLista(input, idLista, modo, key);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -272,7 +415,7 @@ function cerrarModal(idModal) {
 // ══════════════════════════════════════════════════════════════
 if (typeof io !== 'undefined') {
   const socket = io();
-  socket.on('ti_equipos_update', function() {
+  socket.on('ti_equipos_update', function () {
     fetch(window.location.href)
       .then(r => r.text())
       .then(html => {

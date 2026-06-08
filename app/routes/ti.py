@@ -39,8 +39,6 @@ def _check_acceso():
 def _emit_actualizar():
     socketio.emit('ti_equipos_update', {}, namespace='/')
 
-
-# ── Dashboard TI ──────────────────────────────────────────────
 # ── Dashboard TI ──────────────────────────────────────────────
 @ti_bp.route("/")
 @login_required
@@ -124,6 +122,7 @@ def equipos():
 
 
 # ── Alta equipo ───────────────────────────────────────────────
+# ── Alta equipo ───────────────────────────────────────────────
 @ti_bp.route("/equipos/nuevo", methods=["POST"])
 @login_required
 @requiere_permiso('Equipos TI', 'crear')
@@ -131,21 +130,38 @@ def equipo_nuevo():
     if not _check_acceso():
         return redirect(url_for("activos.dashboard"))
 
+    numero_serie = request.form.get("numero_serie", "").strip()
+
+    existente = None
+
+    if numero_serie:
+        existente = Electronico.query.filter_by(
+            NumeroSerie=numero_serie
+        ).first()
+
+    if existente:
+        flash(
+            f"El número de serie '{numero_serie}' ya existe.",
+            "error"
+        )
+        return redirect(url_for("ti.equipos"))
+
     try:
         e = Electronico(
-            Nombre           = request.form.get("nombre", "").strip(),
-            Marca            = request.form.get("marca", "").strip() or None,
-            Modelo           = request.form.get("modelo", "").strip() or None,
-            NumeroSerie      = request.form.get("numero_serie", "").strip() or None,
-            TipoEquipo       = request.form.get("tipo_equipo", "otro"),
-            Gama             = request.form.get("gama") or None,
-            Estado           = request.form.get("estado", "almacen"),
-            Condicion        = "bueno",
-            FechaAdquisicion = request.form.get("fecha_adquisicion") or None,
-            Costo            = float(request.form.get("costo") or 0),
-            Descripcion      = request.form.get("descripcion", "").strip() or None,
-            IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None,
+            Nombre                 = request.form.get("nombre", "").strip(),
+            Marca                  = request.form.get("marca", "").strip() or None,
+            Modelo                 = request.form.get("modelo", "").strip() or None,
+            NumeroSerie            = request.form.get("numero_serie", "").strip() or None,
+            TipoEquipo             = request.form.get("tipo_equipo", "otro"),
+            Gama                   = request.form.get("gama") or None,
+            Estado                 = request.form.get("estado", "almacen"),
+            Condicion              = "bueno",
+            FechaAdquisicion       = request.form.get("fecha_adquisicion") or None,
+            Costo                  = float(request.form.get("costo") or 0),
+            Descripcion            = request.form.get("descripcion", "").strip() or None,
+            IdUbicacion            = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None,
             IMEI                   = request.form.get("imei", "").strip() or None,
+            SerieCargador          = request.form.get("serie_cargador", "").strip() or None,
             Procesador             = request.form.get("procesador", "").strip() or None,
             MemoriaRAM             = request.form.get("memoria_ram", "").strip() or None,
             Almacenamiento         = request.form.get("almacenamiento", "").strip() or None,
@@ -160,25 +176,45 @@ def equipo_nuevo():
         db.session.add(e)
         db.session.flush()
 
-        factura = request.files.get("factura")
-        if factura and factura.filename:
-            info = guardar_archivo(archivo=factura, prefijo=f"equipo_{e.IdElectronico}_factura", carpeta="documents")
-            db.session.add(EvidenciaEquipo(
-                IdElectronico=e.IdElectronico, ArchivoUrl=info["url"],
-                NombreArchivo=info["filename"], Tipo="factura",
-                TipoArchivo="documento", MimeType=info["mime_type"],
-                Descripcion="Factura de compra", CreadoPor=current_user.id,
-            ))
+        # ── Archivos múltiples: facturas ──────────────────────
+        facturas = request.files.getlist("factura")
+        for factura in facturas:
+            if factura and factura.filename:
+                info = guardar_archivo(
+                    archivo=factura,
+                    prefijo=f"equipo_{e.IdElectronico}_factura",
+                    carpeta="documents"
+                )
+                db.session.add(EvidenciaEquipo(
+                    IdElectronico = e.IdElectronico,
+                    ArchivoUrl    = info["url"],
+                    NombreArchivo = info["filename"],
+                    Tipo          = "factura",
+                    TipoArchivo   = "documento",
+                    MimeType      = info["mime_type"],
+                    Descripcion   = "Hoja de asignación",
+                    CreadoPor     = current_user.id,
+                ))
 
-        evidencia = request.files.get("evidencia")
-        if evidencia and evidencia.filename:
-            info = guardar_archivo(archivo=evidencia, prefijo=f"equipo_{e.IdElectronico}_foto", carpeta="static/evidencias")
-            db.session.add(EvidenciaEquipo(
-                IdElectronico=e.IdElectronico, ArchivoUrl=info["url"],
-                NombreArchivo=info["filename"], Tipo="entrega",
-                TipoArchivo="imagen", MimeType=info["mime_type"],
-                Descripcion="Foto inicial al dar de alta", CreadoPor=current_user.id,
-            ))
+        # ── Archivos múltiples: evidencias ────────────────────
+        evidencias = request.files.getlist("evidencia")
+        for evidencia in evidencias:
+            if evidencia and evidencia.filename:
+                info = guardar_archivo(
+                    archivo=evidencia,
+                    prefijo=f"equipo_{e.IdElectronico}_foto",
+                    carpeta="static/evidencias"
+                )
+                db.session.add(EvidenciaEquipo(
+                    IdElectronico = e.IdElectronico,
+                    ArchivoUrl    = info["url"],
+                    NombreArchivo = info["filename"],
+                    Tipo          = "entrega",
+                    TipoArchivo   = "imagen",
+                    MimeType      = info["mime_type"],
+                    Descripcion   = "Foto inicial al dar de alta",
+                    CreadoPor     = current_user.id,
+                ))
 
         db.session.commit()
         _emit_actualizar()
@@ -191,11 +227,28 @@ def equipo_nuevo():
     return redirect(url_for("ti.equipos"))
 
 
+@ti_bp.route("/equipos/validar-serie")
+@login_required
+def validar_serie():
+
+    serie = request.args.get("serie", "").strip()
+
+    existe = False
+
+    if serie:
+        existe = (
+            Electronico.query.filter_by(
+                NumeroSerie=serie
+            ).first()
+            is not None
+        )
+
+    return jsonify({
+        "valido": not existe,
+        "existe": existe
+    })
+    
 # ── Editar equipo ─────────────────────────────────────────────
-# ════════════════════════════════════════════════════════════════
-# REEMPLAZA tu función equipo_editar() en app/routes/ti.py
-# Ahora maneja TODOS los campos del modal expandido.
-# ════════════════════════════════════════════════════════════════
 
 @ti_bp.route("/equipos/<int:id>/editar", methods=["POST"])
 @login_required
@@ -208,21 +261,39 @@ def equipo_editar(id):
         e = Electronico.query.get_or_404(id)
 
         # ── Campos básicos ──────────────────────────────────────
-        e.Nombre           = request.form.get("nombre", "").strip()
-        e.TipoEquipo       = request.form.get("tipo_equipo", "otro")
-        e.Gama             = request.form.get("gama") or None
-        e.Estado           = request.form.get("estado", e.Estado)
-        e.Condicion        = request.form.get("condicion", "bueno")
-        e.Marca            = request.form.get("marca", "").strip() or None
-        e.Modelo           = request.form.get("modelo", "").strip() or None
-        e.NumeroSerie      = request.form.get("numero_serie", "").strip() or None
+        e.Nombre     = request.form.get("nombre", "").strip()
+        e.TipoEquipo = request.form.get("tipo_equipo", "otro")
+        e.Gama       = request.form.get("gama") or None
+        e.Estado     = request.form.get("estado", e.Estado)
+        e.Condicion  = request.form.get("condicion", "bueno")
+        e.Marca      = request.form.get("marca", "").strip() or None
+        e.Modelo     = request.form.get("modelo", "").strip() or None
+
+        # ── Validar número de serie único ───────────────────────
+        nueva_serie = request.form.get("numero_serie", "").strip()
+
+        if nueva_serie:
+            duplicado = Electronico.query.filter(
+                Electronico.NumeroSerie == nueva_serie,
+                Electronico.IdElectronico != id
+            ).first()
+
+            if duplicado:
+                flash(
+                    f"El número de serie '{nueva_serie}' ya está registrado.",
+                    "error"
+                )
+                return redirect(url_for("ti.equipos"))
+
+        e.NumeroSerie = nueva_serie or None
 
         # ── Campos dinámicos según tipo ─────────────────────────
-        e.IMEI             = request.form.get("imei", "").strip() or None
-        # ⚠️ Solo guardar serie_cargador si tu tabla electronico tiene esa columna.
-        # Si todavía no le agregaste, comenta esta línea.
+        e.IMEI = request.form.get("imei", "").strip() or None
+
         if hasattr(e, "SerieCargador"):
-            e.SerieCargador = request.form.get("serie_cargador", "").strip() or None
+            e.SerieCargador = (
+                request.form.get("serie_cargador", "").strip() or None
+            )
 
         # ── Specs técnicas ──────────────────────────────────────
         e.Procesador       = request.form.get("procesador", "").strip() or None
@@ -234,20 +305,30 @@ def equipo_editar(id):
         e.Costo            = float(request.form.get("costo") or 0)
         e.Garantia         = request.form.get("garantia") or None
         e.FechaAdquisicion = request.form.get("fecha_adquisicion") or None
-        e.IdUbicacion      = int(request.form.get("ubicacion_id")) if request.form.get("ubicacion_id") else None
+        e.IdUbicacion      = (
+            int(request.form.get("ubicacion_id"))
+            if request.form.get("ubicacion_id")
+            else None
+        )
 
         # ── Otros ───────────────────────────────────────────────
-        e.Accesorios       = request.form.get("accesorios", "").strip() or None
-        e.Comentarios      = request.form.get("comentarios", "").strip() or None
+        e.Accesorios  = request.form.get("accesorios", "").strip() or None
+        e.Comentarios = request.form.get("comentarios", "").strip() or None
 
         # ── Arrendamiento ───────────────────────────────────────
-        e.Arrendamiento          = bool(request.form.get("arrendamiento"))
-        e.FechaRenovacion        = request.form.get("fecha_renovacion") or None
-        e.ProveedorArrendamiento = request.form.get("proveedor_arrendamiento", "").strip() or None
+        e.Arrendamiento = bool(request.form.get("arrendamiento"))
+        e.FechaRenovacion = request.form.get("fecha_renovacion") or None
+        e.ProveedorArrendamiento = (
+            request.form.get("proveedor_arrendamiento", "").strip() or None
+        )
 
         db.session.commit()
         _emit_actualizar()
-        flash(f"Equipo '{e.Nombre}' actualizado correctamente.", "success")
+
+        flash(
+            f"Equipo '{e.Nombre}' actualizado correctamente.",
+            "success"
+        )
 
     except Exception as ex:
         db.session.rollback()
