@@ -87,10 +87,26 @@ if __name__ == "__main__":
     ip = get_local_ip()
     update_env_ip(ip)
 
+    # ------------------------------------------------------------------
+    # MODO_SERVICIO=1 lo inyecta el servicio de Windows (NSSM).
+    #   - Sin reloader: NSSM pierde el proceso hijo si el reloader está on.
+    #   - Sin debug:    no exponer el debugger de Werkzeug en la red.
+    # Al correr el run.py a mano (desarrollo), la variable no existe,
+    # así que conservas reloader + debug como siempre.
+    # ------------------------------------------------------------------
+    modo_servicio = os.getenv("MODO_SERVICIO", "0") == "1"
+
     print(f"\n  🚀  Servidor en: http://localhost:5000")
     print(f"  🌐  Red local:   http://{ip}:5000")
-    print(f"  🗄️   DB: {app.config['SQLALCHEMY_DATABASE_URI']}\n")
+    print(f"  🗄️   DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"  ⚙️   Modo servicio: {'SÍ' if modo_servicio else 'NO (desarrollo)'}\n")
 
-    # ✅ Sin watchdog — usar stat (default de Flask):
-    socketio.run(app, debug=True, port=5000, host="0.0.0.0",
-             use_reloader=True, reloader_type='stat')
+    socketio.run(
+        app,
+        host="0.0.0.0",
+        port=5000,
+        debug=not modo_servicio,
+        use_reloader=not modo_servicio,
+        reloader_type="stat",
+        allow_unsafe_werkzeug=True,   # requerido por Flask-SocketIO con debug=False
+    )
